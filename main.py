@@ -43,8 +43,8 @@ SUMMARY_FILE = "summary.txt"
 IP_RANGES = os.getenv("IP_RANGES", "").split(",")
 
 # Paramètres de parallélisation
-INITIAL_MAX_WORKERS = 10
-MIN_WORKERS = 2
+INITIAL_MAX_WORKERS = 1  # 10
+MIN_WORKERS = 1  # 2
 MAX_WORKERS = 20
 
 # Créer le dossier de résultats
@@ -148,7 +148,7 @@ def save_active_ip(ip, output, os_info, versions, vulns):
         logger.error(f"Erreur lors de l'écriture dans {ACTIVE_IPS_FILE} : {e}")
 
 
-# Scanner une adresse IP avec Nmap
+# Scanner une adresse IP avec Nmap (limité aux 1000 premiers ports)
 def scan_ip(ip):
     global stop_flag
     if stop_flag:
@@ -158,8 +158,8 @@ def scan_ip(ip):
     logger.info(f"Début du scan de {ip}")
     socketio.emit('progress', {'message': f"Scanning {ip}..."}, namespace='/scan')
     try:
-        # Commande Nmap améliorée : -A (versions), -O (OS), -sS (furtif), -f (fragmentation), --script vuln (NSE vulnérabilités)
-        cmd = ["sudo", "nmap", "-A", "-O", "-sS", "-f", "--script", "vuln", "-p-", ip, "-oN", output_file]
+        # Commande Nmap modifiée : scan des ports 1-1000 uniquement
+        cmd = ["sudo", "nmap", "-A", "-O", "-sS", "-f", "--script", "vuln", "-p", "1-1000", ip, "-oN", output_file]
         subprocess.run(cmd, check=True, timeout=600)
         logger.info(f"Scan de {ip} terminé avec succès")
 
