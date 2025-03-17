@@ -1,97 +1,147 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Scan Nmap</title>
+    <title>Scan Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
-            margin: 0;
-            padding: 20px;
-        }
-        h1 {
-            color: #333;
-            text-align: center;
-        }
-        #log-container {
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-            max-height: 400px;
+        .tile {
+            height: 400px;
             overflow-y: auto;
-            margin-bottom: 20px;
+            font-size: 0.9rem;
         }
-        .log-entry {
-            padding: 5px 0;
-            border-bottom: 1px solid #eee;
+        .tile p {
+            margin: 0;
         }
-        .log-entry.info { color: #333; }
-        .log-entry.error { color: #d9534f; }
-        .buttons {
-            text-align: center;
+        #progress-container {
+            margin: 10px;
         }
-        button {
-            background-color: #5cb85c;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            margin: 5px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
+        #progress-bar {
+            transition: width 0.5s ease-in-out;
         }
-        button:hover { background-color: #4cae4c; }
-        #stop-btn { background-color: #d9534f; }
-        #stop-btn:hover { background-color: #c9302c; }
-        #shutdown-btn { background-color: #f0ad4e; }
-        #shutdown-btn:hover { background-color: #ec971f; }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.1/socket.io.js"></script>
 </head>
 <body>
-<h1>Scan Nmap en temps réel</h1>
-<div id="log-container"></div>
-<div class="buttons">
-    <button id="start-btn" onclick="startScan()">Démarrer le scan</button>
-    <button id="stop-btn" onclick="stopScan()">Arrêter le scan</button>
-    <button id="shutdown-btn" onclick="shutdown()">Éteindre la machine</button>
-</div>
+    <div class="container-fluid">
+        <div id="progress-container">
+            <div id="progress-text" class="mb-2">En attente...</div>
+            <div class="progress">
+                <div id="progress-bar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+        </div>
+        <div class="mb-3">
+            <button class="btn btn-primary" onclick="startScan()">Démarrer le scan</button>
+            <button class="btn btn-danger" onclick="stopScan()">Arrêter le scan</button>
+        </div>
+        <div class="row row-cols-1 row-cols-md-3 g-4" id="tiles"></div>
+    </div>
 
-<script>
-    const socket = io('/scan');
-    const logContainer = document.getElementById('log-container');
+    <script>
+        const tilesContainer = document.getElementById('tiles');
+        const progressText = document.getElementById('progress-text');
+        const progressBar = document.getElementById('progress-bar');
+        const threadTiles = {};  // Stocke les éléments DOM des tuiles actives
+        const activeThreads = new Set();  // Suit les threads actifs
 
-    socket.on('log', function(data) {
-        const logEntry = document.createElement('div');
-        logEntry.className = `log-entry ${data.message.includes('ERROR') ? 'error' : 'info'}`;
-        logEntry.textContent = data.message;
-        logContainer.appendChild(logEntry);
-        logContainer.scrollTop = logContainer.scrollHeight;
-    });
+        // Initialiser SSE
+        const source = new EventSource('/events');
 
-    socket.on('progress', function(data) {
-        const logEntry = document.createElement('div');
-        logEntry.className = 'log-entry info';
-        logEntry.textContent = data.message;
-        logContainer.appendChild(logEntry);
-        logContainer.scrollTop = logContainer.scrollHeight;
-    });
+        source.onopen = () => {
+            console.log('Connexion SSE ouverte');
+            progressText.textContent = 'Connecté au serveur';
+        };
 
-    function startScan() {
-        socket.emit('start_scan');
-    }
+        source.onerror = (error) => {
+            console.error('Erreur SSE :', error);
+            progressText.textContent = 'Erreur de connexion au serveur. Tentative de reconnexion...';
+        };
 
-    function stopScan() {
-        socket.emit('stop_scan');
-    }
+        source.addEventListener('progress', (event) => {
+            const data = JSON.parse(event.data);
+            console.log('Reçu progress :', data);
+            progressText.textContent = data.message;
+            const match = data.message.match(/Progression : (\d+)\/(\d+) \(([\d.]+)%\)/);
+            if (match) {
+                const percentage = parseFloat(match[3]);
+                progressBar.style.width = `${percentage}%`;
+                progressBar.setAttribute('aria-valuenow', percentage);
+                progressBar.textContent = `${percentage.toFixed(2)}%`;
+            } else {
+                progressBar.style.width = '0%';
+                progressBar.setAttribute('aria-valuenow', 0);
+                progressBar.textContent = '';
+            }
+        });
 
-    function shutdown() {
-        if (confirm("Voulez-vous vraiment éteindre la machine ?")) {
-            socket.emit('shutdown');
+        source.addEventListener('thread_update', (event) => {
+            const data = JSON.parse(event.data);
+            console.log('Reçu thread_update :', data);
+            const { thread_id, message } = data;
+
+            // Vérifier si le thread commence
+            if (message.includes("Début du scan")) {
+                activeThreads.add(thread_id);
+                if (!threadTiles[thread_id]) {
+                    const tile = document.createElement('div');
+                    tile.className = 'col';
+                    tile.innerHTML = `
+                        <div class="card tile">
+                            <div class="card-header">Thread ${thread_id.slice(0, 8)}</div>
+                            <div class="card-body"></div>
+                        </div>
+                    `;
+                    tilesContainer.appendChild(tile);
+                    threadTiles[thread_id] = tile.querySelector('.card-body');
+                }
+            }
+
+            // Ajouter le message si le thread est actif
+            if (activeThreads.has(thread_id)) {
+                const tile = threadTiles[thread_id];
+                const lines = message.split('\n');
+                lines.forEach(line => {
+                    const p = document.createElement('p');
+                    p.textContent = line;
+                    tile.appendChild(p);
+                });
+                tile.scrollTop = tile.scrollHeight;
+            }
+
+            // Supprimer la tuile si le thread est terminé
+            if (message.includes("terminé avec succès") ||
+                message.includes("n’a pas de ports ouverts") ||
+                message.includes("Scan interrompu") ||
+                message.includes("Nmap a échoué")) {
+                if (activeThreads.has(thread_id)) {
+                    activeThreads.delete(thread_id);
+                    setTimeout(() => {
+                        if (!activeThreads.has(thread_id) && threadTiles[thread_id]) {
+                            const tile = threadTiles[thread_id].parentElement.parentElement;
+                            tilesContainer.removeChild(tile);
+                            delete threadTiles[thread_id];
+                        }
+                    }, 1000);  // Délai pour laisser le dernier message visible
+                }
+            }
+        });
+
+        source.addEventListener('ping', (event) => {
+            console.log('Ping reçu :', event.data);
+        });
+
+        function startScan() {
+            console.log('Envoi de start_scan');
+            fetch('/start_scan')
+                .then(response => console.log('Start scan réponse :', response.status))
+                .catch(error => console.error('Erreur start_scan :', error));
         }
-    }
-</script>
+
+        function stopScan() {
+            console.log('Envoi de stop_scan');
+            fetch('/stop_scan')
+                .then(response => console.log('Stop scan réponse :', response.status))
+                .catch(error => console.error('Erreur stop_scan :', error));
+        }
+    </script>
 </body>
 </html>
