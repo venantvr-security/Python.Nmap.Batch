@@ -90,38 +90,60 @@ def save_progress(ip):
         logger.error(f"Erreur lors de l'écriture dans {PROGRESS_FILE} : {e}")
 
 
-# Vérifier si une IP est active et récupérer la sortie
-def get_ip_output(output_file):
+# Parser la sortie de Nmap pour extraire ports, OS, versions et vulnérabilités
+def parse_nmap_output(output_file):
     if not os.path.exists(output_file):
-        return False, "", []
+        return False, "", [], None, {}, []
     try:
         with open(output_file, "r") as f:
             content = f.read()
             ports = []
+            os_info = None
+            versions = {}
+            vulns = []
+
             for line in content.splitlines():
+                # Ports ouverts
                 if "open" in line and "/" in line:
                     try:
                         port = int(line.split("/")[0].strip())
                         ports.append(port)
                     except ValueError:
                         continue
-            if ports:
-                return True, content, ports
-        return False, "", []
+                # Détection OS
+                if "OS details" in line:
+                    os_info = line.split("OS details: ")[1].strip()
+                # Versions des services
+                if "open" in line and "VERSION" in line:
+                    parts = line.split()
+                    port = int(parts[0].split("/")[0])
+                    version = " ".join(parts[2:])
+                    versions[port] = version
+                # Vulnérabilités NSE
+                if "VULNERABLE" in line:
+                    vulns.append(line.strip())
+
+            return len(ports) > 0, content, ports, os_info, versions, vulns
     except Exception as e:
-        logger.error(f"Erreur lors de la lecture de {output_file} : {e}")
-        return False, "", []
+        logger.error(f"Erreur lors de l’analyse de {output_file} : {e}")
+        return False, "", [], None, {}, []
 
 
 # Sauvegarder la sortie complète d'une IP active
-def save_active_ip(ip, output):
+def save_active_ip(ip, output, os_info, versions, vulns):
     try:
         with open(ACTIVE_IPS_FILE, "a") as f:
             f.write(f"\n{'=' * 50}\n")
             f.write(f"Scan results for {ip} ({time.ctime()}):\n")
             f.write(f"{'=' * 50}\n")
-            f.write(output)
-            f.write("\n")
+            f.write(f"OS: {os_info if os_info else 'Non détecté'}\n")
+            f.write("Service Versions:\n")
+            for port, version in versions.items():
+                f.write(f"  Port {port}: {version}\n")
+            f.write("Vulnérabilités détectées:\n")
+            for vuln in vulns:
+                f.write(f"  {vuln}\n")
+            f.write(f"Full Nmap Output:\n{output}\n")
     except Exception as e:
         logger.error(f"Erreur lors de l'écriture dans {ACTIVE_IPS_FILE} : {e}")
 
@@ -130,40 +152,43 @@ def save_active_ip(ip, output):
 def scan_ip(ip):
     global stop_flag
     if stop_flag:
-        return ip, False, None, []
+        return ip, False, None, [], None, None
 
     output_file = os.path.join(RESULTS_DIR, f"scan_{ip}.txt")
     logger.info(f"Début du scan de {ip}")
     socketio.emit('progress', {'message': f"Scanning {ip}..."}, namespace='/scan')
     try:
-        cmd = ["sudo", "nmap", "-A", "-p-", ip, "-oN", output_file]
+        # Commande Nmap améliorée : -A (versions), -O (OS), -sS (furtif), -f (fragmentation), --script vuln (NSE vulnérabilités)
+        cmd = ["sudo", "nmap", "-A", "-O", "-sS", "-f", "--script", "vuln", "-p-", ip, "-oN", output_file]
         subprocess.run(cmd, check=True, timeout=600)
         logger.info(f"Scan de {ip} terminé avec succès")
 
-        is_active, output, ports = get_ip_output(output_file)
+        # Analyse des résultats
+        is_active, output, ports, os_info, versions, vulns = parse_nmap_output(output_file)
         if is_active:
-            save_active_ip(ip, output)
-            logger.info(f"{ip} est active (ports ouverts : {ports})")
+            save_active_ip(ip, output, os_info, versions, vulns)
+            logger.info(f"{ip} est active (ports: {ports}, OS: {os_info}, Vulns: {len(vulns)})")
             socketio.emit('progress', {'message': f"{ip} est active !"}, namespace='/scan')
         else:
-            logger.info(f"{ip} n'a pas de ports ouverts")
+            logger.info(f"{ip} n’a pas de ports ouverts")
 
-        return ip, True, None, ports
+        return ip, True, None, ports, os_info, vulns
     except subprocess.CalledProcessError as e:
         logger.error(f"Erreur lors du scan de {ip} : {e}")
-        return ip, False, str(e), []
+        return ip, False, str(e), [], None, None
     except subprocess.TimeoutExpired:
         logger.error(f"Timeout lors du scan de {ip}")
-        return ip, False, "Timeout", []
+        return ip, False, "Timeout", [], None, None
     except Exception as e:
         logger.error(f"Erreur inattendue lors du scan de {ip} : {e}")
-        return ip, False, str(e), []
+        return ip, False, str(e), [], None, None
 
 
 # Générer un rapport synthétique
-def generate_summary(total_scanned, active_count, all_ports):
+def generate_summary(total_scanned, active_count, all_ports, all_vulns):
     try:
         port_counter = Counter(all_ports)
+        vuln_counter = Counter(all_vulns)
         with open(SUMMARY_FILE, "a") as f:
             f.write(f"\n{'-' * 50}\n")
             f.write(f"Résumé du scan ({time.ctime()}):\n")
@@ -175,6 +200,12 @@ def generate_summary(total_scanned, active_count, all_ports):
                     f.write(f"Port {port} : {count} IPs\n")
             else:
                 f.write("Aucun port détecté.\n")
+            f.write("\nVulnérabilités les plus fréquentes :\n")
+            if vuln_counter:
+                for vuln, count in vuln_counter.most_common(5):
+                    f.write(f"{vuln} : {count} IPs\n")
+            else:
+                f.write("Aucune vulnérabilité détectée.\n")
             f.write(f"{'-' * 50}\n")
     except Exception as e:
         logger.error(f"Erreur lors de l'écriture dans {SUMMARY_FILE} : {e}")
@@ -199,7 +230,7 @@ def scan_background():
     if remaining_ips == 0:
         logger.info("Toutes les IPs ont déjà été scannées.")
         socketio.emit('progress', {'message': "Toutes les IPs ont déjà été scannées !"}, namespace='/scan')
-        generate_summary(total_ips, 0, [])
+        generate_summary(total_ips, 0, [], [])
         return
 
     socketio.emit('progress', {'message': f"IPs restantes à scanner : {remaining_ips}"}, namespace='/scan')
@@ -208,6 +239,7 @@ def scan_background():
     processed_count = len(completed_ips)
     active_count = 0
     all_ports = []
+    all_vulns = []
 
     while ips_to_scan and not stop_flag:
         batch_size = min(current_workers, len(ips_to_scan))
@@ -223,13 +255,14 @@ def scan_background():
                 processed_count += 1
 
                 try:
-                    ip, success, error, ports = future.result()
+                    ip, success, error, ports, os_info, vulns = future.result()
                     if success:
                         success_count += 1
                         save_progress(ip)
                         if ports:
                             active_count += 1
-                        all_ports.extend(ports)
+                            all_ports.extend(ports)
+                            all_vulns.extend(vulns)
                     socketio.emit('progress', {
                         'message': f"Progression : {processed_count}/{total_ips} ({(processed_count / total_ips) * 100:.2f}%)"
                     }, namespace='/scan')
@@ -245,12 +278,12 @@ def scan_background():
             current_workers += 2
             logger.info(f"Augmentation de parallélisation à {current_workers} (taux de succès : {success_rate:.2f})")
 
-        generate_summary(processed_count, active_count, all_ports)
+        generate_summary(processed_count, active_count, all_ports, all_vulns)
 
         if not ips_to_scan:
             break
 
-    generate_summary(processed_count, active_count, all_ports)
+    generate_summary(processed_count, active_count, all_ports, all_vulns)
     if processed_count == total_ips:
         logger.info("Tous les scans sont terminés")
         socketio.emit('progress', {'message': "Tous les scans sont terminés !"}, namespace='/scan')
