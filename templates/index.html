@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Scan Nmap</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        #log-container {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .log-entry.info { color: #333; }
+        .log-entry.error { color: #d9534f; }
+        .buttons {
+            text-align: center;
+        }
+        button {
+            background-color: #5cb85c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover { background-color: #4cae4c; }
+        #stop-btn { background-color: #d9534f; }
+        #stop-btn:hover { background-color: #c9302c; }
+        #shutdown-btn { background-color: #f0ad4e; }
+        #shutdown-btn:hover { background-color: #ec971f; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.1/socket.io.js"></script>
+</head>
+<body>
+<h1>Scan Nmap en temps réel</h1>
+<div id="log-container"></div>
+<div class="buttons">
+    <button id="start-btn" onclick="startScan()">Démarrer le scan</button>
+    <button id="stop-btn" onclick="stopScan()">Arrêter le scan</button>
+    <button id="shutdown-btn" onclick="shutdown()">Éteindre la machine</button>
+</div>
+
+<script>
+    const socket = io('/scan');
+    const logContainer = document.getElementById('log-container');
+
+    socket.on('log', function(data) {
+        const logEntry = document.createElement('div');
+        logEntry.className = `log-entry ${data.message.includes('ERROR') ? 'error' : 'info'}`;
+        logEntry.textContent = data.message;
+        logContainer.appendChild(logEntry);
+        logContainer.scrollTop = logContainer.scrollHeight;
+    });
+
+    socket.on('progress', function(data) {
+        const logEntry = document.createElement('div');
+        logEntry.className = 'log-entry info';
+        logEntry.textContent = data.message;
+        logContainer.appendChild(logEntry);
+        logContainer.scrollTop = logContainer.scrollHeight;
+    });
+
+    function startScan() {
+        socket.emit('start_scan');
+    }
+
+    function stopScan() {
+        socket.emit('stop_scan');
+    }
+
+    function shutdown() {
+        if (confirm("Voulez-vous vraiment éteindre la machine ?")) {
+            socket.emit('shutdown');
+        }
+    }
+</script>
+</body>
+</html>
