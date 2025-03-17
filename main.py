@@ -269,6 +269,7 @@ def index():
 @socketio.on('start_scan', namespace='/scan')
 def start_scan():
     global stop_flag, scan_thread
+    # noinspection PyUnresolvedReferences
     if scan_thread and scan_thread.is_alive():
         emit('progress', {'message': "Un scan est déjà en cours !"})
         return
