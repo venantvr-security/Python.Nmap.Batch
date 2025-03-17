@@ -70,6 +70,7 @@ def signal_handler(sig, frame):
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 
+
 # Générer toutes les adresses IP
 def generate_all_ips(ranges):
     all_ips = []
@@ -83,6 +84,7 @@ def generate_all_ips(ranges):
     logger.info(f"Total IPs générées : {len(all_ips)}")
     return all_ips
 
+
 # Charger les IPs déjà scannées
 def load_progress():
     if os.path.exists(PROGRESS_FILE):
@@ -93,6 +95,7 @@ def load_progress():
             logger.error(f"Erreur lors de la lecture de {PROGRESS_FILE} : {e}")
             return set()
     return set()
+
 
 # Sauvegarder une IP terminée
 def save_progress(ip):
@@ -253,6 +256,7 @@ def generate_summary(total_scanned, active_count, all_ports, all_vulns):
     except Exception as e:
         logger.error(f"Erreur lors de l'écriture dans {SUMMARY_FILE} : {e}")
 
+
 # Fonction de scan en arrière-plan
 def scan_background():
     global stop_flag, success_rate, scan_thread
@@ -337,6 +341,7 @@ def scan_background():
         logger.info("Scan terminé partiellement")
         event_queue.put({'event': 'progress', 'data': {'message': f"[{time.ctime()}] Scan terminé partiellement"}})
 
+
 # Routes Flask
 @app.route('/')
 def index():
@@ -385,6 +390,7 @@ def stop_scan_endpoint():
     event_queue.put({'event': 'progress',
                      'data': {'message': f"[{time.ctime()}] Arrêt demandé. Attente de la fin du batch en cours..."}})
     return "Arrêt demandé", 200
+
 
 if __name__ == "__main__":
     logger.info("Démarrage du serveur Flask sur 0.0.0.0:5000")
