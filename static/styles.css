@@ -1,0 +1,17 @@
+.tile {
+    height: 400px;
+    overflow-y: auto;
+    font-size: 0.9rem;
+}
+
+.tile p {
+    margin: 0;
+}
+
+#progress-container {
+    margin: 10px;
+}
+
+#progress-bar {
+    transition: width 0.5s ease-in-out;
+}

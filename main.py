@@ -15,6 +15,8 @@ from queue import Queue, Empty  # Import explicite de Empty
 from dotenv import load_dotenv
 from flask import Flask, render_template, Response
 
+from NmapScanner import NmapScanner
+
 # Charger le fichier .env
 load_dotenv()
 
@@ -36,7 +38,7 @@ PROGRESS_FILE = "progress_ips.txt"
 SUMMARY_FILE = "summary.json"
 
 # Liste des plages d'IP à scanner
-IP_RANGES = os.getenv("IP_RANGES", "46.19.128.1").split(",")
+IP_RANGES = os.getenv("IP_RANGES", "30.31.32.33").split(",")
 logger.info(f"Plages IP chargées : {IP_RANGES}")
 
 # Paramètres de parallélisation
@@ -50,6 +52,8 @@ success_rate = 0.0
 scan_thread = None
 active_processes = []
 event_queue = Queue()
+
+nmap_scanner = NmapScanner(strategy="basic", active_processes=active_processes, yaml_file="strategies.yaml")
 
 
 # Gestion de l'arrêt propre
@@ -276,13 +280,11 @@ def scan_background():
     remaining_ips = len(ips_to_scan)
     if remaining_ips == 0:
         logger.info("Toutes les IPs ont déjà été scannées")
-        event_queue.put(
-            {'event': 'progress', 'data': {'message': f"[{time.ctime()}] Toutes les IPs ont déjà été scannées"}})
+        event_queue.put({'event': 'progress', 'data': {'message': f"[{time.ctime()}] Toutes les IPs ont déjà été scannées"}})
         generate_summary(total_ips, 0, [], [])
         return
 
-    event_queue.put(
-        {'event': 'progress', 'data': {'message': f"[{time.ctime()}] IPs restantes à scanner : {remaining_ips}"}})
+    event_queue.put({'event': 'progress', 'data': {'message': f"[{time.ctime()}] IPs restantes à scanner : {remaining_ips}"}})
 
     current_workers = INITIAL_MAX_WORKERS
     processed_count = len(completed_ips)
@@ -298,7 +300,7 @@ def scan_background():
         success_count = 0
         logger.info(f"Début du batch avec {batch_size} IPs : {batch}")
         with ThreadPoolExecutor(max_workers=batch_size) as executor:
-            future_to_ip = {executor.submit(scan_ip, ip, str(uuid.uuid4())): ip for ip in batch}
+            future_to_ip = {executor.submit(nmap_scanner.scan, ip, str(uuid.uuid4()), event_queue, lambda: stop_flag): ip for ip in batch}
 
             for future in as_completed(future_to_ip):
                 ip = future_to_ip[future]
@@ -317,8 +319,7 @@ def scan_background():
                     logger.info(f"Message de progression envoyé : {progress_msg}")
                 except Exception as e:
                     logger.error(f"Erreur inattendue pour {ip} : {e}")
-                    event_queue.put(
-                        {'event': 'progress', 'data': {'message': f"[{time.ctime()}] Erreur pour {ip} : {e}"}})
+                    event_queue.put({'event': 'progress', 'data': {'message': f"[{time.ctime()}] Erreur pour {ip} : {e}"}})
 
         success_rate = success_count / batch_size if batch_size > 0 else 0
         if success_rate < 0.7 and current_workers > MIN_WORKERS:
@@ -367,19 +368,27 @@ def events():
     return Response(stream(), mimetype='text/event-stream')
 
 
-@app.route('/start_scan')
-def start_scan_endpoint():
-    global stop_flag, scan_thread
-    logger.info("Requête HTTP pour démarrer le scan")
-    # noinspection PyUnresolvedReferences
+# noinspection PyUnresolvedReferences
+@app.route('/start_scan/<strategy>')
+def start_scan_endpoint(strategy):
+    global stop_flag, scan_thread, nmap_scanner, active_processes
+    logger.info(f"Requête HTTP pour démarrer le scan avec stratégie : {strategy}")
+
+    try:
+        nmap_scanner = NmapScanner(strategy=strategy, active_processes=active_processes, yaml_file="strategies.yaml")
+    except (ValueError, FileNotFoundError) as e:
+        event_queue.put({'event': 'progress', 'data': {'message': f"[{time.ctime()}] Erreur : {str(e)}"}})
+        return str(e), 400
+
     if scan_thread and scan_thread.is_alive():
         logger.info("Scan déjà en cours")
         event_queue.put({'event': 'progress', 'data': {'message': f"[{time.ctime()}] Un scan est déjà en cours !"}})
         return "Scan déjà en cours", 200
+
     stop_flag = False
     scan_thread = threading.Thread(target=scan_background)
     scan_thread.start()
-    return "Scan démarré", 200
+    return f"Scan démarré avec stratégie {strategy}", 200
 
 
 @app.route('/stop_scan')

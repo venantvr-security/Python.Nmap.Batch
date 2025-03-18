@@ -1,4 +1,4 @@
-# Nmap Scanner Flask
+# ~~Nmap Scanner Flask~~ DEPRECATED
 
 Scanner Nmap parallélisé avec interface Flask et logs WebSocket.
 
@@ -30,7 +30,6 @@ Ouvre `http://localhost:5000`.
 - `active_ips.txt` : IPs actives.
 - `summary.txt` : Stats.
 - `progress_ips.txt` : Progression.
-- `scan_results/` : Scans individuels.
 
 ## Config
 
