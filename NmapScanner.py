@@ -1,16 +1,20 @@
+import logging
 import subprocess
 import time
 from typing import List, Dict, Tuple, Optional
 
 import yaml
 
+# Configuration des logs (déjà dans votre code)
+logger = logging.getLogger()
 
 class NmapScanner:
-    def __init__(self, strategy: str = "basic", active_processes: List = None, yaml_file: str = "strategies.yaml"):
-        """Initialise le scanner Nmap avec une stratégie spécifique."""
+    def __init__(self, strategy: str = "basic", active_processes: List = None, yaml_file: str = "strategies.yaml", proxy: str = None):
+        """Initialise le scanner Nmap avec une stratégie spécifique et un proxy optionnel."""
         self.strategy = strategy
         self.active_processes = active_processes if active_processes is not None else []
         self.yaml_file = yaml_file
+        self.proxy = proxy
         self.strategies = self._load_strategies()
 
         if strategy not in self.strategies:
@@ -32,7 +36,11 @@ class NmapScanner:
     def build_command(self, ip: str) -> List[str]:
         """Construit la commande Nmap en fonction de la stratégie."""
         base_cmd = ["/usr/bin/nmap"]
-        return base_cmd + [ip] + self.strategies[self.strategy]
+        cmd = base_cmd + [ip] + self.strategies[self.strategy]
+        if self.proxy:
+            cmd.extend(["--proxies", self.proxy])
+        logger.info(f"Commande Nmap générée : {cmd}")
+        return cmd
 
     def scan(self, ip: str, thread_id: str, event_queue, stop_flag) -> Tuple[str, bool, Optional[str], Dict, Optional[str]]:
         """Effectue un scan Nmap sur une IP donnée."""
@@ -93,7 +101,7 @@ class NmapScanner:
                         versions[port] = version
                     except (IndexError, ValueError):
                         pass
-            if "VULNERABLE" in line:
+            if "VULNERABLE" in line or "http-user-agent" in line:
                 vulns.append(line.strip())
 
         if buffer:

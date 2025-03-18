@@ -486,3 +486,98 @@ Si un IDS bloque TOR :
 ✅ **DPI avancé** → Utilise **Meek**
 
 Tu veux tester sur une infra spécifique ?
+
+# Meek, comment ça marche ?
+
+### 🔥 **Comment fonctionne Meek dans TOR ?**
+
+Meek est un **transport enfichable (pluggable transport)** qui permet à TOR de contourner la censure en **dissimulant le trafic TOR à l'intérieur de requêtes web
+légitimes** vers des services comme **Google, Microsoft ou Amazon**.
+
+---
+
+## 🎯 **1️⃣ Principe de fonctionnement**
+
+Meek encapsule les paquets TOR dans des requêtes HTTP/HTTPS normales vers des **serveurs de façade (front domains)**, comme `ajax.aspnetcdn.com` (Microsoft) ou
+`www.google.com`.
+
+Voici comment ça marche :
+
+1️⃣ **Le client TOR envoie une requête HTTPS à un site web légitime** (ex: `www.google.com`).  
+2️⃣ **Le serveur de façade (Google, Microsoft, Amazon) relaie le trafic à un serveur Meek caché** (géré par Tor Project).  
+3️⃣ **Le serveur Meek décrypte et transmet le trafic au réseau TOR**.  
+4️⃣ **Les réponses reviennent via le même chemin** : serveur Meek → serveur de façade → client TOR.
+
+💡 **Avantage** :  
+Le trafic ressemble **à une simple connexion HTTPS normale**, donc difficile à bloquer avec DPI (Deep Packet Inspection).
+
+---
+
+## 🔧 **2️⃣ Comment utiliser Meek sur Linux ?**
+
+### 📌 **Méthode 1 : Via le Tor Browser**
+
+1️⃣ Ouvre **Tor Browser**.  
+2️⃣ Va dans **Paramètres > Ponts (Bridges)**.  
+3️⃣ Sélectionne **Meek-Azure** (passe par Microsoft).  
+4️⃣ Redémarre le navigateur → Maintenant TOR passe par Meek.
+
+---
+
+### 📌 **Méthode 2 : Utiliser Meek avec le daemon TOR**
+
+Si tu veux utiliser Meek avec le **daemon TOR** (ligne de commande) :
+
+1️⃣ **Installe tor et obfs4proxy**
+
+```bash
+sudo apt install tor obfs4proxy
+```
+
+2️⃣ **Ajoute Meek dans le fichier `torrc`**  
+Édite `/etc/tor/torrc` et ajoute :
+
+```ini
+UseBridges 1
+ClientTransportPlugin meek exec /usr/bin/meek-client
+Bridge meek 0.0.2.0:1 url=https://ajax.aspnetcdn.com/ bootstrap=1
+```
+
+3️⃣ **Redémarre TOR**
+
+```bash
+sudo systemctl restart tor
+```
+
+---
+
+## 🚀 **3️⃣ Pourquoi Meek est difficile à bloquer ?**
+
+✅ **Pas de liste noire d’IP** → Le trafic passe par des serveurs **comme Google ou Microsoft**, difficiles à bloquer.  
+✅ **Se fond dans du HTTPS normal** → Même avec un IDS/DPI avancé, impossible de dire si c'est TOR ou une vraie requête web.  
+✅ **Aucun proxy fixe** → Contrairement aux bridges classiques, Meek ne dépend pas d’une seule IP.
+
+---
+
+## 🛑 **4️⃣ Inconvénients de Meek**
+
+❌ **Très lent** → Le trafic transite par plusieurs serveurs, donc la latence est élevée.  
+❌ **Coût pour le serveur Meek** → Le relais Meek doit gérer beaucoup de trafic, ce qui limite les performances.  
+❌ **Certains services cloud peuvent bloquer Meek** → Ex: Google et Amazon pourraient détecter et limiter les connexions anormales.
+
+---
+
+## 🔥 **5️⃣ Alternatives si Meek est bloqué**
+
+🔹 **Obfs4** → Transforme le trafic TOR pour le masquer.  
+🔹 **VPN + TOR** → Passe par un VPN avant TOR pour brouiller les pistes.  
+🔹 **Snowflake** → Nouvelle méthode basée sur WebRTC (utile contre le DPI).
+
+---
+
+### **💡 Conclusion**
+
+Meek est une solution puissante contre la censure et le blocage de TOR, mais il est lent. Si tu veux du **TOR furtif**, combine-le avec **Obfs4 ou Snowflake** pour plus
+d’efficacité.
+
+Tu veux tester Meek sur une config spécifique ?

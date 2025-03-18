@@ -19,3 +19,32 @@ strategies:
     - "vuln"
     - "-p"
     - "1-1000"
+  stealth:
+    - "-v"
+    - "-sS"
+    - "-f"
+    - "-p"
+    - "443"
+    - "-T2"
+  stealth-http:
+    - "-v"
+    - "-sS"
+    - "-f"
+    - "-p"
+    - "443"
+    - "-T2"
+    - "--script"
+    - "http-user-agent"
+    - "--script-args"
+    - "http.useragent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+  stealth-packet:
+    - "-v"           # Verbeux pour le débogage
+    - "-sS"          # Scan SYN furtif
+    - "-f"           # Fragmentation des paquets
+    - "--mtu"        # Taille maximale des fragments
+    - "24"           # MTU de 24 octets
+    - "--data-length" # Ajoute des données supplémentaires
+    - "32"           # 32 octets de données supplémentaires
+    - "-p"           # Ports spécifiques
+    - "443"          # Cible uniquement 443
+    - "-T2"          # Timing discret

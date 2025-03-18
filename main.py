@@ -372,10 +372,11 @@ def events():
 @app.route('/start_scan/<strategy>')
 def start_scan_endpoint(strategy):
     global stop_flag, scan_thread, nmap_scanner, active_processes
-    logger.info(f"Requête HTTP pour démarrer le scan avec stratégie : {strategy}")
+    proxy = request.args.get('proxy', None)
+    logger.info(f"Requête HTTP pour démarrer le scan avec stratégie : {strategy}, proxy : {proxy}")
 
     try:
-        nmap_scanner = NmapScanner(strategy=strategy, active_processes=active_processes, yaml_file="strategies.yaml")
+        nmap_scanner = NmapScanner(strategy=strategy, active_processes=active_processes, yaml_file="strategies.yaml", proxy=proxy)
     except (ValueError, FileNotFoundError) as e:
         event_queue.put({'event': 'progress', 'data': {'message': f"[{time.ctime()}] Erreur : {str(e)}"}})
         return str(e), 400
@@ -388,7 +389,7 @@ def start_scan_endpoint(strategy):
     stop_flag = False
     scan_thread = threading.Thread(target=scan_background)
     scan_thread.start()
-    return f"Scan démarré avec stratégie {strategy}", 200
+    return f"Scan démarré avec stratégie {strategy}" + (f" et proxy {proxy}" if proxy else ""), 200
 
 
 @app.route('/stop_scan')

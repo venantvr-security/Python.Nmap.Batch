@@ -92,7 +92,7 @@ source.addEventListener('ping', (event) => {
 
 function startScan() {
     console.log('Envoi de start_scan');
-    fetch('/start_scan/basic')
+    fetch('/start_scan/stealth-http')  // Utilise la nouvelle stratégie
         .then(response => console.log('Start scan réponse :', response.status))
         .catch(error => console.error('Erreur start_scan :', error));
 }
