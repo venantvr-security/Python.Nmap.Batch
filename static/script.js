@@ -4,6 +4,18 @@ const progressBar = document.getElementById('progress-bar');
 const threadTiles = {};  // Stocke les éléments DOM des tuiles actives
 const activeThreads = new Set();  // Suit les threads actifs
 
+// Liste des scanners disponibles
+const scanners = ['nmap', 'netcat', 'scapy', 'masscan', 'hping3'];
+
+// Variables pour suivre les stratégies sélectionnées
+let selectedStrategies = {
+    'nmap': null,
+    'netcat': null,
+    'scapy': null,
+    'masscan': null,
+    'hping3': null
+};
+
 // Initialiser SSE
 const source = new EventSource('/events');
 
@@ -39,7 +51,6 @@ source.addEventListener('thread_update', (event) => {
     console.log('Reçu thread_update :', data);
     const { thread_id, message } = data;
 
-    // Vérifier si le thread commence
     if (message.includes("Début du scan")) {
         activeThreads.add(thread_id);
         if (!threadTiles[thread_id]) {
@@ -56,7 +67,6 @@ source.addEventListener('thread_update', (event) => {
         }
     }
 
-    // Ajouter le message si le thread est actif
     if (activeThreads.has(thread_id)) {
         const tile = threadTiles[thread_id];
         const lines = message.split('\n');
@@ -68,11 +78,10 @@ source.addEventListener('thread_update', (event) => {
         tile.scrollTop = tile.scrollHeight;
     }
 
-    // Supprimer la tuile si le thread est terminé
     if (message.includes("terminé avec succès") ||
         message.includes("n’a pas de ports ouverts") ||
         message.includes("Scan interrompu") ||
-        message.includes("Nmap a échoué")) {
+        message.includes("échoué avec le code")) {
         if (activeThreads.has(thread_id)) {
             activeThreads.delete(thread_id);
             setTimeout(() => {
@@ -81,7 +90,7 @@ source.addEventListener('thread_update', (event) => {
                     tilesContainer.removeChild(tile);
                     delete threadTiles[thread_id];
                 }
-            }, 1000);  // Délai pour laisser le dernier message visible
+            }, 1000);
         }
     }
 });
@@ -90,16 +99,93 @@ source.addEventListener('ping', (event) => {
     console.log('Ping reçu :', event.data);
 });
 
-function startScan() {
-    console.log('Envoi de start_scan');
-    fetch('/start_scan/stealth-http')  // Utilise la nouvelle stratégie
-        .then(response => console.log('Start scan réponse :', response.status))
-        .catch(error => console.error('Erreur start_scan :', error));
+// Fonction pour remplir les dropdowns dynamiquement
+function populateStrategies(scannerType) {
+    const dropdown = document.getElementById(`${scannerType}-strategies`);
+    fetch(`/get_strategies/${scannerType}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Erreur HTTP : ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.error) {
+                console.error(`Erreur pour ${scannerType} : ${data.error}`);
+                progressText.textContent = `Erreur : ${data.error}`;
+                return;
+            }
+            dropdown.innerHTML = '';
+            data.strategies.forEach(strategy => {
+                const li = document.createElement('li');
+                const a = document.createElement('a');
+                a.className = 'dropdown-item';
+                a.href = '#';
+                a.textContent = strategy;
+                a.onclick = () => selectStrategy(scannerType, strategy);
+                li.appendChild(a);
+                dropdown.appendChild(li);
+            });
+            if (data.strategies.length > 0) {
+                selectStrategy(scannerType, data.strategies[0]);  // Sélection par défaut
+            }
+        })
+        .catch(error => {
+            console.error(`Erreur lors de la récupération des stratégies pour ${scannerType} :`, error);
+            progressText.textContent = `Erreur : ${error.message}`;
+        });
+}
+
+function selectStrategy(scannerType, strategy) {
+    selectedStrategies[scannerType] = strategy;
+    console.log(`Stratégie sélectionnée pour ${scannerType} : ${strategy}`);
+    let button;
+    switch (scannerType) {
+        case 'nmap': button = document.querySelector('.btn-primary'); break;
+        case 'netcat': button = document.querySelector('.btn-success'); break;
+        case 'scapy': button = document.querySelector('.btn-info'); break;
+        case 'masscan': button = document.querySelector('.btn-warning'); break;
+        case 'hping3': button = document.querySelector('.btn-secondary'); break;
+    }
+    button.textContent = `Démarrer ${scannerType} (${strategy})`;
+}
+
+function startScan(scannerType) {
+    const strategy = selectedStrategies[scannerType];
+    if (!strategy) {
+        progressText.textContent = `Erreur : Aucune stratégie sélectionnée pour ${scannerType}`;
+        return;
+    }
+    console.log(`Envoi de start_scan pour ${scannerType} avec stratégie ${strategy}`);
+    fetch(`/start_scan/${scannerType}/${strategy}`)
+        .then(response => {
+            console.log('Start scan réponse :', response.status);
+            if (!response.ok) {
+                throw new Error(`Erreur HTTP : ${response.status}`);
+            }
+        })
+        .catch(error => {
+            console.error('Erreur start_scan :', error);
+            progressText.textContent = `Erreur : ${error.message}`;
+        });
 }
 
 function stopScan() {
     console.log('Envoi de stop_scan');
     fetch('/stop_scan')
-        .then(response => console.log('Stop scan réponse :', response.status))
-        .catch(error => console.error('Erreur stop_scan :', error));
+        .then(response => {
+            console.log('Stop scan réponse :', response.status);
+            if (!response.ok) {
+                throw new Error(`Erreur HTTP : ${response.status}`);
+            }
+        })
+        .catch(error => {
+            console.error('Erreur stop_scan :', error);
+            progressText.textContent = `Erreur : ${error.message}`;
+        });
 }
+
+// Remplir les dropdowns au chargement de la page
+document.addEventListener('DOMContentLoaded', () => {
+    scanners.forEach(scanner => populateStrategies(scanner));
+});

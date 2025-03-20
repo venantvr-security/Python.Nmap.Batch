@@ -3,19 +3,23 @@ import json
 import logging
 import os
 import signal
-import subprocess
 import sys
 import threading
 import time
 import uuid
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from queue import Queue, Empty  # Import explicite de Empty
+from queue import Queue, Empty
 
+import yaml
 from dotenv import load_dotenv
-from flask import Flask, render_template, Response
+from flask import Flask, render_template, Response, request, jsonify
 
-from NmapScanner import NmapScanner
+from scanners.Hping3Scanner import Hping3Scanner
+from scanners.MasscanScanner import MasscanScanner
+from scanners.NetcatScanner import NetcatScanner
+from scanners.NmapScanner import NmapScanner
+from scanners.ScapyScanner import ScapyScanner
 
 # Charger le fichier .env
 load_dotenv()
@@ -53,11 +57,24 @@ scan_thread = None
 active_processes = []
 event_queue = Queue()
 
-nmap_scanner = NmapScanner(strategy="basic", active_processes=active_processes, yaml_file="strategies.yaml")
+# Initialisation des scanners
+nmap_scanner = NmapScanner(strategy="basic", active_processes=active_processes, yaml_file="strategies/nmap_strategies.yaml")
+netcat_scanner = NetcatScanner(strategy="stealth", active_processes=active_processes, yaml_file="strategies/netcat_strategies.yaml")
+scapy_scanner = ScapyScanner(strategy="stealth", active_processes=active_processes, yaml_file="strategies/scapy_strategies.yaml")
+masscan_scanner = MasscanScanner(strategy="stealth", active_processes=active_processes, yaml_file="strategies/masscan_strategies.yaml")
+hping3_scanner = Hping3Scanner(strategy="stealth", active_processes=active_processes, yaml_file="strategies/hping3_strategies.yaml")
 
+scanner_map = {
+    "nmap": nmap_scanner,
+    "netcat": netcat_scanner,
+    "scapy": scapy_scanner,
+    "masscan": masscan_scanner,
+    "hping3": hping3_scanner
+}
+current_scanner = nmap_scanner
 
 # Gestion de l'arrêt propre
-# noinspection PyUnresolvedReferences
+# noinspection PyUnresolvedReferences,PyUnusedLocal
 def signal_handler(sig, frame):
     global stop_flag
     stop_flag = True
@@ -70,10 +87,8 @@ def signal_handler(sig, frame):
     logger.info("Serveur arrêté proprement")
     sys.exit(0)
 
-
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
-
 
 # Générer toutes les adresses IP
 def generate_all_ips(ranges):
@@ -88,7 +103,6 @@ def generate_all_ips(ranges):
     logger.info(f"Total IPs générées : {len(all_ips)}")
     return all_ips
 
-
 # Charger les IPs déjà scannées
 def load_progress():
     if os.path.exists(PROGRESS_FILE):
@@ -100,7 +114,6 @@ def load_progress():
             return set()
     return set()
 
-
 # Sauvegarder une IP terminée
 def save_progress(ip):
     try:
@@ -109,113 +122,15 @@ def save_progress(ip):
     except Exception as e:
         logger.error(f"Erreur lors de l'écriture dans {PROGRESS_FILE} : {e}")
 
-
-# Scanner une adresse IP avec Nmap en mode verbose (sortie texte)
-def scan_ip(ip, thread_id):
-    global stop_flag, active_processes
-    if stop_flag:
-        logger.info(f"Thread {thread_id}: Scan de {ip} annulé (stop_flag)")
-        event_queue.put({'event': 'thread_update',
-                         'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Scan de {ip} annulé"}})
-        return ip, False, None, {}, None
-
-    logger.info(f"Thread {thread_id}: Début du scan de {ip}")
-    event_queue.put({'event': 'thread_update',
-                     'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Début du scan de {ip}"}})
-
-    # cmd = ["/usr/bin/nmap", "-v", ip, "-sV", "-O", "-sS", "-f", "--script", "vuln", "-p", "1-1000"]
-    # cmd = ["/usr/bin/nmap", "-v", ip, "-sV", "-O", "-sS", "--script", "vuln", "-p", "1-1000"]
-    cmd = ["/usr/bin/nmap", "-v", ip, "-O", "-p", "80,443"]
-    try:
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-        active_processes.append(process)
-    except Exception as e:
-        logger.error(f"Thread {thread_id}: Erreur lancement Nmap : {e}")
-        event_queue.put({'event': 'thread_update',
-                         'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Erreur lancement Nmap : {e}"}})
-        return ip, False, str(e), {}, None
-
-    output_lines = []
-    ports = []
-    os_info = None
-    versions = {}
-    vulns = []
-    buffer = []
-    last_emit = time.time()
-
-    for line in iter(process.stdout.readline, ''):
-        if stop_flag:
-            process.terminate()
-            logger.info(f"Thread {thread_id}: Scan de {ip} interrompu")
-            event_queue.put({'event': 'thread_update',
-                             'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Scan interrompu"}})
-            active_processes.remove(process)
-            return ip, False, "Interrupted", {}, None
-        output_lines.append(line.strip())
-        buffer.append(f"[{time.ctime()}] {line.strip()}")
-
-        if time.time() - last_emit >= 0.5:
-            event_queue.put({'event': 'thread_update', 'data': {'thread_id': thread_id, 'message': "\n".join(buffer)}})
-            logger.info(f"Thread {thread_id}: Envoi buffer au client - {len(buffer)} lignes")
-            buffer = []
-            last_emit = time.time()
-
-        if "open port" in line:
-            try:
-                port = int(line.split()[4].split('/')[0])
-                ports.append(port)
-            except (IndexError, ValueError):
-                pass
-        if "OS details" in line:
-            os_info = line.split("OS details: ")[1].strip()
-        if "Service Info" in line or ("open" in line and "/" in line and "version" not in line.lower()):
-            parts = line.split()
-            if len(parts) > 2 and "/" in parts[0]:
-                try:
-                    port = int(parts[0].split('/')[0])
-                    version = " ".join(parts[2:]) if len(parts) > 2 else "Unknown"
-                    versions[port] = version
-                except (IndexError, ValueError):
-                    pass
-        if "VULNERABLE" in line:
-            vulns.append(line.strip())
-
-    if buffer:
-        event_queue.put({'event': 'thread_update', 'data': {'thread_id': thread_id, 'message': "\n".join(buffer)}})
-        logger.info(f"Thread {thread_id}: Envoi final buffer au client - {len(buffer)} lignes")
-
-    process.wait()
-    active_processes.remove(process)
-    if process.returncode == 0:
-        logger.info(f"Thread {thread_id}: Scan de {ip} terminé avec succès")
-        if ports:
-            details = {"ports": ports, "os": os_info, "versions": versions, "vulns": vulns}
-            save_active_ip(ip, details, os_info, versions, vulns)
-            event_queue.put({'event': 'thread_update', 'data': {
-                'thread_id': thread_id,
-                'message': f"[{time.ctime()}] {ip} actif (ports: {ports}, OS: {os_info}, Vulns: {len(vulns)})"
-            }})
-            return ip, True, None, details, None
-        else:
-            event_queue.put({'event': 'thread_update', 'data': {'thread_id': thread_id,
-                                                                'message': f"[{time.ctime()}] {ip} n’a pas de ports ouverts"}})
-            return ip, True, None, {}, None
-    else:
-        error = f"Nmap a échoué avec le code {process.returncode}"
-        logger.error(f"Thread {thread_id}: {error}")
-        event_queue.put(
-            {'event': 'thread_update', 'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] {error}"}})
-        return ip, False, error, {}, None
-
-
 # Sauvegarder les IPs actives en JSON
+# noinspection PyTypeChecker
 def save_active_ip(ip, scan_result, os_info, versions, vulns):
     entry = {
         "ip": ip,
         "timestamp": time.ctime(),
-        "os": os_info,
-        "ports": [{"port": p, "version": versions.get(p, "Unknown")} for p in versions],
-        "vulnerabilities": vulns,
+        "os": os_info if os_info else "Unknown",
+        "ports": [{"port": p, "version": versions.get(p, "Unknown")} for p in versions] if versions else scan_result.get("ports", []),
+        "vulnerabilities": vulns if vulns else [],
         "raw_result": scan_result
     }
     try:
@@ -226,14 +141,13 @@ def save_active_ip(ip, scan_result, os_info, versions, vulns):
             data = []
         data.append(entry)
         with open(ACTIVE_IPS_FILE, "w") as f:
-            # noinspection PyTypeChecker
             json.dump(data, f, indent=4)
         logger.info(f"IP {ip} sauvegardée dans {ACTIVE_IPS_FILE}")
     except Exception as e:
         logger.error(f"Erreur lors de l'écriture dans {ACTIVE_IPS_FILE} : {e}")
 
-
 # Générer un rapport synthétique en JSON avec incrémentation
+# noinspection PyTypeChecker
 def generate_summary(total_scanned, active_count, all_ports, all_vulns):
     port_counter = Counter(all_ports)
     vuln_counter = Counter(all_vulns)
@@ -254,16 +168,35 @@ def generate_summary(total_scanned, active_count, all_ports, all_vulns):
             summary_data = []
         summary_data.append(new_entry)
         with open(SUMMARY_FILE, "w") as f:
-            # noinspection PyTypeChecker
             json.dump(summary_data, f, indent=4)
         logger.info(f"Résumé mis à jour dans {SUMMARY_FILE}")
     except Exception as e:
         logger.error(f"Erreur lors de l'écriture dans {SUMMARY_FILE} : {e}")
 
 
+# Nouvelle route pour récupérer les stratégies
+@app.route('/get_strategies/<scanner_type>')
+def get_strategies(scanner_type):
+    if scanner_type == "nmap":
+        yaml_file = "strategies/nmap_strategies.yaml"
+    elif scanner_type == "netcat":
+        yaml_file = "strategies/netcat_strategies.yaml"
+    else:
+        return jsonify({"error": "Scanner type inconnu"}), 400
+
+    try:
+        with open(yaml_file, 'r') as file:
+            data = yaml.safe_load(file)
+            strategies = list(data['strategies'].keys())
+        return jsonify({"strategies": strategies})
+    except FileNotFoundError:
+        return jsonify({"error": f"Fichier {yaml_file} non trouvé"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 # Fonction de scan en arrière-plan
 def scan_background():
-    global stop_flag, success_rate, scan_thread
+    global stop_flag, success_rate, scan_thread, current_scanner
     logger.info("Démarrage du scan")
     event_queue.put({'event': 'progress', 'data': {'message': f"[{time.ctime()}] Scan démarré"}})
 
@@ -300,7 +233,7 @@ def scan_background():
         success_count = 0
         logger.info(f"Début du batch avec {batch_size} IPs : {batch}")
         with ThreadPoolExecutor(max_workers=batch_size) as executor:
-            future_to_ip = {executor.submit(nmap_scanner.scan, ip, str(uuid.uuid4()), event_queue, lambda: stop_flag): ip for ip in batch}
+            future_to_ip = {executor.submit(current_scanner.scan, ip, str(uuid.uuid4()), event_queue, lambda: stop_flag): ip for ip in batch}
 
             for future in as_completed(future_to_ip):
                 ip = future_to_ip[future]
@@ -313,7 +246,7 @@ def scan_background():
                         if details.get("ports"):
                             active_count += 1
                             all_ports.extend(details["ports"])
-                            all_vulns.extend(details["vulns"])
+                            all_vulns.extend(details.get("vulns", []))
                     progress_msg = f"[{time.ctime()}] Progression : {processed_count}/{total_ips} ({(processed_count / total_ips) * 100:.2f}%)"
                     event_queue.put({'event': 'progress', 'data': {'message': progress_msg}})
                     logger.info(f"Message de progression envoyé : {progress_msg}")
@@ -342,13 +275,11 @@ def scan_background():
         logger.info("Scan terminé partiellement")
         event_queue.put({'event': 'progress', 'data': {'message': f"[{time.ctime()}] Scan terminé partiellement"}})
 
-
 # Routes Flask
 @app.route('/')
 def index():
     logger.info("Accès à la page d'accueil")
     return render_template('index.html')
-
 
 @app.route('/events')
 def events():
@@ -356,27 +287,31 @@ def events():
         logger.info("Client connecté au flux SSE")
         while True:
             try:
-                event = event_queue.get(timeout=1)  # Attendre 1 seconde max
+                event = event_queue.get(timeout=1)
                 event_type = event['event']
                 data = json.dumps(event['data'])
                 yield f"event: {event_type}\ndata: {data}\n\n"
                 event_queue.task_done()
-            except Empty:  # Gérer la file vide
-                yield f"event: ping\ndata: {time.time()}\n\n"  # Envoyer un ping pour maintenir la connexion
-                time.sleep(0.5)  # Réduire la charge CPU
+            except Empty:
+                yield f"event: ping\ndata: {time.time()}\n\n"
+                time.sleep(0.5)
 
     return Response(stream(), mimetype='text/event-stream')
 
 
 # noinspection PyUnresolvedReferences
-@app.route('/start_scan/<strategy>')
-def start_scan_endpoint(strategy):
-    global stop_flag, scan_thread, nmap_scanner, active_processes
+@app.route('/start_scan/<scanner_type>/<strategy>')
+def start_scan_endpoint(scanner_type, strategy):
+    global stop_flag, scan_thread, nmap_scanner, netcat_scanner, current_scanner, active_processes
     proxy = request.args.get('proxy', None)
-    logger.info(f"Requête HTTP pour démarrer le scan avec stratégie : {strategy}, proxy : {proxy}")
+    logger.info(f"Requête HTTP pour démarrer le scan avec {scanner_type} et stratégie : {strategy}, proxy : {proxy}")
 
+    global stop_flag, scan_thread, current_scanner, active_processes
+    if scanner_type not in scanner_map:
+        return f"Type de scanner inconnu : {scanner_type}", 400
     try:
-        nmap_scanner = NmapScanner(strategy=strategy, active_processes=active_processes, yaml_file="strategies.yaml", proxy=proxy)
+        current_scanner = scanner_map[scanner_type]
+        current_scanner.strategy = strategy  # Met à jour la stratégie
     except (ValueError, FileNotFoundError) as e:
         event_queue.put({'event': 'progress', 'data': {'message': f"[{time.ctime()}] Erreur : {str(e)}"}})
         return str(e), 400
@@ -389,8 +324,7 @@ def start_scan_endpoint(strategy):
     stop_flag = False
     scan_thread = threading.Thread(target=scan_background)
     scan_thread.start()
-    return f"Scan démarré avec stratégie {strategy}" + (f" et proxy {proxy}" if proxy else ""), 200
-
+    return f"Scan démarré avec {scanner_type} et stratégie {strategy}" + (f" et proxy {proxy}" if proxy else ""), 200
 
 @app.route('/stop_scan')
 def stop_scan_endpoint():
@@ -400,7 +334,6 @@ def stop_scan_endpoint():
     event_queue.put({'event': 'progress',
                      'data': {'message': f"[{time.ctime()}] Arrêt demandé. Attente de la fin du batch en cours..."}})
     return "Arrêt demandé", 200
-
 
 if __name__ == "__main__":
     logger.info("Démarrage du serveur Flask sur 0.0.0.0:5000")

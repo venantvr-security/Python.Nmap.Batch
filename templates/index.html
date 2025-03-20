@@ -16,12 +16,58 @@
         </div>
     </div>
     <div class="mb-3">
-        <button class="btn btn-primary" onclick="startScan()">Démarrer le scan</button>
+        <!-- Bouton et dropdown pour Nmap -->
+        <div class="btn-group me-2">
+            <button class="btn btn-primary" onclick="startScan('nmap')">Démarrer Nmap</button>
+            <button aria-expanded="false" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" type="button">
+                <span class="visually-hidden">Sélectionner stratégie</span>
+            </button>
+            <ul class="dropdown-menu" id="nmap-strategies"></ul>
+        </div>
+
+        <!-- Bouton et dropdown pour Netcat -->
+        <div class="btn-group me-2">
+            <button class="btn btn-success" onclick="startScan('netcat')">Démarrer Netcat</button>
+            <button aria-expanded="false" class="btn btn-success dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" type="button">
+                <span class="visually-hidden">Sélectionner stratégie</span>
+            </button>
+            <ul class="dropdown-menu" id="netcat-strategies"></ul>
+        </div>
+
+        <!-- Bouton et dropdown pour Scapy -->
+        <div class="btn-group me-2">
+            <button class="btn btn-info" onclick="startScan('scapy')">Démarrer Scapy</button>
+            <button aria-expanded="false" class="btn btn-info dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" type="button">
+                <span class="visually-hidden">Sélectionner stratégie</span>
+            </button>
+            <ul class="dropdown-menu" id="scapy-strategies"></ul>
+        </div>
+
+        <!-- Bouton et dropdown pour Masscan -->
+        <div class="btn-group me-2">
+            <button class="btn btn-warning" onclick="startScan('masscan')">Démarrer Masscan</button>
+            <button aria-expanded="false" class="btn btn-warning dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" type="button">
+                <span class="visually-hidden">Sélectionner stratégie</span>
+            </button>
+            <ul class="dropdown-menu" id="masscan-strategies"></ul>
+        </div>
+
+        <!-- Bouton et dropdown pour Hping3 -->
+        <div class="btn-group me-2">
+            <button class="btn btn-secondary" onclick="startScan('hping3')">Démarrer Hping3</button>
+            <button aria-expanded="false" class="btn btn-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" type="button">
+                <span class="visually-hidden">Sélectionner stratégie</span>
+            </button>
+            <ul class="dropdown-menu" id="hping3-strategies"></ul>
+        </div>
+
+        <!-- Bouton pour arrêter -->
         <button class="btn btn-danger" onclick="stopScan()">Arrêter le scan</button>
     </div>
     <div class="row row-cols-1 row-cols-md-3 g-4" id="tiles"></div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="/static/script.js"></script>
 </body>
 </html>

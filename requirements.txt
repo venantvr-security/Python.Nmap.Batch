@@ -3,3 +3,5 @@ Flask~=3.1.0
 Flask-SocketIO~=5.5.1
 eventlet~=0.39.1
 python3-nmap~=1.9.1
+PyYAML~=6.0.2
+scapy~=2.6.1
