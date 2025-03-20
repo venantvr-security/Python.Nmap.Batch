@@ -1,27 +1,15 @@
-import logging
+# NmapScanner.py
 import subprocess
 import time
 from typing import List, Dict, Tuple, Optional
 
 import yaml
 
-# Configuration des logs (déjà dans votre code)
-logger = logging.getLogger()
+from ScannerInterface import ScannerInterface
 
-class NmapScanner:
-    def __init__(self, strategy: str = "basic", active_processes: List = None, yaml_file: str = "strategies.yaml", proxy: str = None):
-        """Initialise le scanner Nmap avec une stratégie spécifique et un proxy optionnel."""
-        self.strategy = strategy
-        self.active_processes = active_processes if active_processes is not None else []
-        self.yaml_file = yaml_file
-        self.proxy = proxy
-        self.strategies = self._load_strategies()
 
-        if strategy not in self.strategies:
-            raise ValueError(f"Stratégie inconnue : {strategy}. Options valides : {list(self.strategies.keys())}")
-
+class NmapScanner(ScannerInterface):
     def _load_strategies(self) -> Dict[str, List[str]]:
-        """Charge les stratégies depuis le fichier YAML."""
         try:
             with open(self.yaml_file, 'r') as file:
                 data = yaml.safe_load(file)
@@ -33,23 +21,13 @@ class NmapScanner:
         except KeyError:
             raise ValueError(f"Le fichier {self.yaml_file} doit contenir une clé 'strategies'.")
 
-    def build_command(self, ip: str) -> List[str]:
-        """Construit la commande Nmap en fonction de la stratégie."""
-        base_cmd = ["/usr/bin/nmap"]
-        cmd = base_cmd + [ip] + self.strategies[self.strategy]
-        if self.proxy:
-            cmd.extend(["--proxies", self.proxy])
-        logger.info(f"Commande Nmap générée : {cmd}")
-        return cmd
-
     def scan(self, ip: str, thread_id: str, event_queue, stop_flag) -> Tuple[str, bool, Optional[str], Dict, Optional[str]]:
-        """Effectue un scan Nmap sur une IP donnée."""
         if stop_flag():
             event_queue.put({'event': 'thread_update',
                              'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Scan de {ip} annulé"}})
             return ip, False, "Cancelled", {}, None
 
-        cmd = self.build_command(ip)
+        cmd = ["/usr/bin/nmap"] + [ip] + self.strategies[self.strategy]
         event_queue.put({'event': 'thread_update',
                          'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Début du scan de {ip} avec {cmd}"}})
 
@@ -101,7 +79,7 @@ class NmapScanner:
                         versions[port] = version
                     except (IndexError, ValueError):
                         pass
-            if "VULNERABLE" in line or "http-user-agent" in line:
+            if "VULNERABLE" in line:
                 vulns.append(line.strip())
 
         if buffer:
@@ -110,17 +88,16 @@ class NmapScanner:
         process.wait()
         self.active_processes.remove(process)
         if process.returncode == 0:
+            details = {"ports": ports, "os": os_info, "versions": versions, "vulns": vulns}
             if ports:
-                details = {"ports": ports, "os": os_info, "versions": versions, "vulns": vulns}
                 event_queue.put({'event': 'thread_update', 'data': {
                     'thread_id': thread_id,
                     'message': f"[{time.ctime()}] {ip} actif (ports: {ports}, OS: {os_info}, Vulns: {len(vulns)})"
                 }})
-                return ip, True, None, details, None
             else:
                 event_queue.put({'event': 'thread_update', 'data': {'thread_id': thread_id,
                                                                     'message': f"[{time.ctime()}] {ip} n’a pas de ports ouverts"}})
-                return ip, True, None, {}, None
+            return ip, True, None, details, None
         else:
             error = f"Nmap a échoué avec le code {process.returncode}"
             event_queue.put({'event': 'thread_update', 'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] {error}"}})

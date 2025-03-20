@@ -1,0 +1,5 @@
+strategies:
+  stealth:
+    port: 443
+    delay: 0.5
+    timeout: 2

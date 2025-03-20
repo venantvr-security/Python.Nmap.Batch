@@ -1,0 +1,8 @@
+strategies:
+  stealth:
+    - "-p"
+    - "443"
+    - "--rate"
+    - "100"
+    - "--wait"
+    - "2"
