@@ -1,13 +1,10 @@
 const tilesContainer = document.getElementById('tiles');
 const progressText = document.getElementById('progress-text');
 const progressBar = document.getElementById('progress-bar');
-const threadTiles = {};  // Stocke les éléments DOM des tuiles actives
-const activeThreads = new Set();  // Suit les threads actifs
-
-// Liste des scanners disponibles
+const threadTiles = {};
+const activeThreads = new Set();
 const scanners = ['nmap', 'netcat', 'scapy', 'masscan', 'hping3'];
 
-// Variables pour suivre les stratégies sélectionnées
 let selectedStrategies = {
     'nmap': null,
     'netcat': null,
@@ -16,7 +13,6 @@ let selectedStrategies = {
     'hping3': null
 };
 
-// Initialiser SSE
 const source = new EventSource('/events');
 
 source.onopen = () => {
@@ -99,14 +95,11 @@ source.addEventListener('ping', (event) => {
     console.log('Ping reçu :', event.data);
 });
 
-// Fonction pour remplir les dropdowns dynamiquement
 function populateStrategies(scannerType) {
     const dropdown = document.getElementById(`${scannerType}-strategies`);
     fetch(`/get_strategies/${scannerType}`)
         .then(response => {
-            if (!response.ok) {
-                throw new Error(`Erreur HTTP : ${response.status}`);
-            }
+            if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`);
             return response.json();
         })
         .then(data => {
@@ -126,12 +119,19 @@ function populateStrategies(scannerType) {
                 li.appendChild(a);
                 dropdown.appendChild(li);
             });
-            if (data.strategies.length > 0) {
-                selectStrategy(scannerType, data.strategies[0]);  // Sélection par défaut
-            }
+            if (data.strategies.length > 0) selectStrategy(scannerType, data.strategies[0]);
+            // Ajout du lien pour les infos
+            const infoLi = document.createElement('li');
+            const infoA = document.createElement('a');
+            infoA.className = 'dropdown-item text-info';
+            infoA.href = '#';
+            infoA.textContent = 'Détails techniques';
+            infoA.onclick = () => showScannerInfo(scannerType);
+            infoLi.appendChild(infoA);
+            dropdown.appendChild(infoLi);
         })
         .catch(error => {
-            console.error(`Erreur lors de la récupération des stratégies pour ${scannerType} :`, error);
+            console.error(`Erreur pour ${scannerType} :`, error);
             progressText.textContent = `Erreur : ${error.message}`;
         });
 }
@@ -160,9 +160,7 @@ function startScan(scannerType) {
     fetch(`/start_scan/${scannerType}/${strategy}`)
         .then(response => {
             console.log('Start scan réponse :', response.status);
-            if (!response.ok) {
-                throw new Error(`Erreur HTTP : ${response.status}`);
-            }
+            if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`);
         })
         .catch(error => {
             console.error('Erreur start_scan :', error);
@@ -175,9 +173,7 @@ function stopScan() {
     fetch('/stop_scan')
         .then(response => {
             console.log('Stop scan réponse :', response.status);
-            if (!response.ok) {
-                throw new Error(`Erreur HTTP : ${response.status}`);
-            }
+            if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`);
         })
         .catch(error => {
             console.error('Erreur stop_scan :', error);
@@ -185,7 +181,30 @@ function stopScan() {
         });
 }
 
-// Remplir les dropdowns au chargement de la page
+function showScannerInfo(scannerType) {
+    fetch(`/get_scanner_info/${scannerType}`)
+        .then(response => {
+            if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`);
+            return response.json();
+        })
+        .then(data => {
+            if (data.error) {
+                console.error(`Erreur pour ${scannerType} : ${data.error}`);
+                progressText.textContent = `Erreur : ${data.error}`;
+                return;
+            }
+            const contentDiv = document.getElementById('scanner-info-content');
+            contentDiv.innerHTML = marked.parse(data.content); // Conversion Markdown en HTML
+            document.getElementById('scannerInfoModalLabel').textContent = `Détails du Scanner : ${scannerType.toUpperCase()}`;
+            const modal = new bootstrap.Modal(document.getElementById('scannerInfoModal'));
+            modal.show();
+        })
+        .catch(error => {
+            console.error('Erreur lors de la récupération des infos :', error);
+            progressText.textContent = `Erreur : ${error.message}`;
+        });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     scanners.forEach(scanner => populateStrategies(scanner));
 });

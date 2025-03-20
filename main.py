@@ -177,22 +177,33 @@ def generate_summary(total_scanned, active_count, all_ports, all_vulns):
 # Nouvelle route pour récupérer les stratégies
 @app.route('/get_strategies/<scanner_type>')
 def get_strategies(scanner_type):
-    if scanner_type == "nmap":
-        yaml_file = "strategies/nmap_strategies.yaml"
-    elif scanner_type == "netcat":
-        yaml_file = "strategies/netcat_strategies.yaml"
-    else:
-        return jsonify({"error": "Scanner type inconnu"}), 400
+    # Dictionnaire des scanners et leurs fichiers YAML
+    scanner_files = {
+        "nmap": "strategies/nmap_strategies.yaml",
+        "netcat": "strategies/netcat_strategies.yaml",
+        "scapy": "strategies/scapy_strategies.yaml",
+        "masscan": "strategies/masscan_strategies.yaml",
+        "hping3": "strategies/hping3_strategies.yaml"
+    }
 
+    if scanner_type not in scanner_files:
+        return jsonify({"error": f"Type de scanner inconnu : {scanner_type}. Options valides : {list(scanner_files.keys())}"}), 400
+
+    yaml_file = scanner_files[scanner_type]
     try:
         with open(yaml_file, 'r') as file:
             data = yaml.safe_load(file)
+            if not data or 'strategies' not in data:
+                return jsonify({"error": f"Le fichier {yaml_file} doit contenir une clé 'strategies'"}), 400
             strategies = list(data['strategies'].keys())
         return jsonify({"strategies": strategies})
     except FileNotFoundError:
         return jsonify({"error": f"Fichier {yaml_file} non trouvé"}), 404
+    except yaml.YAMLError as e:
+        return jsonify({"error": f"Erreur de syntaxe dans {yaml_file} : {str(e)}"}), 500
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": f"Erreur inattendue : {str(e)}"}), 500
+
 
 # Fonction de scan en arrière-plan
 def scan_background():
@@ -325,6 +336,31 @@ def start_scan_endpoint(scanner_type, strategy):
     scan_thread = threading.Thread(target=scan_background)
     scan_thread.start()
     return f"Scan démarré avec {scanner_type} et stratégie {strategy}" + (f" et proxy {proxy}" if proxy else ""), 200
+
+
+@app.route('/get_scanner_info/<scanner_type>')
+def get_scanner_info(scanner_type):
+    scanner_files = {
+        "nmap": "docs/nmap.md",
+        "netcat": "docs/netcat.md",
+        "scapy": "docs/scapy.md",
+        "masscan": "docs/masscan.md",
+        "hping3": "docs/hping3.md"
+    }
+
+    if scanner_type not in scanner_files:
+        return jsonify({"error": f"Type de scanner inconnu : {scanner_type}"}), 400
+
+    md_file = scanner_files[scanner_type]
+    try:
+        with open(md_file, 'r', encoding='utf-8') as file:
+            content = file.read()
+        return jsonify({"content": content})
+    except FileNotFoundError:
+        return jsonify({"error": f"Fichier {md_file} non trouvé"}), 404
+    except Exception as e:
+        return jsonify({"error": f"Erreur inattendue : {str(e)}"}), 500
+
 
 @app.route('/stop_scan')
 def stop_scan_endpoint():

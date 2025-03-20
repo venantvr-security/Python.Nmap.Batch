@@ -1,17 +1,26 @@
+/* static/styles.css */
 .tile {
     height: 400px;
     overflow-y: auto;
     font-size: 0.9rem;
 }
-
 .tile p {
     margin: 0;
 }
-
 #progress-container {
-    margin: 10px;
+    margin: 10px 0;
 }
-
 #progress-bar {
     transition: width 0.5s ease-in-out;
+}
+#scanner-buttons .btn-group, #scanner-buttons .btn {
+    font-size: 0.9rem;
+}
+@media (max-width: 767px) {
+    #scanner-buttons .btn-group, #scanner-buttons .btn {
+        margin-bottom: 10px;
+    }
+    .modal-dialog {
+        margin: 0.5rem;
+    }
 }
