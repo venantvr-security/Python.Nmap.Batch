@@ -8,13 +8,13 @@ class ScannerInterface(ABC):
         self.strategy = strategy
         self.active_processes = active_processes if active_processes is not None else []
         self.yaml_file = yaml_file
-        self.strategies = self._load_strategies()
+        self.strategies = self.load_strategies()
 
         if strategy not in self.strategies:
             raise ValueError(f"Stratégie inconnue : {strategy}. Options valides : {list(self.strategies.keys())}")
 
     @abstractmethod
-    def _load_strategies(self) -> Dict[str, any]:
+    def load_strategies(self) -> Dict[str, any]:
         """Charge les stratégies depuis le fichier YAML. Retourne un dictionnaire."""
         pass
 

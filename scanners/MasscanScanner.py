@@ -9,7 +9,7 @@ from ScannerInterface import ScannerInterface
 
 
 class MasscanScanner(ScannerInterface):
-    def _load_strategies(self) -> Dict[str, List[str]]:
+    def load_strategies(self) -> Dict[str, List[str]]:
         try:
             with open(self.yaml_file, 'r') as file:
                 data = yaml.safe_load(file)

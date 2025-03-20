@@ -11,7 +11,7 @@ from ScannerInterface import ScannerInterface
 
 
 class ScapyScanner(ScannerInterface):
-    def _load_strategies(self) -> Dict[str, Dict[str, any]]:
+    def load_strategies(self) -> Dict[str, Dict[str, any]]:
         try:
             with open(self.yaml_file, 'r') as file:
                 data = yaml.safe_load(file)
