@@ -1,0 +1,14 @@
+{
+  "ip": "192.168.1.1",
+  "success": true,
+  "error": null,
+  "details": {
+    "ports": [
+      80
+    ]
+  },
+  "extra": {
+    "command": "/usr/bin/sudo /bin/nc -v -z -w 2 192.168.1.1 80"
+  },
+  "timestamp": "Fri Mar 21 21:42:08 2025"
+}

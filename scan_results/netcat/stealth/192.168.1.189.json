@@ -1,0 +1,10 @@
+{
+  "ip": "192.168.1.189",
+  "success": false,
+  "error": "Netcat a \u00e9chou\u00e9 avec le code 1",
+  "details": {},
+  "extra": {
+    "command": "/usr/bin/sudo /bin/nc -v -z -w 2 192.168.1.189 80"
+  },
+  "timestamp": "Fri Mar 21 21:44:15 2025"
+}

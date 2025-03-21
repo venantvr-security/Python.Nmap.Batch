@@ -1,4 +1,3 @@
-# NetcatScanner.py
 import subprocess
 import time
 from typing import List, Dict
@@ -8,6 +7,8 @@ import yaml
 from ScannerInterface import ScannerInterface, ScanResult
 
 
+# echo "rvv ALL=(ALL) NOPASSWD: /bin/nc" | sudo tee -a /etc/sudoers.d/netcat
+# sudo chmod 440 /etc/sudoers.d/netcat
 class NetcatScanner(ScannerInterface):
     def load_strategies(self) -> Dict[str, List[str]]:
         try:
@@ -27,7 +28,15 @@ class NetcatScanner(ScannerInterface):
                              'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Scan de {ip} annulé"}})
             return ip, False, "Cancelled", {}, {}
 
-        cmd = ["/usr/bin/nmap"] + [ip] + self.strategies[self.strategy]
+        # Utiliser Netcat au lieu de Nmap
+        cmd = ["/usr/bin/sudo", "/bin/nc"] + self.strategies[self.strategy] + [ip]
+        # Ajuster pour que le port soit en dernier (Netcat attend "ip port")
+        port_index = cmd.index("-p") + 1 if "-p" in cmd else -1
+        if 0 < port_index < len(cmd) - 1:
+            port = cmd.pop(port_index)  # Retire le port
+            cmd.pop(port_index - 1)  # Retire "-p"
+            cmd.append(port)  # Ajoute le port à la fin
+
         cmd_str = " ".join(cmd)
         event_queue.put({'event': 'thread_update',
                          'data': {'thread_id': thread_id,
@@ -43,80 +52,53 @@ class NetcatScanner(ScannerInterface):
         except Exception as e:
             event_queue.put({'event': 'thread_update',
                              'data': {'thread_id': thread_id,
-                                      'message': f"[{time.ctime()}] Erreur lancement Nmap : {str(e)}"}})
+                                      'message': f"[{time.ctime()}] Erreur lancement Netcat : {str(e)}"}})
             return ip, False, str(e), {}, {"command": cmd_str}
 
-        # output_lines = []
         ports = []
-        os_info = None
-        versions = {}
-        vulns = []
-        mac_address = None
-        lan_name = None
+        extra = {"command": cmd_str}
 
         try:
-            stdout, stderr = process.communicate(timeout=3600)
+            stdout, stderr = process.communicate(timeout=10)  # Timeout ajusté pour Netcat
             output_lines = stdout.splitlines() + (stderr.splitlines() if stderr else [])
             event_queue.put({'event': 'thread_update',
                              'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Communicate terminé"}})
         except subprocess.TimeoutExpired:
             process.kill()
             stdout, stderr = process.communicate()
-            # output_lines = stdout.splitlines() + (stderr.splitlines() if stderr else [])
+            output_lines = stdout.splitlines() + (stderr.splitlines() if stderr else [])
             event_queue.put({'event': 'thread_update',
                              'data': {'thread_id': thread_id,
-                                      'message': f"[{time.ctime()}] Scan timeout après 3600s - Processus terminé"}})
+                                      'message': f"[{time.ctime()}] Scan timeout après 10s"}})
             self.active_processes.remove(process)
-            return ip, False, "Timeout", {}, {"command": cmd_str}
+            return ip, False, "Timeout", {}, extra
 
         self.active_processes.remove(process)
-        # Traitement des lignes (inchangé)
+
+        # Parsing de la sortie Netcat
         for line in output_lines:
             event_queue.put({'event': 'thread_update',
                              'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] {line.strip()}"}})
-            if "open port" in line:
+            if "open" in line.lower() or "succeeded" in line.lower():
                 try:
-                    port = int(line.split()[4].split('/')[0])
+                    port = int(cmd[-1])  # Le dernier argument est le port
                     ports.append(port)
-                except (IndexError, ValueError):
+                except ValueError:
                     pass
-            if "OS details" in line:
-                os_info = line.split("OS details: ")[1].strip()
-            if "MAC Address" in line:
-                mac_address = line.split("MAC Address: ")[1].split()[0]
-            if "Nmap scan report for" in line and len(line.split()) > 4:
-                lan_name = line.split()[4].strip("()")
-            if "Service Info" in line or ("open" in line and "/" in line and "version" not in line.lower()):
-                parts = line.split()
-                if len(parts) > 2 and "/" in parts[0]:
-                    try:
-                        port = int(parts[0].split('/')[0])
-                        version = " ".join(parts[2:]) if len(parts) > 2 else "Unknown"
-                        versions[port] = version
-                    except (IndexError, ValueError):
-                        pass
-            if "VULNERABLE" in line:
-                vulns.append(line.strip())
-
-        extra = {"command": cmd_str}
-        if mac_address:
-            extra["mac_address"] = mac_address
-        if lan_name:
-            extra["lan_name"] = lan_name
 
         if process.returncode == 0:
-            details = {"ports": ports, "os": os_info, "versions": versions, "vulns": vulns}
+            details = {"ports": ports}
             if ports:
                 event_queue.put({'event': 'thread_update', 'data': {
                     'thread_id': thread_id,
-                    'message': f"[{time.ctime()}] {ip} actif (ports: {ports}, OS: {os_info}, Vulns: {len(vulns)}, MAC: {mac_address}, LAN: {lan_name})"
+                    'message': f"[{time.ctime()}] {ip} actif (ports: {ports})"
                 }})
             else:
                 event_queue.put({'event': 'thread_update', 'data': {'thread_id': thread_id,
                                                                     'message': f"[{time.ctime()}] {ip} n’a pas de ports ouverts"}})
             return ip, True, None, details, extra
         else:
-            error = f"Nmap a échoué avec le code {process.returncode}"
-            event_queue.put(
-                {'event': 'thread_update', 'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] {error}"}})
+            error = f"Netcat a échoué avec le code {process.returncode}"
+            event_queue.put({'event': 'thread_update',
+                             'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] {error}"}})
             return ip, False, error, {}, extra

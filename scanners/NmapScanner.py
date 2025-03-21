@@ -10,6 +10,8 @@ import yaml
 from ScannerInterface import ScannerInterface, ScanResult
 
 
+# echo "votre_utilisateur ALL=(ALL) NOPASSWD: /usr/bin/nmap" | sudo tee -a /etc/sudoers.d/nmap
+# sudo chmod 440 /etc/sudoers.d/nmap
 class NmapScanner(ScannerInterface):
     def load_strategies(self) -> Dict[str, List[str]]:
         try:
@@ -29,7 +31,7 @@ class NmapScanner(ScannerInterface):
                              'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Scan de {ip} annulé"}})
             return ip, False, "Cancelled", {}, {}
 
-        cmd = ["/usr/bin/nmap"] + [ip] + self.strategies[self.strategy]
+        cmd = ["/usr/bin/sudo", "/usr/bin/nmap"] + [ip] + self.strategies[self.strategy]
         cmd_str = " ".join(cmd)
         event_queue.put({'event': 'thread_update',
                          'data': {'thread_id': thread_id,

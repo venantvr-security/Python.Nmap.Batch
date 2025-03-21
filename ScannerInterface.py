@@ -1,9 +1,10 @@
 # ScannerInterface.py
 from abc import ABC, abstractmethod
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict, Tuple, TypedDict
 
 # Alias de type pour le retour des méthodes scan
-ScanResult = Tuple[str, bool, Optional[str], Dict, Dict[str, str]]
+# ScanResult = Tuple[str, bool, Optional[str], Dict, Dict[str, str]]
+ScanResult = Tuple[str, bool, str or None, dict, TypedDict]
 
 
 class ScannerInterface(ABC):

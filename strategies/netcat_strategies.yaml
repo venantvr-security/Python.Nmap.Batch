@@ -5,4 +5,4 @@ strategies:
     - "-w"          # Timeout (secondes)
     - "2"           # Timeout de 2 secondes
     - "-p"          # Indique que le port suit (traité dans le code)
-    - "443"         # Port cible
+    - "80"         # Port cible
