@@ -2,7 +2,8 @@
 
 ## Présentation
 
-Scapy est une bibliothèque Python pour créer, envoyer, et analyser des paquets réseau personnalisés. Elle est idéale pour des scans furtifs et des tests avancés.
+Scapy est une bibliothèque Python pour créer, envoyer, et analyser des paquets réseau personnalisés. Elle est idéale
+pour des scans furtifs et des tests avancés.
 
 ## Protocoles exploités
 
@@ -20,7 +21,8 @@ Scapy est une bibliothèque Python pour créer, envoyer, et analyser des paquets
 
 ## Spécificités techniques
 
-- **Personnalisation totale** : Contrôle des en-têtes IP/TCP (ex. taille de fenêtre, options TCP) pour imiter un trafic légitime.
+- **Personnalisation totale** : Contrôle des en-têtes IP/TCP (ex. taille de fenêtre, options TCP) pour imiter un trafic
+  légitime.
 - **Furtivité** : Délais aléatoires et ports sources variables réduisent la détectabilité.
 - **Analyse fine** : Inspection des réponses (ex. flags SYN-ACK ou RST) pour déterminer l’état des ports.
 - **Flexibilité** : Supporte ARP, IPv6, DNS, etc., avec des scripts personnalisés.

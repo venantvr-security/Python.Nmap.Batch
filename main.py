@@ -7,7 +7,6 @@ import sys
 import threading
 import time
 import uuid
-from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from queue import Queue, Empty
 
@@ -37,17 +36,17 @@ logging.basicConfig(
 logger = logging.getLogger()
 
 # Fichiers JSON
-ACTIVE_IPS_FILE = "active_ips.json"
+# ACTIVE_IPS_FILE = "active_ips.json"
 PROGRESS_FILE = "progress_ips.txt"
-SUMMARY_FILE = "summary.json"
+# SUMMARY_FILE = "summary.json"
 
 # Liste des plages d'IP à scanner
 IP_RANGES = os.getenv("IP_RANGES", "30.31.32.33").split(",")
 logger.info(f"Plages IP chargées : {IP_RANGES}")
 
 # Paramètres de parallélisation
-INITIAL_MAX_WORKERS = 1
-MIN_WORKERS = 1
+INITIAL_MAX_WORKERS = 3
+MIN_WORKERS = 3
 MAX_WORKERS = 10
 
 # Variables globales
@@ -58,11 +57,16 @@ active_processes = []
 event_queue = Queue()
 
 # Initialisation des scanners
-nmap_scanner = NmapScanner(strategy="basic", active_processes=active_processes, yaml_file="strategies/nmap_strategies.yaml")
-netcat_scanner = NetcatScanner(strategy="stealth", active_processes=active_processes, yaml_file="strategies/netcat_strategies.yaml")
-scapy_scanner = ScapyScanner(strategy="stealth", active_processes=active_processes, yaml_file="strategies/scapy_strategies.yaml")
-masscan_scanner = MasscanScanner(strategy="stealth", active_processes=active_processes, yaml_file="strategies/masscan_strategies.yaml")
-hping3_scanner = Hping3Scanner(strategy="stealth", active_processes=active_processes, yaml_file="strategies/hping3_strategies.yaml")
+nmap_scanner = NmapScanner(strategy="basic", active_processes=active_processes,
+                           yaml_file="strategies/nmap_strategies.yaml")
+netcat_scanner = NetcatScanner(strategy="stealth", active_processes=active_processes,
+                               yaml_file="strategies/netcat_strategies.yaml")
+scapy_scanner = ScapyScanner(strategy="stealth", active_processes=active_processes,
+                             yaml_file="strategies/scapy_strategies.yaml")
+masscan_scanner = MasscanScanner(strategy="stealth", active_processes=active_processes,
+                                 yaml_file="strategies/masscan_strategies.yaml")
+hping3_scanner = Hping3Scanner(strategy="stealth", active_processes=active_processes,
+                               yaml_file="strategies/hping3_strategies.yaml")
 
 scanner_map = {
     "nmap": nmap_scanner,
@@ -73,6 +77,7 @@ scanner_map = {
 }
 current_scanner = nmap_scanner
 
+
 # Gestion de l'arrêt propre
 # noinspection PyUnresolvedReferences,PyUnusedLocal
 def signal_handler(sig, frame):
@@ -81,14 +86,17 @@ def signal_handler(sig, frame):
     logger.info("Signal d'arrêt reçu (Ctrl+C), arrêt en cours...")
     for proc in active_processes:
         if proc.poll() is None:
-            proc.terminate()
+            proc.kill()  # Force la terminaison
+            logger.info(f"Processus {proc.pid} tué")
     if scan_thread and scan_thread.is_alive():
         scan_thread.join(timeout=5)
     logger.info("Serveur arrêté proprement")
     sys.exit(0)
 
+
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
+
 
 # Générer toutes les adresses IP
 def generate_all_ips(ranges):
@@ -103,6 +111,7 @@ def generate_all_ips(ranges):
     logger.info(f"Total IPs générées : {len(all_ips)}")
     return all_ips
 
+
 # Charger les IPs déjà scannées
 def load_progress():
     if os.path.exists(PROGRESS_FILE):
@@ -114,6 +123,7 @@ def load_progress():
             return set()
     return set()
 
+
 # Sauvegarder une IP terminée
 def save_progress(ip):
     try:
@@ -122,56 +132,44 @@ def save_progress(ip):
     except Exception as e:
         logger.error(f"Erreur lors de l'écriture dans {PROGRESS_FILE} : {e}")
 
+
+# Sauvegarder les résultats dans scan_results/<type_de_script>/<stratégie>/<ip>.json
+def save_scan_result(scanner_type, strategy, ip, scan_result):
+    base_dir = f"scan_results/{scanner_type}/{strategy}"
+    os.makedirs(base_dir, exist_ok=True)  # Crée les répertoires si nécessaire
+    result_file = f"{base_dir}/{ip}.json"
+    try:
+        with open(result_file, "w") as f:
+            # noinspection PyTypeChecker
+            json.dump(scan_result, f, indent=2)
+        logger.info(f"Résultat du scan sauvegardé dans {result_file}")
+    except Exception as e:
+        logger.error(f"Erreur lors de la sauvegarde du résultat dans {result_file} : {e}")
+
+
 # Sauvegarder les IPs actives en JSON
 # noinspection PyTypeChecker
-def save_active_ip(ip, scan_result, os_info, versions, vulns):
-    entry = {
-        "ip": ip,
-        "timestamp": time.ctime(),
-        "os": os_info if os_info else "Unknown",
-        "ports": [{"port": p, "version": versions.get(p, "Unknown")} for p in versions] if versions else scan_result.get("ports", []),
-        "vulnerabilities": vulns if vulns else [],
-        "raw_result": scan_result
-    }
-    try:
-        if os.path.exists(ACTIVE_IPS_FILE):
-            with open(ACTIVE_IPS_FILE, "r") as f:
-                data = json.load(f)
-        else:
-            data = []
-        data.append(entry)
-        with open(ACTIVE_IPS_FILE, "w") as f:
-            json.dump(data, f, indent=4)
-        logger.info(f"IP {ip} sauvegardée dans {ACTIVE_IPS_FILE}")
-    except Exception as e:
-        logger.error(f"Erreur lors de l'écriture dans {ACTIVE_IPS_FILE} : {e}")
-
-# Générer un rapport synthétique en JSON avec incrémentation
-# noinspection PyTypeChecker
-def generate_summary(total_scanned, active_count, all_ports, all_vulns):
-    port_counter = Counter(all_ports)
-    vuln_counter = Counter(all_vulns)
-    new_entry = {
-        "timestamp": time.ctime(),
-        "total_scanned": total_scanned,
-        "active_ips": active_count,
-        "top_ports": dict(port_counter.most_common(5)),
-        "top_vulnerabilities": dict(vuln_counter.most_common(5))
-    }
-    try:
-        if os.path.exists(SUMMARY_FILE):
-            with open(SUMMARY_FILE, "r") as f:
-                summary_data = json.load(f)
-                if not isinstance(summary_data, list):
-                    summary_data = [summary_data]
-        else:
-            summary_data = []
-        summary_data.append(new_entry)
-        with open(SUMMARY_FILE, "w") as f:
-            json.dump(summary_data, f, indent=4)
-        logger.info(f"Résumé mis à jour dans {SUMMARY_FILE}")
-    except Exception as e:
-        logger.error(f"Erreur lors de l'écriture dans {SUMMARY_FILE} : {e}")
+# def save_active_ip(ip, scan_result, os_info, versions, vulns):
+#     entry = {
+#         "ip": ip,
+#         "timestamp": time.ctime(),
+#         "os": os_info if os_info else "Unknown",
+#         "ports": [{"port": p, "version": versions.get(p, "Unknown")} for p in versions] if versions else scan_result.get("ports", []),
+#         "vulnerabilities": vulns if vulns else [],
+#         "raw_result": scan_result
+#     }
+#     try:
+#         if os.path.exists(ACTIVE_IPS_FILE):
+#             with open(ACTIVE_IPS_FILE, "r") as f:
+#                 data = json.load(f)
+#         else:
+#             data = []
+#         data.append(entry)
+#         with open(ACTIVE_IPS_FILE, "w") as f:
+#             json.dump(data, f, indent=4)
+#         logger.info(f"IP {ip} sauvegardée dans {ACTIVE_IPS_FILE}")
+#     except Exception as e:
+#         logger.error(f"Erreur lors de l'écriture dans {ACTIVE_IPS_FILE} : {e}")
 
 
 # Nouvelle route pour récupérer les stratégies
@@ -187,7 +185,8 @@ def get_strategies(scanner_type):
     }
 
     if scanner_type not in scanner_files:
-        return jsonify({"error": f"Type de scanner inconnu : {scanner_type}. Options valides : {list(scanner_files.keys())}"}), 400
+        return jsonify(
+            {"error": f"Type de scanner inconnu : {scanner_type}. Options valides : {list(scanner_files.keys())}"}), 400
 
     yaml_file = scanner_files[scanner_type]
     try:
@@ -224,17 +223,22 @@ def scan_background():
     remaining_ips = len(ips_to_scan)
     if remaining_ips == 0:
         logger.info("Toutes les IPs ont déjà été scannées")
-        event_queue.put({'event': 'progress', 'data': {'message': f"[{time.ctime()}] Toutes les IPs ont déjà été scannées"}})
-        generate_summary(total_ips, 0, [], [])
+        event_queue.put(
+            {'event': 'progress', 'data': {'message': f"[{time.ctime()}] Toutes les IPs ont déjà été scannées"}})
         return
 
-    event_queue.put({'event': 'progress', 'data': {'message': f"[{time.ctime()}] IPs restantes à scanner : {remaining_ips}"}})
+    event_queue.put(
+        {'event': 'progress', 'data': {'message': f"[{time.ctime()}] IPs restantes à scanner : {remaining_ips}"}})
 
     current_workers = INITIAL_MAX_WORKERS
     processed_count = len(completed_ips)
     active_count = 0
     all_ports = []
     all_vulns = []
+
+    # Récupérer le type de scanner pour la sauvegarde
+    scanner_type = [key for key, value in scanner_map.items() if value == current_scanner][0]
+    strategy = current_scanner.strategy
 
     while ips_to_scan and not stop_flag:
         batch_size = min(current_workers, len(ips_to_scan))
@@ -244,13 +248,27 @@ def scan_background():
         success_count = 0
         logger.info(f"Début du batch avec {batch_size} IPs : {batch}")
         with ThreadPoolExecutor(max_workers=batch_size) as executor:
-            future_to_ip = {executor.submit(current_scanner.scan, ip, str(uuid.uuid4()), event_queue, lambda: stop_flag): ip for ip in batch}
+            future_to_ip = {
+                executor.submit(current_scanner.scan, ip, str(uuid.uuid4()), event_queue, lambda: stop_flag): ip for ip
+                in batch}
 
             for future in as_completed(future_to_ip):
                 ip = future_to_ip[future]
                 processed_count += 1
                 try:
-                    ip, success, error, details, _ = future.result()
+                    ip, success, error, details, extra = future.result()
+                    # Préparer les données pour la sauvegarde
+                    scan_result = {
+                        "ip": ip,
+                        "success": success,
+                        "error": error,
+                        "details": details,
+                        "extra": extra,
+                        "timestamp": time.ctime()
+                    }
+                    # Sauvegarder le résultat dans scan_results/<type>/<stratégie>/<ip>.json
+                    save_scan_result(scanner_type, strategy, ip, scan_result)
+
                     if success:
                         success_count += 1
                         save_progress(ip)
@@ -263,7 +281,8 @@ def scan_background():
                     logger.info(f"Message de progression envoyé : {progress_msg}")
                 except Exception as e:
                     logger.error(f"Erreur inattendue pour {ip} : {e}")
-                    event_queue.put({'event': 'progress', 'data': {'message': f"[{time.ctime()}] Erreur pour {ip} : {e}"}})
+                    event_queue.put(
+                        {'event': 'progress', 'data': {'message': f"[{time.ctime()}] Erreur pour {ip} : {e}"}})
 
         success_rate = success_count / batch_size if batch_size > 0 else 0
         if success_rate < 0.7 and current_workers > MIN_WORKERS:
@@ -273,12 +292,9 @@ def scan_background():
             current_workers += 1
             logger.info(f"Augmentation de parallélisation à {current_workers} (taux de succès : {success_rate:.2f})")
 
-        generate_summary(processed_count, active_count, all_ports, all_vulns)
-
         if not ips_to_scan:
             break
 
-    generate_summary(processed_count, active_count, all_ports, all_vulns)
     if processed_count == total_ips:
         logger.info("Tous les scans sont terminés")
         event_queue.put({'event': 'progress', 'data': {'message': f"[{time.ctime()}] Tous les scans sont terminés"}})
@@ -286,11 +302,13 @@ def scan_background():
         logger.info("Scan terminé partiellement")
         event_queue.put({'event': 'progress', 'data': {'message': f"[{time.ctime()}] Scan terminé partiellement"}})
 
+
 # Routes Flask
 @app.route('/')
 def index():
     logger.info("Accès à la page d'accueil")
     return render_template('index.html')
+
 
 @app.route('/events')
 def events():
@@ -370,6 +388,28 @@ def stop_scan_endpoint():
     event_queue.put({'event': 'progress',
                      'data': {'message': f"[{time.ctime()}] Arrêt demandé. Attente de la fin du batch en cours..."}})
     return "Arrêt demandé", 200
+
+
+@app.route('/reset_progress', methods=['POST'])
+def reset_progress_endpoint():
+    global PROGRESS_FILE
+    logger.info("Requête HTTP pour réinitialiser le fichier de progression")
+    try:
+        if os.path.exists(PROGRESS_FILE):
+            os.remove(PROGRESS_FILE)
+            logger.info(f"Fichier {PROGRESS_FILE} supprimé avec succès")
+            event_queue.put(
+                {'event': 'progress', 'data': {'message': f"[{time.ctime()}] Fichier de progression réinitialisé"}})
+            return "Fichier de progression réinitialisé", 200
+        else:
+            logger.info(f"Le fichier {PROGRESS_FILE} n'existe pas")
+            return "Aucun fichier de progression à supprimer", 200
+    except Exception as e:
+        logger.error(f"Erreur lors de la suppression de {PROGRESS_FILE} : {e}")
+        event_queue.put(
+            {'event': 'progress', 'data': {'message': f"[{time.ctime()}] Erreur lors de la réinitialisation : {e}"}})
+        return f"Erreur : {str(e)}", 500
+
 
 if __name__ == "__main__":
     logger.info("Démarrage du serveur Flask sur 0.0.0.0:5000")

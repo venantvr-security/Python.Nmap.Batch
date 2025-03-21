@@ -2,6 +2,9 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict, Tuple, Optional
 
+# Alias de type pour le retour des méthodes scan
+ScanResult = Tuple[str, bool, Optional[str], Dict, Dict[str, str]]
+
 
 class ScannerInterface(ABC):
     def __init__(self, strategy: str, active_processes: List, yaml_file: str):
@@ -19,7 +22,7 @@ class ScannerInterface(ABC):
         pass
 
     @abstractmethod
-    def scan(self, ip: str, thread_id: str, event_queue, stop_flag) -> Tuple[str, bool, Optional[str], Dict, Optional[str]]:
+    def scan(self, ip: str, thread_id: str, event_queue, stop_flag) -> ScanResult:
         """
         Effectue un scan sur une IP donnée et retourne un tuple avec un format standardisé :
         - ip (str): L'adresse IP scannée.

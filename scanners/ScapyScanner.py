@@ -1,13 +1,13 @@
 # ScapyScanner.py
 import random
 import time
-from typing import Dict, Tuple, Optional
+from typing import Dict
 
 import yaml
 from scapy.layers.inet import IP, TCP
 from scapy.sendrecv import sr1
 
-from ScannerInterface import ScannerInterface
+from ScannerInterface import ScannerInterface, ScanResult
 
 
 class ScapyScanner(ScannerInterface):
@@ -24,7 +24,7 @@ class ScapyScanner(ScannerInterface):
             raise ValueError(f"Le fichier {self.yaml_file} doit contenir une clé 'strategies'.")
 
     # noinspection PyTypeChecker
-    def scan(self, ip: str, thread_id: str, event_queue, stop_flag) -> Tuple[str, bool, Optional[str], Dict, Optional[str]]:
+    def scan(self, ip: str, thread_id: str, event_queue, stop_flag) -> ScanResult:
         # Tuple[str, bool, Optional[str], Dict, Optional[str]]
         if stop_flag():
             event_queue.put({'event': 'thread_update',
@@ -37,7 +37,8 @@ class ScapyScanner(ScannerInterface):
         timeout = float(strategy_params.get("timeout", 2))
 
         event_queue.put({'event': 'thread_update',
-                         'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Début du scan de {ip}:{port} avec Scapy"}})
+                         'data': {'thread_id': thread_id,
+                                  'message': f"[{time.ctime()}] Début du scan de {ip}:{port} avec Scapy"}})
 
         time.sleep(random.uniform(0, delay))
         packet = IP(dst=ip) / TCP(sport=random.randint(1024, 65535), dport=port, flags="S")
@@ -54,5 +55,6 @@ class ScapyScanner(ScannerInterface):
                 return ip, True, None, {"ports": []}, None
         else:
             event_queue.put({'event': 'thread_update',
-                             'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Port {port} filtré ou pas de réponse"}})
+                             'data': {'thread_id': thread_id,
+                                      'message': f"[{time.ctime()}] Port {port} filtré ou pas de réponse"}})
             return ip, True, None, {"ports": []}, None

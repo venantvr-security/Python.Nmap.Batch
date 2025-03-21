@@ -3,7 +3,7 @@ strategies:
     - "-v"
     - "-O"
     - "-p"
-    - "80,443"
+    - "21,22,80,443"
   full:
     - "-v"
     - "-sV"
@@ -19,7 +19,7 @@ strategies:
     - "vuln"
     - "-p"
     - "1-1000"
-  stealth:
+  stealth-scan:
     - "-v"
     - "-sS"
     - "-f"
@@ -34,9 +34,9 @@ strategies:
     - "443"
     - "-T2"
     - "--script"
-    - "http-user-agent"
+    - "http-headers"  # Script valide pour récupérer les en-têtes HTTP
     - "--script-args"
-    - "http.useragent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    - "http.useragent=\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36\""
   stealth-packet:
     - "-v"           # Verbeux pour le débogage
     - "-sS"          # Scan SYN furtif

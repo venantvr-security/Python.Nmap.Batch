@@ -2,7 +2,8 @@
 
 ## Présentation
 
-Netcat (`nc`) est un utilitaire réseau simple et polyvalent pour établir des connexions TCP/UDP et tester les ports. Il est léger et souvent utilisé pour des diagnostics
+Netcat (`nc`) est un utilitaire réseau simple et polyvalent pour établir des connexions TCP/UDP et tester les ports. Il
+est léger et souvent utilisé pour des diagnostics
 ou des scans manuels.
 
 ## Protocoles exploités
@@ -20,8 +21,10 @@ ou des scans manuels.
 
 ## Spécificités techniques
 
-- **Simplicité** : Envoie une requête TCP ou UDP brute et attend une réponse (SYN-ACK ou RST pour TCP, réponse ou timeout pour UDP).
-- **Furtivité limitée** : Pas de contrôle fin sur les paquets, donc détectable par un IDS sensible aux connexions répétées.
+- **Simplicité** : Envoie une requête TCP ou UDP brute et attend une réponse (SYN-ACK ou RST pour TCP, réponse ou
+  timeout pour UDP).
+- **Furtivité limitée** : Pas de contrôle fin sur les paquets, donc détectable par un IDS sensible aux connexions
+  répétées.
 - **Flexibilité** : Peut être combiné avec des scripts pour des tests personnalisés.
 - **Performance** : Mono-thread par défaut, donc lent pour scanner plusieurs ports ou IPs sans script externe.
 

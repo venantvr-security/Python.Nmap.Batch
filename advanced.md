@@ -1,7 +1,9 @@
 # INSTALL.md
 
-Ce document explique comment installer et configurer les dépendances nécessaires pour exécuter le projet de scan réseau utilisant les scanners `NmapScanner`,
-`NetcatScanner`, `ScapyScanner`, `MasscanScanner`, et `Hping3Scanner`. Les instructions sont basées sur un système Ubuntu/Debian, mais peuvent être adaptées à d'autres
+Ce document explique comment installer et configurer les dépendances nécessaires pour exécuter le projet de scan réseau
+utilisant les scanners `NmapScanner`,
+`NetcatScanner`, `ScapyScanner`, `MasscanScanner`, et `Hping3Scanner`. Les instructions sont basées sur un système
+Ubuntu/Debian, mais peuvent être adaptées à d'autres
 distributions Linux ou systèmes avec des ajustements.
 
 ## Prérequis
@@ -92,7 +94,8 @@ from scapy.all import *
 print("Scapy est installé")
 ```
 
-**Note** : Scapy nécessite des privilèges root pour envoyer des paquets réseau. Exécutez votre script avec `sudo` si nécessaire.
+**Note** : Scapy nécessite des privilèges root pour envoyer des paquets réseau. Exécutez votre script avec `sudo` si
+nécessaire.
 
 ### 4. Masscan (pour `MasscanScanner`)
 
@@ -214,9 +217,11 @@ Ouvrez un navigateur à `http://localhost:5000` pour accéder à l’interface.
 
 ## Notes supplémentaires
 
-- **Privilèges root** : Les outils comme Scapy, Masscan, et Hping3 nécessitent souvent `sudo` pour manipuler les interfaces réseau. Assurez-vous que votre utilisateur a
+- **Privilèges root** : Les outils comme Scapy, Masscan, et Hping3 nécessitent souvent `sudo` pour manipuler les
+  interfaces réseau. Assurez-vous que votre utilisateur a
   les permissions nécessaires ou exécutez le script avec `sudo python3 app.py`.
-- **Pare-feu** : Si un pare-feu local bloque les scans, désactivez-le temporairement pour tester (`sudo ufw disable` sur Ubuntu).
+- **Pare-feu** : Si un pare-feu local bloque les scans, désactivez-le temporairement pour tester (`sudo ufw disable` sur
+  Ubuntu).
 - **Tor/Proxy (optionnel)** : Pour plus de furtivité, installez `proxychains` et `tor` :
   ```bash
   sudo apt install proxychains tor -y

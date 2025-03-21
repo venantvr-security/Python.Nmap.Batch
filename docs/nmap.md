@@ -2,7 +2,8 @@
 
 ## Présentation
 
-Nmap est un outil de scan réseau open-source conçu pour découvrir les hôtes, les services, et les vulnérabilités sur un réseau. Il est largement utilisé pour l’audit de
+Nmap est un outil de scan réseau open-source conçu pour découvrir les hôtes, les services, et les vulnérabilités sur un
+réseau. Il est largement utilisé pour l’audit de
 sécurité et l’analyse de réseau.
 
 ## Protocoles exploités
@@ -26,7 +27,8 @@ sécurité et l’analyse de réseau.
 
 - **Moteur NSE** : Scripting Engine pour des scans personnalisés (ex. détection de SSLv3 ou Heartbleed).
 - **Empreintes TCP/IP** : Analyse des options TCP (window size, MSS) pour identifier l’OS.
-- **Furtivité** : Le scan SYN envoie un paquet SYN sans établir de connexion complète, évitant souvent les logs de niveau applicatif.
+- **Furtivité** : Le scan SYN envoie un paquet SYN sans établir de connexion complète, évitant souvent les logs de
+  niveau applicatif.
 - **Performance** : Parallélisation interne pour scanner rapidement de grandes plages IP.
 
 ## Limites

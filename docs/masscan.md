@@ -2,7 +2,8 @@
 
 ## Présentation
 
-Masscan est un outil optimisé pour scanner rapidement de grandes plages IP. Il est conçu pour la performance brute, souvent utilisé pour des audits à grande échelle.
+Masscan est un outil optimisé pour scanner rapidement de grandes plages IP. Il est conçu pour la performance brute,
+souvent utilisé pour des audits à grande échelle.
 
 ## Protocoles exploités
 

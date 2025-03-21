@@ -1,11 +1,11 @@
 # Hping3Scanner.py
 import subprocess
 import time
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict
 
 import yaml
 
-from ScannerInterface import ScannerInterface
+from ScannerInterface import ScannerInterface, ScanResult
 
 
 class Hping3Scanner(ScannerInterface):
@@ -21,23 +21,26 @@ class Hping3Scanner(ScannerInterface):
         except KeyError:
             raise ValueError(f"Le fichier {self.yaml_file} doit contenir une clé 'strategies'.")
 
-    def scan(self, ip: str, thread_id: str, event_queue, stop_flag) -> Tuple[str, bool, Optional[str], Dict, Optional[str]]:
+    def scan(self, ip: str, thread_id: str, event_queue, stop_flag) -> ScanResult:
         if stop_flag():
             event_queue.put({'event': 'thread_update',
                              'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Scan de {ip} annulé"}})
-            return ip, False, "Cancelled", {}, None
+            return ip, False, "Cancelled", {}, {}
 
         cmd = ["/usr/bin/hping3"] + [ip] + self.strategies[self.strategy]
+        cmd_str = " ".join(cmd)  # Commande sous forme de chaîne pour persistance
         event_queue.put({'event': 'thread_update',
-                         'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Début du scan de {ip} avec {cmd}"}})
+                         'data': {'thread_id': thread_id,
+                                  'message': f"[{time.ctime()}] Début du scan de {ip} avec {cmd_str}"}})
 
         try:
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
             self.active_processes.append(process)
         except Exception as e:
             event_queue.put({'event': 'thread_update',
-                             'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Erreur lancement Hping3 : {e}"}})
-            return ip, False, str(e), {}, None
+                             'data': {'thread_id': thread_id,
+                                      'message': f"[{time.ctime()}] Erreur lancement Hping3 : {e}"}})
+            return ip, False, str(e), {}, {}
 
         ports = []
         buffer = []
@@ -51,7 +54,7 @@ class Hping3Scanner(ScannerInterface):
                 event_queue.put({'event': 'thread_update',
                                  'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Scan interrompu"}})
                 self.active_processes.remove(process)
-                return ip, False, "Interrupted", {}, None
+                return ip, False, "Interrupted", {}, {}
 
             line = process.stdout.readline()
             if not line:
@@ -62,7 +65,8 @@ class Hping3Scanner(ScannerInterface):
                 ports.append(port)
 
             if time.time() - last_emit >= 0.5:
-                event_queue.put({'event': 'thread_update', 'data': {'thread_id': thread_id, 'message': "\n".join(buffer)}})
+                event_queue.put(
+                    {'event': 'thread_update', 'data': {'thread_id': thread_id, 'message': "\n".join(buffer)}})
                 buffer = []
                 last_emit = time.time()
 
@@ -75,5 +79,6 @@ class Hping3Scanner(ScannerInterface):
                              'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Port {port} ouvert"}})
         else:
             event_queue.put({'event': 'thread_update',
-                             'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Aucun port ouvert ou filtré"}})
-        return ip, True, None, details, None
+                             'data': {'thread_id': thread_id,
+                                      'message': f"[{time.ctime()}] Aucun port ouvert ou filtré"}})
+        return ip, True, None, details, {"command": cmd_str}

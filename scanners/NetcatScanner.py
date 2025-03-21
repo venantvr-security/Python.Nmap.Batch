@@ -1,12 +1,11 @@
 # NetcatScanner.py
-import random
 import subprocess
 import time
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict
 
 import yaml
 
-from ScannerInterface import ScannerInterface
+from ScannerInterface import ScannerInterface, ScanResult
 
 
 class NetcatScanner(ScannerInterface):
@@ -22,71 +21,102 @@ class NetcatScanner(ScannerInterface):
         except KeyError:
             raise ValueError(f"Le fichier {self.yaml_file} doit contenir une clé 'strategies'.")
 
-    def scan(self, ip: str, thread_id: str, event_queue, stop_flag) -> Tuple[str, bool, Optional[str], Dict, Optional[str]]:
+    def scan(self, ip: str, thread_id: str, event_queue, stop_flag) -> ScanResult:
         if stop_flag():
             event_queue.put({'event': 'thread_update',
                              'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Scan de {ip} annulé"}})
-            return ip, False, "Cancelled", {}, None
+            return ip, False, "Cancelled", {}, {}
 
-        cmd = ["/usr/bin/nc"] + self.strategies[self.strategy] + [ip]
-        delay = random.uniform(0.5, 2.0)
+        cmd = ["/usr/bin/nmap"] + [ip] + self.strategies[self.strategy]
+        cmd_str = " ".join(cmd)
         event_queue.put({'event': 'thread_update',
-                         'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Attente aléatoire de {delay:.2f}s pour {ip}"}})
-        time.sleep(delay)
-
-        event_queue.put({'event': 'thread_update',
-                         'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Début du scan de {ip} avec {cmd}"}})
+                         'data': {'thread_id': thread_id,
+                                  'message': f"[{time.ctime()}] Début du scan de {ip} avec {cmd_str}"}})
 
         try:
-            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+            event_queue.put({'event': 'thread_update',
+                             'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Lancement de Popen"}})
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             self.active_processes.append(process)
+            event_queue.put({'event': 'thread_update',
+                             'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Popen lancé avec succès"}})
         except Exception as e:
             event_queue.put({'event': 'thread_update',
-                             'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Erreur lancement Netcat : {e}"}})
-            return ip, False, str(e), {}, None
+                             'data': {'thread_id': thread_id,
+                                      'message': f"[{time.ctime()}] Erreur lancement Nmap : {str(e)}"}})
+            return ip, False, str(e), {}, {"command": cmd_str}
 
+        # output_lines = []
         ports = []
-        buffer = []
-        last_emit = time.time()
+        os_info = None
+        versions = {}
+        vulns = []
+        mac_address = None
+        lan_name = None
 
-        for line in iter(process.stdout.readline, ''):
-            if stop_flag():
-                process.terminate()
-                event_queue.put({'event': 'thread_update',
-                                 'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Scan interrompu"}})
-                self.active_processes.remove(process)
-                return ip, False, "Interrupted", {}, None
-            buffer.append(f"[{time.ctime()}] {line.strip()}")
+        try:
+            stdout, stderr = process.communicate(timeout=3600)
+            output_lines = stdout.splitlines() + (stderr.splitlines() if stderr else [])
+            event_queue.put({'event': 'thread_update',
+                             'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Communicate terminé"}})
+        except subprocess.TimeoutExpired:
+            process.kill()
+            stdout, stderr = process.communicate()
+            # output_lines = stdout.splitlines() + (stderr.splitlines() if stderr else [])
+            event_queue.put({'event': 'thread_update',
+                             'data': {'thread_id': thread_id,
+                                      'message': f"[{time.ctime()}] Scan timeout après 3600s - Processus terminé"}})
+            self.active_processes.remove(process)
+            return ip, False, "Timeout", {}, {"command": cmd_str}
 
-            if "succeeded" in line or "open" in line:
-                try:
-                    port = int(self.strategies[self.strategy][-1])
-                    ports.append(port)
-                except ValueError:
-                    pass
-
-            if time.time() - last_emit >= 0.5:
-                event_queue.put({'event': 'thread_update', 'data': {'thread_id': thread_id, 'message': "\n".join(buffer)}})
-                buffer = []
-                last_emit = time.time()
-
-        if buffer:
-            event_queue.put({'event': 'thread_update', 'data': {'thread_id': thread_id, 'message': "\n".join(buffer)}})
-
-        process.wait()
         self.active_processes.remove(process)
+        # Traitement des lignes (inchangé)
+        for line in output_lines:
+            event_queue.put({'event': 'thread_update',
+                             'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] {line.strip()}"}})
+            if "open port" in line:
+                try:
+                    port = int(line.split()[4].split('/')[0])
+                    ports.append(port)
+                except (IndexError, ValueError):
+                    pass
+            if "OS details" in line:
+                os_info = line.split("OS details: ")[1].strip()
+            if "MAC Address" in line:
+                mac_address = line.split("MAC Address: ")[1].split()[0]
+            if "Nmap scan report for" in line and len(line.split()) > 4:
+                lan_name = line.split()[4].strip("()")
+            if "Service Info" in line or ("open" in line and "/" in line and "version" not in line.lower()):
+                parts = line.split()
+                if len(parts) > 2 and "/" in parts[0]:
+                    try:
+                        port = int(parts[0].split('/')[0])
+                        version = " ".join(parts[2:]) if len(parts) > 2 else "Unknown"
+                        versions[port] = version
+                    except (IndexError, ValueError):
+                        pass
+            if "VULNERABLE" in line:
+                vulns.append(line.strip())
+
+        extra = {"command": cmd_str}
+        if mac_address:
+            extra["mac_address"] = mac_address
+        if lan_name:
+            extra["lan_name"] = lan_name
+
         if process.returncode == 0:
-            details = {"ports": ports}
+            details = {"ports": ports, "os": os_info, "versions": versions, "vulns": vulns}
             if ports:
                 event_queue.put({'event': 'thread_update', 'data': {
                     'thread_id': thread_id,
-                    'message': f"[{time.ctime()}] {ip} actif (ports: {ports})"
+                    'message': f"[{time.ctime()}] {ip} actif (ports: {ports}, OS: {os_info}, Vulns: {len(vulns)}, MAC: {mac_address}, LAN: {lan_name})"
                 }})
             else:
                 event_queue.put({'event': 'thread_update', 'data': {'thread_id': thread_id,
                                                                     'message': f"[{time.ctime()}] {ip} n’a pas de ports ouverts"}})
-            return ip, True, None, details, None
+            return ip, True, None, details, extra
         else:
-            error = f"Netcat a échoué avec le code {process.returncode}"
-            event_queue.put({'event': 'thread_update', 'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] {error}"}})
-            return ip, False, error, {}, None
+            error = f"Nmap a échoué avec le code {process.returncode}"
+            event_queue.put(
+                {'event': 'thread_update', 'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] {error}"}})
+            return ip, False, error, {}, extra

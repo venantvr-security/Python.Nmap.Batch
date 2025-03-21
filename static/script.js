@@ -60,6 +60,18 @@ source.addEventListener('thread_update', (event) => {
             `;
             tilesContainer.appendChild(tile);
             threadTiles[thread_id] = tile.querySelector('.card-body');
+            // Ajouter un timeout pour fermer les tuiles bloquées
+            setTimeout(() => {
+                if (activeThreads.has(thread_id) && threadTiles[thread_id]) {
+                    threadTiles[thread_id].innerHTML += '<p>[Timeout] Scan bloqué, forcé à fermer</p>';
+                    activeThreads.delete(thread_id);
+                    setTimeout(() => {
+                        const tile = threadTiles[thread_id].parentElement.parentElement;
+                        /* tilesContainer.removeChild(tile);
+                        delete threadTiles[thread_id]; */
+                    }, 10000);  // Ferme après 10s supplémentaires
+                }
+            }, 35000);  // 35s après le début (30s timeout + marge)
         }
     }
 
@@ -69,6 +81,9 @@ source.addEventListener('thread_update', (event) => {
         lines.forEach(line => {
             const p = document.createElement('p');
             p.textContent = line;
+            if (line.includes("Début du scan avec")) {
+                p.style.fontWeight = 'bold';
+            }
             tile.appendChild(p);
         });
         tile.scrollTop = tile.scrollHeight;
@@ -77,7 +92,8 @@ source.addEventListener('thread_update', (event) => {
     if (message.includes("terminé avec succès") ||
         message.includes("n’a pas de ports ouverts") ||
         message.includes("Scan interrompu") ||
-        message.includes("échoué avec le code")) {
+        message.includes("échoué avec le code") ||
+        message.includes("Scan timeout après")) {
         if (activeThreads.has(thread_id)) {
             activeThreads.delete(thread_id);
             setTimeout(() => {
@@ -86,7 +102,7 @@ source.addEventListener('thread_update', (event) => {
                     tilesContainer.removeChild(tile);
                     delete threadTiles[thread_id];
                 }
-            }, 1000);
+            }, 10000);
         }
     }
 });
@@ -203,6 +219,13 @@ function showScannerInfo(scannerType) {
             console.error('Erreur lors de la récupération des infos :', error);
             progressText.textContent = `Erreur : ${error.message}`;
         });
+}
+
+function resetProgress() {
+    fetch('/reset_progress', { method: 'POST' })
+        .then(response => response.text())
+        .then(message => console.log(message))
+        .catch(error => console.error('Erreur :', error));
 }
 
 document.addEventListener('DOMContentLoaded', () => {

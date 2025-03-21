@@ -22,7 +22,8 @@
         <div class="col">
             <div class="btn-group w-100">
                 <button class="btn btn-primary" onclick="startScan('nmap')">Démarrer Nmap</button>
-                <button aria-expanded="false" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" type="button">
+                <button aria-expanded="false" class="btn btn-primary dropdown-toggle dropdown-toggle-split"
+                        data-bs-toggle="dropdown" type="button">
                     <span class="visually-hidden">Sélectionner stratégie</span>
                 </button>
                 <ul class="dropdown-menu" id="nmap-strategies"></ul>
@@ -31,7 +32,8 @@
         <div class="col">
             <div class="btn-group w-100">
                 <button class="btn btn-success" onclick="startScan('netcat')">Démarrer Netcat</button>
-                <button aria-expanded="false" class="btn btn-success dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" type="button">
+                <button aria-expanded="false" class="btn btn-success dropdown-toggle dropdown-toggle-split"
+                        data-bs-toggle="dropdown" type="button">
                     <span class="visually-hidden">Sélectionner stratégie</span>
                 </button>
                 <ul class="dropdown-menu" id="netcat-strategies"></ul>
@@ -40,7 +42,8 @@
         <div class="col">
             <div class="btn-group w-100">
                 <button class="btn btn-info" onclick="startScan('scapy')">Démarrer Scapy</button>
-                <button aria-expanded="false" class="btn btn-info dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" type="button">
+                <button aria-expanded="false" class="btn btn-info dropdown-toggle dropdown-toggle-split"
+                        data-bs-toggle="dropdown" type="button">
                     <span class="visually-hidden">Sélectionner stratégie</span>
                 </button>
                 <ul class="dropdown-menu" id="scapy-strategies"></ul>
@@ -49,7 +52,8 @@
         <div class="col">
             <div class="btn-group w-100">
                 <button class="btn btn-warning" onclick="startScan('masscan')">Démarrer Masscan</button>
-                <button aria-expanded="false" class="btn btn-warning dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" type="button">
+                <button aria-expanded="false" class="btn btn-warning dropdown-toggle dropdown-toggle-split"
+                        data-bs-toggle="dropdown" type="button">
                     <span class="visually-hidden">Sélectionner stratégie</span>
                 </button>
                 <ul class="dropdown-menu" id="masscan-strategies"></ul>
@@ -58,14 +62,18 @@
         <div class="col">
             <div class="btn-group w-100">
                 <button class="btn btn-secondary" onclick="startScan('hping3')">Démarrer Hping3</button>
-                <button aria-expanded="false" class="btn btn-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" type="button">
+                <button aria-expanded="false" class="btn btn-secondary dropdown-toggle dropdown-toggle-split"
+                        data-bs-toggle="dropdown" type="button">
                     <span class="visually-hidden">Sélectionner stratégie</span>
                 </button>
                 <ul class="dropdown-menu" id="hping3-strategies"></ul>
             </div>
         </div>
         <div class="col">
-            <button class="btn btn-danger w-100" onclick="stopScan()">Arrêter le scan</button>
+            <div class="d-flex gap-2">
+                <button class="btn btn-danger w-50" onclick="stopScan()">Arrêter le scan</button>
+                <button class="btn btn-warning w-50" onclick="resetProgress()">Réinitialiser</button>
+            </div>
         </div>
     </div>
     <div class="row row-cols-1 row-cols-md-3 g-4" id="tiles"></div>

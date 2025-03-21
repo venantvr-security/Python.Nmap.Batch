@@ -19,7 +19,8 @@ Cela peut sembler improbable, mais plusieurs explications sont possibles :
 
 ### 4. **Adresses IP réellement utilisées**
 
-- Si ta plage correspond à un fournisseur d'hébergement cloud (AWS, Azure, OVH...), il est possible que chaque IP héberge des services web (80 et 443).
+- Si ta plage correspond à un fournisseur d'hébergement cloud (AWS, Azure, OVH...), il est possible que chaque IP
+  héberge des services web (80 et 443).
 
 ### 5. **Interprétation des résultats**
 
@@ -44,7 +45,8 @@ Cela peut sembler improbable, mais plusieurs explications sont possibles :
   curl -I http://<ip>
   ```
 
-Si malgré tout, toutes les IPs semblent avoir ces ports ouverts, il y a fort à parier qu'un équipement réseau manipule les résultats.
+Si malgré tout, toutes les IPs semblent avoir ces ports ouverts, il y a fort à parier qu'un équipement réseau manipule
+les résultats.
 
 # Sur TOR, ça fonctionne ?
 
@@ -104,22 +106,26 @@ torsocks nmap -sT -p 80,443 -Pn <IP>
 
 ### 4. **Mieux vaut utiliser des outils adaptés à TOR**
 
-Nmap n’est pas vraiment fait pour scanner via TOR. Pour un scan plus efficace sur TOR, utilise `masscan` avec des proxys SOCKS5, ou un script Python avec `requests` et
+Nmap n’est pas vraiment fait pour scanner via TOR. Pour un scan plus efficace sur TOR, utilise `masscan` avec des proxys
+SOCKS5, ou un script Python avec `requests` et
 `stem` (lib TOR).
 
 #### ⚠️ **Attention à la légalité**
 
-Scanner via TOR peut être mal vu, surtout si tu fais du scanning sur des infrastructures externes sans autorisation. Vérifie les règles et lois en vigueur.
+Scanner via TOR peut être mal vu, surtout si tu fais du scanning sur des infrastructures externes sans autorisation.
+Vérifie les règles et lois en vigueur.
 
 # Nmap trouve tous les ports ouverts...
 
-Si Nmap te trouve **tous** les ports ouverts, c'est très probablement un faux positif. Voici les causes possibles et comment les vérifier :
+Si Nmap te trouve **tous** les ports ouverts, c'est très probablement un faux positif. Voici les causes possibles et
+comment les vérifier :
 
 ---
 
 ### 1️⃣ **Un pare-feu ou IDS trompe Nmap**
 
-Certains systèmes de détection d'intrusion (IDS) ou pare-feux sont configurés pour renvoyer un **TCP RST** systématique ou une réponse SYN-ACK à chaque requête Nmap,
+Certains systèmes de détection d'intrusion (IDS) ou pare-feux sont configurés pour renvoyer un **TCP RST** systématique
+ou une réponse SYN-ACK à chaque requête Nmap,
 donnant l'illusion que tous les ports sont ouverts.
 
 ✅ **Solution** : Teste avec un autre outil comme `nc` (netcat) ou `telnet` :
@@ -135,7 +141,8 @@ Si ces outils échouent mais que Nmap trouve le port ouvert, il y a une interfé
 
 ### 2️⃣ **Un honeypot ou un serveur proxy en amont**
 
-Si tu scannes une plage IP, il est possible qu'un honeypot ou un équipement réseau réponde à **toutes** les requêtes, simulant des ports ouverts.
+Si tu scannes une plage IP, il est possible qu'un honeypot ou un équipement réseau réponde à **toutes** les requêtes,
+simulant des ports ouverts.
 
 ✅ **Solution** : Active la détection des services (`-sV`) pour voir ce qui tourne vraiment :
 
@@ -192,11 +199,13 @@ Si **tous** les ports sont ouverts, c'est probablement :
 2. Un honeypot ou proxy en amont.
 3. Une mauvaise configuration de scan.
 
-Testes avec d'autres outils (`nc`, `curl`, `telnet`), change de méthode (`-sT`, `-sV`), et compare avec et sans TOR/VPN pour confirmer.
+Testes avec d'autres outils (`nc`, `curl`, `telnet`), change de méthode (`-sT`, `-sV`), et compare avec et sans TOR/VPN
+pour confirmer.
 
 # Peut-on maquiller Nmap ?
 
-Oui, tu peux maquiller Nmap pour éviter la détection par les pare-feux et IDS/IPS qui pourraient te donner de faux résultats. Voici plusieurs techniques :
+Oui, tu peux maquiller Nmap pour éviter la détection par les pare-feux et IDS/IPS qui pourraient te donner de faux
+résultats. Voici plusieurs techniques :
 
 ---
 
@@ -306,19 +315,23 @@ nmap -p 80 --script=http-useragent --script-args http.useragent="Mozilla/5.0" <I
 🔸 Si un pare-feu renvoie de faux résultats → Teste **SYN (-sS) + Idle (-sI)**  
 🔸 Si tu veux masquer ton IP → **Proxychains + TOR**
 
-Toutes ces méthodes augmentent la furtivité, mais rien n’est infaillible contre une surveillance avancée. Tu veux tester sur quel type d’infra ?
+Toutes ces méthodes augmentent la furtivité, mais rien n’est infaillible contre une surveillance avancée. Tu veux tester
+sur quel type d’infra ?
 
 # Si l'IDS renvoie RST ça perturbe le vrai handshake HTTP non?
 
-Oui, si un IDS (ou un pare-feu) envoie un **TCP RST** (Reset) en réponse aux tentatives de connexion, cela peut perturber le handshake HTTP et provoquer des comportements
+Oui, si un IDS (ou un pare-feu) envoie un **TCP RST** (Reset) en réponse aux tentatives de connexion, cela peut
+perturber le handshake HTTP et provoquer des comportements
 anormaux.
 
 ---
 
 ### 📌 **Impact sur le handshake TCP (SYN -> SYN-ACK -> ACK)**
 
-- Normalement, un client envoie un **SYN** → Le serveur répond **SYN-ACK** → Le client répond **ACK**, et la connexion est établie.
-- Si un IDS/Pare-feu envoie un **RST** immédiatement après le SYN ou le SYN-ACK, la connexion est coupée **avant même d'envoyer la requête HTTP**.
+- Normalement, un client envoie un **SYN** → Le serveur répond **SYN-ACK** → Le client répond **ACK**, et la connexion
+  est établie.
+- Si un IDS/Pare-feu envoie un **RST** immédiatement après le SYN ou le SYN-ACK, la connexion est coupée **avant même
+  d'envoyer la requête HTTP**.
 
 ### 🛑 **Conséquences sur HTTP**
 
@@ -377,7 +390,8 @@ Tu veux tester sur une infra spécifique ?
 
 # L'IDS peut bloquer tout TOR ?
 
-Oui, un IDS ou un pare-feu peut **bloquer complètement TOR**, mais ça dépend de sa configuration et de sa sophistication. Voici comment ça fonctionne et comment
+Oui, un IDS ou un pare-feu peut **bloquer complètement TOR**, mais ça dépend de sa configuration et de sa
+sophistication. Voici comment ça fonctionne et comment
 contourner ces blocages.
 
 ---
@@ -416,7 +430,8 @@ Les IDS/pare-feux peuvent identifier et bloquer TOR de plusieurs manières :
 
 ### 🔹 **d) Inspection TLS/Deep Packet Inspection (DPI)**
 
-- Certains IDS utilisent le **Deep Packet Inspection (DPI)** pour identifier et bloquer TOR, même si les IPs et ports changent.
+- Certains IDS utilisent le **Deep Packet Inspection (DPI)** pour identifier et bloquer TOR, même si les IPs et ports
+  changent.
 - Exemples : **Grand Firewall de Chine, entreprises qui surveillent le trafic HTTPS**.
 
 ✅ **Contournement** :
@@ -491,25 +506,29 @@ Tu veux tester sur une infra spécifique ?
 
 ### 🔥 **Comment fonctionne Meek dans TOR ?**
 
-Meek est un **transport enfichable (pluggable transport)** qui permet à TOR de contourner la censure en **dissimulant le trafic TOR à l'intérieur de requêtes web
+Meek est un **transport enfichable (pluggable transport)** qui permet à TOR de contourner la censure en **dissimulant le
+trafic TOR à l'intérieur de requêtes web
 légitimes** vers des services comme **Google, Microsoft ou Amazon**.
 
 ---
 
 ## 🎯 **1️⃣ Principe de fonctionnement**
 
-Meek encapsule les paquets TOR dans des requêtes HTTP/HTTPS normales vers des **serveurs de façade (front domains)**, comme `ajax.aspnetcdn.com` (Microsoft) ou
+Meek encapsule les paquets TOR dans des requêtes HTTP/HTTPS normales vers des **serveurs de façade (front domains)**,
+comme `ajax.aspnetcdn.com` (Microsoft) ou
 `www.google.com`.
 
 Voici comment ça marche :
 
 1️⃣ **Le client TOR envoie une requête HTTPS à un site web légitime** (ex: `www.google.com`).  
-2️⃣ **Le serveur de façade (Google, Microsoft, Amazon) relaie le trafic à un serveur Meek caché** (géré par Tor Project).  
+2️⃣ **Le serveur de façade (Google, Microsoft, Amazon) relaie le trafic à un serveur Meek caché** (géré par Tor
+Project).  
 3️⃣ **Le serveur Meek décrypte et transmet le trafic au réseau TOR**.  
 4️⃣ **Les réponses reviennent via le même chemin** : serveur Meek → serveur de façade → client TOR.
 
 💡 **Avantage** :  
-Le trafic ressemble **à une simple connexion HTTPS normale**, donc difficile à bloquer avec DPI (Deep Packet Inspection).
+Le trafic ressemble **à une simple connexion HTTPS normale**, donc difficile à bloquer avec DPI (Deep Packet
+Inspection).
 
 ---
 
@@ -554,7 +573,8 @@ sudo systemctl restart tor
 ## 🚀 **3️⃣ Pourquoi Meek est difficile à bloquer ?**
 
 ✅ **Pas de liste noire d’IP** → Le trafic passe par des serveurs **comme Google ou Microsoft**, difficiles à bloquer.  
-✅ **Se fond dans du HTTPS normal** → Même avec un IDS/DPI avancé, impossible de dire si c'est TOR ou une vraie requête web.  
+✅ **Se fond dans du HTTPS normal** → Même avec un IDS/DPI avancé, impossible de dire si c'est TOR ou une vraie requête
+web.  
 ✅ **Aucun proxy fixe** → Contrairement aux bridges classiques, Meek ne dépend pas d’une seule IP.
 
 ---
@@ -563,7 +583,8 @@ sudo systemctl restart tor
 
 ❌ **Très lent** → Le trafic transite par plusieurs serveurs, donc la latence est élevée.  
 ❌ **Coût pour le serveur Meek** → Le relais Meek doit gérer beaucoup de trafic, ce qui limite les performances.  
-❌ **Certains services cloud peuvent bloquer Meek** → Ex: Google et Amazon pourraient détecter et limiter les connexions anormales.
+❌ **Certains services cloud peuvent bloquer Meek** → Ex: Google et Amazon pourraient détecter et limiter les connexions
+anormales.
 
 ---
 
@@ -577,7 +598,8 @@ sudo systemctl restart tor
 
 ### **💡 Conclusion**
 
-Meek est une solution puissante contre la censure et le blocage de TOR, mais il est lent. Si tu veux du **TOR furtif**, combine-le avec **Obfs4 ou Snowflake** pour plus
+Meek est une solution puissante contre la censure et le blocage de TOR, mais il est lent. Si tu veux du **TOR furtif**,
+combine-le avec **Obfs4 ou Snowflake** pour plus
 d’efficacité.
 
 Tu veux tester Meek sur une config spécifique ?
