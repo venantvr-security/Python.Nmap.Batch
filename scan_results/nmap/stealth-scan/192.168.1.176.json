@@ -1,0 +1,17 @@
+{
+  "ip": "192.168.1.176",
+  "success": true,
+  "error": null,
+  "details": {
+    "ports": [],
+    "os": null,
+    "versions": {},
+    "vulns": []
+  },
+  "extra": {
+    "command": "/usr/bin/nmap 192.168.1.176 -v -sS -f -p 443 -T2",
+    "mac_address": "B4:C9:B9:69:30:07",
+    "lan_name": "TECKIN_TC100.lan"
+  },
+  "timestamp": "Fri Mar 21 20:25:39 2025"
+}

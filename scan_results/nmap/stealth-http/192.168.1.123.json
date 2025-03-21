@@ -1,0 +1,17 @@
+{
+  "ip": "192.168.1.123",
+  "success": true,
+  "error": null,
+  "details": {
+    "ports": [],
+    "os": null,
+    "versions": {},
+    "vulns": []
+  },
+  "extra": {
+    "command": "/usr/bin/nmap 192.168.1.123 -v -sS -f -p 443 -T2 --script http-headers --script-args http.useragent=\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36\"",
+    "mac_address": "02:2B:FC:AC:3E:0A",
+    "lan_name": "HONOR-Magic5-Lite-5G.lan"
+  },
+  "timestamp": "Fri Mar 21 20:44:10 2025"
+}

@@ -1,0 +1,17 @@
+{
+  "ip": "192.168.1.106",
+  "success": true,
+  "error": null,
+  "details": {
+    "ports": [],
+    "os": null,
+    "versions": {},
+    "vulns": []
+  },
+  "extra": {
+    "command": "/usr/bin/nmap 192.168.1.106 -v -sS -f -p 443 -T2 --script http-headers --script-args http.useragent=\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36\"",
+    "mac_address": "48:E1:E9:61:06:15",
+    "lan_name": "Meross_Smart_Plug.lan"
+  },
+  "timestamp": "Fri Mar 21 20:44:04 2025"
+}

@@ -1,0 +1,16 @@
+{
+  "ip": "192.168.1.241",
+  "success": true,
+  "error": null,
+  "details": {
+    "ports": [],
+    "os": null,
+    "versions": {},
+    "vulns": []
+  },
+  "extra": {
+    "command": "/usr/bin/nmap 192.168.1.241 -v -sS -f -p 443 -T2",
+    "lan_name": "192.168.1.241"
+  },
+  "timestamp": "Fri Mar 21 20:26:00 2025"
+}

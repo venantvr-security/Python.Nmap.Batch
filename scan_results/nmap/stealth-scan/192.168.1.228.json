@@ -1,0 +1,17 @@
+{
+  "ip": "192.168.1.228",
+  "success": true,
+  "error": null,
+  "details": {
+    "ports": [],
+    "os": null,
+    "versions": {},
+    "vulns": []
+  },
+  "extra": {
+    "command": "/usr/bin/nmap 192.168.1.228 -v -sS -f -p 443 -T2",
+    "mac_address": "48:E1:E9:42:56:4E",
+    "lan_name": "192.168.1.228"
+  },
+  "timestamp": "Fri Mar 21 20:25:56 2025"
+}

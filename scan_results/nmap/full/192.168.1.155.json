@@ -1,0 +1,17 @@
+{
+  "ip": "192.168.1.155",
+  "success": true,
+  "error": null,
+  "details": {
+    "ports": [],
+    "os": "Too many fingerprints match this host to give specific OS details",
+    "versions": {},
+    "vulns": []
+  },
+  "extra": {
+    "command": "/usr/bin/nmap 192.168.1.155 -v -sV -O -sS -p 1-1000",
+    "mac_address": "B8:27:EB:80:E4:1B",
+    "lan_name": "Python.lan"
+  },
+  "timestamp": "Fri Mar 21 19:38:04 2025"
+}

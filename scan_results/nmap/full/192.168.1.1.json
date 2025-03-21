@@ -1,0 +1,21 @@
+{
+  "ip": "192.168.1.1",
+  "success": true,
+  "error": null,
+  "details": {
+    "ports": [],
+    "os": null,
+    "versions": {
+      "22": "ssh Dropbear sshd (protocol 2.0)",
+      "53": "domain Cloudflare public DNS",
+      "80": "http"
+    },
+    "vulns": []
+  },
+  "extra": {
+    "command": "/usr/bin/nmap 192.168.1.1 -v -sV -O -sS -p 1-1000",
+    "mac_address": "AC:84:C6:9D:B2:A2",
+    "lan_name": "OpenWrt.lan"
+  },
+  "timestamp": "Fri Mar 21 19:32:34 2025"
+}

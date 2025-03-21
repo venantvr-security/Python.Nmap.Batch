@@ -1,0 +1,17 @@
+{
+  "ip": "192.168.1.223",
+  "success": true,
+  "error": null,
+  "details": {
+    "ports": [],
+    "os": "Too many fingerprints match this host to give specific OS details",
+    "versions": {},
+    "vulns": []
+  },
+  "extra": {
+    "command": "/usr/bin/nmap 192.168.1.223 -v -O -p 80,443",
+    "mac_address": "28:D0:43:A4:CC:58",
+    "lan_name": "Carole.lan"
+  },
+  "timestamp": "Fri Mar 21 19:03:58 2025"
+}

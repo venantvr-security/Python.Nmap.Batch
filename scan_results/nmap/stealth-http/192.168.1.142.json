@@ -1,0 +1,16 @@
+{
+  "ip": "192.168.1.142",
+  "success": true,
+  "error": null,
+  "details": {
+    "ports": [],
+    "os": null,
+    "versions": {},
+    "vulns": []
+  },
+  "extra": {
+    "command": "/usr/bin/nmap 192.168.1.142 -v -sS -f -p 443 -T2 --script http-headers --script-args http.useragent=\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36\"",
+    "lan_name": "192.168.1.142"
+  },
+  "timestamp": "Fri Mar 21 20:44:12 2025"
+}

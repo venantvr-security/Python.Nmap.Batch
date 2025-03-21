@@ -1,0 +1,19 @@
+{
+  "ip": "192.168.1.156",
+  "success": true,
+  "error": null,
+  "details": {
+    "ports": [],
+    "os": "Linux 2.6.32",
+    "versions": {
+      "139": "netbios-ssn Samba smbd 4.6.2",
+      "445": "netbios-ssn Samba smbd 4.6.2"
+    },
+    "vulns": []
+  },
+  "extra": {
+    "command": "/usr/bin/nmap 192.168.1.156 -v -sV -O -sS -p 1-1000",
+    "lan_name": "rvv-B660M-Pro-RS.lan"
+  },
+  "timestamp": "Fri Mar 21 19:35:41 2025"
+}
