@@ -66,6 +66,7 @@ class NetcatScanner(ScannerInterface):
         except subprocess.TimeoutExpired:
             process.kill()
             stdout, stderr = process.communicate()
+            # noinspection PyUnusedLocal
             output_lines = stdout.splitlines() + (stderr.splitlines() if stderr else [])
             event_queue.put({'event': 'thread_update',
                              'data': {'thread_id': thread_id,

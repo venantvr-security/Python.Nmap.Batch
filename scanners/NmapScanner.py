@@ -58,6 +58,7 @@ class NmapScanner(ScannerInterface):
                                               'message': f"[{time.ctime()}] Scan timeout après 3600s"}})
                     self.active_processes.remove(process)
                     with open(temp_filename, 'r') as f:
+                        # noinspection PyUnusedLocal
                         output_lines = f.read().splitlines()
                     os.remove(temp_filename)
                     return ip, False, "Timeout", {}, {"command": cmd_str}
