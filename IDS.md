@@ -120,8 +120,6 @@ Vérifie les règles et lois en vigueur.
 Si Nmap te trouve **tous** les ports ouverts, c'est très probablement un faux positif. Voici les causes possibles et
 comment les vérifier :
 
----
-
 ### 1️⃣ **Un pare-feu ou IDS trompe Nmap**
 
 Certains systèmes de détection d'intrusion (IDS) ou pare-feux sont configurés pour renvoyer un **TCP RST** systématique
@@ -137,8 +135,6 @@ telnet <IP> 443
 
 Si ces outils échouent mais que Nmap trouve le port ouvert, il y a une interférence réseau.
 
----
-
 ### 2️⃣ **Un honeypot ou un serveur proxy en amont**
 
 Si tu scannes une plage IP, il est possible qu'un honeypot ou un équipement réseau réponde à **toutes** les requêtes,
@@ -151,8 +147,6 @@ nmap -sV -p- <IP>
 ```
 
 Si tous les services retournent les mêmes résultats, c'est suspect.
-
----
 
 ### 3️⃣ **Scan TCP SYN contre Scan TCP Connect**
 
@@ -167,15 +161,11 @@ nmap -sT -p- <IP>
 
 Si les résultats changent, c’est un pare-feu qui interfère.
 
----
-
 ### 4️⃣ **TOR ou VPN fausse les résultats**
 
 Si tu passes par TOR/VPN, il est possible que le trafic soit redirigé via un proxy qui répond à tout.
 
 ✅ **Solution** : Essaye un scan direct **sans TOR/VPN** pour comparer.
-
----
 
 ### 5️⃣ **Bug dans Nmap ou mauvaise syntaxe**
 
@@ -188,8 +178,6 @@ nmap -p 80,443 --reason <IP>
 ```
 
 L’option `--reason` te dira **pourquoi** Nmap considère un port ouvert.
-
----
 
 ### Conclusion
 
@@ -206,8 +194,6 @@ pour confirmer.
 
 Oui, tu peux maquiller Nmap pour éviter la détection par les pare-feux et IDS/IPS qui pourraient te donner de faux
 résultats. Voici plusieurs techniques :
-
----
 
 ## 1️⃣ **Changer l’empreinte du scan (User-Agent, Headers, TTL, etc.)**
 
@@ -228,8 +214,6 @@ nmap --spoof-mac 00:11:22:33:44:55 <IP>
 ```
 
 (Ça change l’adresse MAC pour paraître comme un autre appareil)
-
----
 
 ## 2️⃣ **Utiliser des scans furtifs**
 
@@ -257,8 +241,6 @@ nmap -f -p 80,443 <IP>
 
 (Découpe les paquets TCP en petits fragments)
 
----
-
 ## 3️⃣ **Ralentir et déguiser le trafic**
 
 ### 🔹 **Simuler un trafic légitime (scan aléatoire, retards)**
@@ -277,8 +259,6 @@ nmap -T2 -p 80,443 <IP>
 
 (T2 est lent, mais T1 ou T0 sont encore plus furtifs)
 
----
-
 ## 4️⃣ **Dissimulation via Proxy/TOR**
 
 Si tu veux masquer ta vraie IP, utilise TOR :
@@ -295,8 +275,6 @@ torsocks nmap -sT -p 80,443 <IP>
 
 (TOR ne supporte que TCP et ralentit énormément le scan)
 
----
-
 ## 5️⃣ **Changer la signature de Nmap avec des scripts personnalisés**
 
 ### 🔹 **Modifier le `User-Agent` ou d'autres en-têtes**
@@ -306,8 +284,6 @@ Si tu fais du scanning HTTP, utilise un script Lua pour modifier le `User-Agent`
 ```bash
 nmap -p 80 --script=http-useragent --script-args http.useragent="Mozilla/5.0" <IP>
 ```
-
----
 
 ### **🛠️ Conclusion : Mixer les techniques**
 
@@ -324,8 +300,6 @@ Oui, si un IDS (ou un pare-feu) envoie un **TCP RST** (Reset) en réponse aux te
 perturber le handshake HTTP et provoquer des comportements
 anormaux.
 
----
-
 ### 📌 **Impact sur le handshake TCP (SYN -> SYN-ACK -> ACK)**
 
 - Normalement, un client envoie un **SYN** → Le serveur répond **SYN-ACK** → Le client répond **ACK**, et la connexion
@@ -338,8 +312,6 @@ anormaux.
 1. **Connexion immédiatement interrompue** → Pas de requête HTTP possible.
 2. **Certains clients HTTP peuvent réessayer** (ex: curl, navigateurs), mais cela ralentit les chargements.
 3. **Si le RST est aléatoire**, certaines connexions HTTP peuvent passer et d'autres échouer.
-
----
 
 ### 🎯 **Comment contourner ce problème ?**
 
@@ -378,8 +350,6 @@ proxychains nmap -sT -p 80,443 <IP>
 
 Si l’IDS filtre ton IP, un proxy peut contourner cela.
 
----
-
 ### ✅ **Conclusion**
 
 📌 **Si un IDS envoie RST, il casse le handshake HTTP et bloque l’accès réel au site.**  
@@ -394,8 +364,6 @@ Oui, un IDS ou un pare-feu peut **bloquer complètement TOR**, mais ça dépend 
 sophistication. Voici comment ça fonctionne et comment
 contourner ces blocages.
 
----
-
 ## 🎯 **1️⃣ Méthodes courantes de blocage de TOR par un IDS**
 
 Les IDS/pare-feux peuvent identifier et bloquer TOR de plusieurs manières :
@@ -408,8 +376,6 @@ Les IDS/pare-feux peuvent identifier et bloquer TOR de plusieurs manières :
 
 ✅ **Contournement** : Utiliser un **bridge TOR** (voir plus bas).
 
----
-
 ### 🔹 **b) Détection des empreintes du protocole TOR**
 
 - TOR a une signature réseau distincte (ex: taille des paquets, séquence des connexions).
@@ -417,16 +383,12 @@ Les IDS/pare-feux peuvent identifier et bloquer TOR de plusieurs manières :
 
 ✅ **Contournement** : Activer **Obfs4 (obfuscation des paquets)** pour masquer TOR.
 
----
-
 ### 🔹 **c) Blocage des ports TOR**
 
 - TOR utilise par défaut **les ports 9001 et 9050**.
 - Un pare-feu peut bloquer ces ports pour empêcher toute connexion.
 
 ✅ **Contournement** : **Faire passer TOR sur des ports courants** (80, 443).
-
----
 
 ### 🔹 **d) Inspection TLS/Deep Packet Inspection (DPI)**
 
@@ -438,8 +400,6 @@ Les IDS/pare-feux peuvent identifier et bloquer TOR de plusieurs manières :
 
 1. Utiliser **Meek** (fait passer TOR pour du trafic classique, comme Google).
 2. Utiliser **Obfs4 + un bridge**.
-
----
 
 ## 🔥 **2️⃣ Contournements : Comment éviter le blocage ?**
 
@@ -453,8 +413,6 @@ Les IDS/pare-feux peuvent identifier et bloquer TOR de plusieurs manières :
 - Ou obtenir une IP de bridge ici :  
   https://bridges.torproject.org/
 
----
-
 ### 🔹 **Méthode 2 : Activer l’obfuscation avec Obfs4**
 
 - **Obfs4** masque le trafic TOR pour le faire ressembler à du HTTPS normal.
@@ -466,8 +424,6 @@ Les IDS/pare-feux peuvent identifier et bloquer TOR de plusieurs manières :
   ```
 - Relance TOR.
 
----
-
 ### 🔹 **Méthode 3 : Faire passer TOR sur le port 443**
 
 Si l’IDS bloque TOR mais laisse passer HTTPS :
@@ -478,8 +434,6 @@ Si l’IDS bloque TOR mais laisse passer HTTPS :
    ```
 2. Redémarre TOR.
 
----
-
 ### 🔹 **Méthode 4 : Utiliser Meek (TOR caché dans du trafic Google ou Microsoft)**
 
 Meek encapsule le trafic TOR dans des requêtes légitimes à **Google ou Microsoft**, contournant les IDS avancés.
@@ -489,8 +443,6 @@ Meek encapsule le trafic TOR dans des requêtes légitimes à **Google ou Micros
    sudo apt install torbrowser-launcher
    ```
 2. Active Meek dans **Tor Browser** (`Settings > Bridges > Meek-Azure`).
-
----
 
 ## 🚀 **Conclusion**
 
@@ -510,8 +462,6 @@ Meek est un **transport enfichable (pluggable transport)** qui permet à TOR de 
 trafic TOR à l'intérieur de requêtes web
 légitimes** vers des services comme **Google, Microsoft ou Amazon**.
 
----
-
 ## 🎯 **1️⃣ Principe de fonctionnement**
 
 Meek encapsule les paquets TOR dans des requêtes HTTP/HTTPS normales vers des **serveurs de façade (front domains)**,
@@ -530,8 +480,6 @@ Project).
 Le trafic ressemble **à une simple connexion HTTPS normale**, donc difficile à bloquer avec DPI (Deep Packet
 Inspection).
 
----
-
 ## 🔧 **2️⃣ Comment utiliser Meek sur Linux ?**
 
 ### 📌 **Méthode 1 : Via le Tor Browser**
@@ -540,8 +488,6 @@ Inspection).
 2️⃣ Va dans **Paramètres > Ponts (Bridges)**.  
 3️⃣ Sélectionne **Meek-Azure** (passe par Microsoft).  
 4️⃣ Redémarre le navigateur → Maintenant TOR passe par Meek.
-
----
 
 ### 📌 **Méthode 2 : Utiliser Meek avec le daemon TOR**
 
@@ -568,16 +514,12 @@ Bridge meek 0.0.2.0:1 url=https://ajax.aspnetcdn.com/ bootstrap=1
 sudo systemctl restart tor
 ```
 
----
-
 ## 🚀 **3️⃣ Pourquoi Meek est difficile à bloquer ?**
 
 ✅ **Pas de liste noire d’IP** → Le trafic passe par des serveurs **comme Google ou Microsoft**, difficiles à bloquer.  
 ✅ **Se fond dans du HTTPS normal** → Même avec un IDS/DPI avancé, impossible de dire si c'est TOR ou une vraie requête
 web.  
 ✅ **Aucun proxy fixe** → Contrairement aux bridges classiques, Meek ne dépend pas d’une seule IP.
-
----
 
 ## 🛑 **4️⃣ Inconvénients de Meek**
 
@@ -586,15 +528,11 @@ web.
 ❌ **Certains services cloud peuvent bloquer Meek** → Ex: Google et Amazon pourraient détecter et limiter les connexions
 anormales.
 
----
-
 ## 🔥 **5️⃣ Alternatives si Meek est bloqué**
 
 🔹 **Obfs4** → Transforme le trafic TOR pour le masquer.  
 🔹 **VPN + TOR** → Passe par un VPN avant TOR pour brouiller les pistes.  
 🔹 **Snowflake** → Nouvelle méthode basée sur WebRTC (utile contre le DPI).
-
----
 
 ### **💡 Conclusion**
 
