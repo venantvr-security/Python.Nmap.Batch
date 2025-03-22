@@ -158,12 +158,12 @@ function selectStrategy(scannerType, strategy) {
     console.log(`Stratégie sélectionnée pour ${scannerType} : ${strategy}`);
     let button;
     switch (scannerType) {
-        case 'nmap': button = document.querySelector('.btn-primary'); break;
-        case 'netcat': button = document.querySelector('.btn-success'); break;
-        case 'scapy': button = document.querySelector('.btn-info'); break;
-        case 'masscan': button = document.querySelector('.btn-warning'); break;
-        case 'hping3': button = document.querySelector('.btn-secondary'); break;
-        case 'curl': button = document.querySelector('.btn-secondary'); break;
+        case 'nmap': button = document.querySelector('.btn-nmap'); break;
+        case 'netcat': button = document.querySelector('.btn-netcat'); break;
+        case 'scapy': button = document.querySelector('.btn-scapy'); break;
+        case 'masscan': button = document.querySelector('.btn-masscan'); break;
+        case 'hping3': button = document.querySelector('.btn-hping3'); break;
+        case 'curl': button = document.querySelector('.btn-curl'); break;
     }
     button.textContent = `Démarrer ${scannerType} (${strategy})`;
 }

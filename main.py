@@ -14,11 +14,17 @@ import yaml
 from dotenv import load_dotenv
 from flask import Flask, render_template, Response, request, jsonify
 
+# noinspection PyUnresolvedReferences
 from scanners.CurlScanner import CurlScanner
+# noinspection PyUnresolvedReferences
 from scanners.Hping3Scanner import Hping3Scanner
+# noinspection PyUnresolvedReferences
 from scanners.MasscanScanner import MasscanScanner
+# noinspection PyUnresolvedReferences
 from scanners.NetcatScanner import NetcatScanner
+# noinspection PyUnresolvedReferences
 from scanners.NmapScanner import NmapScanner
+# noinspection PyUnresolvedReferences
 from scanners.ScapyScanner import ScapyScanner
 
 # Charger le fichier .env
@@ -58,28 +64,124 @@ active_processes = []
 event_queue = Queue()
 
 # Initialisation des scanners
-nmap_scanner = NmapScanner(strategy="basic", active_processes=active_processes,
-                           yaml_file="strategies/nmap_strategies.yaml")
-netcat_scanner = NetcatScanner(strategy="stealth", active_processes=active_processes,
-                               yaml_file="strategies/netcat_strategies.yaml")
-scapy_scanner = ScapyScanner(strategy="stealth", active_processes=active_processes,
-                             yaml_file="strategies/scapy_strategies.yaml")
-masscan_scanner = MasscanScanner(strategy="stealth", active_processes=active_processes,
-                                 yaml_file="strategies/masscan_strategies.yaml")
-hping3_scanner = Hping3Scanner(strategy="stealth", active_processes=active_processes,
-                               yaml_file="strategies/hping3_strategies.yaml")
-curl_scanner = CurlScanner(strategy="basic", active_processes=active_processes,
-                           yaml_file="strategies/curl_strategies.yaml")
+import yaml
 
-scanner_map = {
-    "nmap": nmap_scanner,
-    "netcat": netcat_scanner,
-    "scapy": scapy_scanner,
-    "masscan": masscan_scanner,
-    "hping3": hping3_scanner,
-    "curl": curl_scanner
-}
-current_scanner = nmap_scanner
+import yaml
+
+
+def get_first_strategy(yaml_file):
+    """Lit un fichier YAML et renvoie le nom de la première stratégie sous 'strategy'."""
+    try:
+        with open(yaml_file, 'r') as file:
+            data = yaml.safe_load(file)
+            # Récupère directement les stratégies sous 'strategy'
+            strategies = data.get('strategies', {})
+            # Renvoie la première clé sous 'strategy'
+            return next(iter(strategies.keys())) if strategies else None
+    except (FileNotFoundError, yaml.YAMLError) as e:
+        print(f"Erreur lors de la lecture de {yaml_file}: {e}")
+        return None
+
+
+import os
+import yaml
+
+# Chemin du répertoire strategies
+STRATEGIES_DIR = "strategies"
+
+# Chemin du fichier de définition
+DEFINITION_FILE = os.path.join(STRATEGIES_DIR, "definition.yaml")
+
+
+def get_first_strategy(yaml_file):
+    """Lit un fichier YAML et renvoie le nom de la première stratégie sous 'strategy'."""
+    try:
+        with open(yaml_file, 'r') as file:
+            data = yaml.safe_load(file)
+            strategies = data.get('strategies', {})
+            return next(iter(strategies.keys())) if strategies else None
+    except (FileNotFoundError, yaml.YAMLError) as e:
+        print(f"Erreur lors de la lecture de {yaml_file}: {e}")
+        return None
+
+
+def load_scanner_definitions(definition_file):
+    """Charge les définitions des scanners depuis definition.yaml."""
+    try:
+        with open(definition_file, 'r') as file:
+            data = yaml.safe_load(file)
+            return data.get('scanners', {})
+    except (FileNotFoundError, yaml.YAMLError) as e:
+        print(f"Erreur lors de la lecture de {definition_file}: {e}")
+        return {}
+
+
+def build_scanners_config_and_map(strategies_dir=STRATEGIES_DIR, definition_file=DEFINITION_FILE):
+    """Construit dynamiquement scanners_config et scanner_map."""
+    scanners_config = []
+    scanners = {}
+    scanner_map = {}
+
+    # Charge les définitions des scanners
+    scanner_definitions = load_scanner_definitions(definition_file)
+
+    if not scanner_definitions:
+        print("Aucune définition de scanner trouvée.")
+        return scanners_config, scanner_map
+
+    # Vérifie les fichiers dans le répertoire strategies/
+    available_files = {f for f in os.listdir(strategies_dir) if f.endswith('.yaml') and f != 'definition.yaml'}
+
+    # Construit scanners_config et initialise les scanners
+    for scanner_key, config in scanner_definitions.items():
+        class_name = config.get('class')
+        file_name = config.get('file')
+
+        if not class_name or not file_name:
+            print(f"Configuration invalide pour {scanner_key}: 'class' ou 'file' manquant.")
+            continue
+
+        full_file_path = os.path.join(strategies_dir, file_name)
+        if file_name in available_files:
+            scanners_config.append((class_name, full_file_path))
+            strategy = get_first_strategy(full_file_path)
+            if strategy:
+                # Instancie le scanner
+                scanners[class_name] = globals()[class_name](
+                    strategy=strategy,
+                    active_processes=active_processes,
+                    yaml_file=full_file_path
+                )
+                # Ajoute au scanner_map avec la clé (ex. "nmap")
+                scanner_map[scanner_key] = scanners[class_name]
+            else:
+                print(f"Aucune stratégie trouvée pour {class_name} dans {full_file_path}")
+        else:
+            print(f"Fichier {file_name} pour {class_name} non trouvé dans {strategies_dir}")
+
+    return scanners_config, scanner_map
+
+
+# Exemple d'utilisation
+scanners_config, scanner_map = build_scanners_config_and_map()
+print("Scanners configurés dynamiquement :", scanners_config)
+print("Scanner map :", {k: v.__class__.__name__ for k, v in scanner_map.items()})
+
+# Initialisation dynamique des scanners
+scanners = {}
+for scanner_class, yaml_file in scanners_config:
+    strategy = get_first_strategy(yaml_file)
+    if strategy:
+        # Suppose que les classes comme NmapScanner, etc., sont déjà importées
+        scanners[scanner_class] = globals()[scanner_class](
+            strategy=strategy,
+            active_processes=active_processes,
+            yaml_file=yaml_file
+        )
+    else:
+        print(f"Aucune stratégie trouvée pour {scanner_class} dans {yaml_file}")
+
+current_scanner = list(scanner_map.values())[0]  # nmap_scanner
 
 
 # Gestion de l'arrêt propre

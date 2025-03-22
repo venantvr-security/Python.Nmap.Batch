@@ -10,7 +10,12 @@
 </head>
 <body>
 <div class="container-fluid p-3">
-    <h1 class="text-center mb-4">Scan Dashboard</h1>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="text-center flex-grow-1">Scan Dashboard</h1>
+        <button class="btn btn-outline-light" id="dark-mode-toggle" style="position: absolute; right: 15px;">
+            <span class="dark-mode-icon">🌙</span> Mode Nuit
+        </button>
+    </div>
     <div class="mb-4" id="progress-container">
         <div class="mb-2" id="progress-text">En attente...</div>
         <div class="progress">
@@ -21,8 +26,8 @@
     <div class="row row-cols-1 row-cols-md-3 g-3 mb-3" id="scanner-buttons">
         <div class="col">
             <div class="btn-group w-100">
-                <button class="btn btn-primary" onclick="startScan('nmap')">Démarrer Nmap</button>
-                <button aria-expanded="false" class="btn btn-primary dropdown-toggle dropdown-toggle-split"
+                <button class="btn btn-primary btn-nmap" onclick="startScan('nmap')">Démarrer Nmap</button>
+                <button aria-expanded="false" class="btn btn-primary btn-nmap dropdown-toggle dropdown-toggle-split"
                         data-bs-toggle="dropdown" type="button">
                     <span class="visually-hidden">Sélectionner stratégie</span>
                 </button>
@@ -31,8 +36,8 @@
         </div>
         <div class="col">
             <div class="btn-group w-100">
-                <button class="btn btn-success" onclick="startScan('netcat')">Démarrer Netcat</button>
-                <button aria-expanded="false" class="btn btn-success dropdown-toggle dropdown-toggle-split"
+                <button class="btn btn-primary btn-netcat" onclick="startScan('netcat')">Démarrer Netcat</button>
+                <button aria-expanded="false" class="btn btn-primary btn-netcat dropdown-toggle dropdown-toggle-split"
                         data-bs-toggle="dropdown" type="button">
                     <span class="visually-hidden">Sélectionner stratégie</span>
                 </button>
@@ -41,8 +46,8 @@
         </div>
         <div class="col">
             <div class="btn-group w-100">
-                <button class="btn btn-info" onclick="startScan('scapy')">Démarrer Scapy</button>
-                <button aria-expanded="false" class="btn btn-info dropdown-toggle dropdown-toggle-split"
+                <button class="btn btn-primary btn-scapy" onclick="startScan('scapy')">Démarrer Scapy</button>
+                <button aria-expanded="false" class="btn btn-primary btn-scapy dropdown-toggle dropdown-toggle-split"
                         data-bs-toggle="dropdown" type="button">
                     <span class="visually-hidden">Sélectionner stratégie</span>
                 </button>
@@ -51,8 +56,8 @@
         </div>
         <div class="col">
             <div class="btn-group w-100">
-                <button class="btn btn-warning" onclick="startScan('masscan')">Démarrer Masscan</button>
-                <button aria-expanded="false" class="btn btn-warning dropdown-toggle dropdown-toggle-split"
+                <button class="btn btn-primary btn-masscan" onclick="startScan('masscan')">Démarrer Masscan</button>
+                <button aria-expanded="false" class="btn btn-primary btn-masscan dropdown-toggle dropdown-toggle-split"
                         data-bs-toggle="dropdown" type="button">
                     <span class="visually-hidden">Sélectionner stratégie</span>
                 </button>
@@ -61,8 +66,8 @@
         </div>
         <div class="col">
             <div class="btn-group w-100">
-                <button class="btn btn-secondary" onclick="startScan('hping3')">Démarrer Hping3</button>
-                <button aria-expanded="false" class="btn btn-secondary dropdown-toggle dropdown-toggle-split"
+                <button class="btn btn-primary btn-hping3" onclick="startScan('hping3')">Démarrer Hping3</button>
+                <button aria-expanded="false" class="btn btn-primary btn-hping3 dropdown-toggle dropdown-toggle-split"
                         data-bs-toggle="dropdown" type="button">
                     <span class="visually-hidden">Sélectionner stratégie</span>
                 </button>
@@ -71,8 +76,8 @@
         </div>
         <div class="col">
             <div class="btn-group w-100">
-                <button class="btn btn-primary" onclick="startScan('curl')">Démarrer Curl</button>
-                <button aria-expanded="false" class="btn btn-primary dropdown-toggle dropdown-toggle-split"
+                <button class="btn btn-primary btn-curl" onclick="startScan('curl')">Démarrer Curl</button>
+                <button aria-expanded="false" class="btn btn-primary btn-curl dropdown-toggle dropdown-toggle-split"
                         data-bs-toggle="dropdown" type="button">
                     <span class="visually-hidden">Sélectionner stratégie</span>
                 </button>
@@ -109,5 +114,33 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="/static/script.js"></script>
+<script>
+    // Gestion du mode nuit
+    const toggleButton = document.getElementById('dark-mode-toggle');
+    const body = document.body;
+    const icon = toggleButton.querySelector('.dark-mode-icon');
+
+    toggleButton.addEventListener('click', () => {
+        body.classList.toggle('dark-mode');
+        if (body.classList.contains('dark-mode')) {
+            icon.textContent = '☀️'; // Icône soleil pour mode jour
+            toggleButton.textContent = ' Mode Jour';
+            toggleButton.prepend(icon);
+        } else {
+            icon.textContent = '🌙'; // Icône lune pour mode nuit
+            toggleButton.textContent = ' Mode Nuit';
+            toggleButton.prepend(icon);
+        }
+        localStorage.setItem('darkMode', body.classList.contains('dark-mode'));
+    });
+
+    // Appliquer le mode sauvegardé au chargement
+    if (localStorage.getItem('darkMode') === 'true') {
+        body.classList.add('dark-mode');
+        icon.textContent = '☀️';
+        toggleButton.textContent = ' Mode Jour';
+        toggleButton.prepend(icon);
+    }
+</script>
 </body>
 </html>

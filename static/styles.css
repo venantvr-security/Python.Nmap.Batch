@@ -24,3 +24,112 @@
         margin: 0.5rem;
     }
 }
+
+/* Styles des boutons personnalisés */
+.btn-nmap {
+    background-color: #1a73e8;
+    color: white;
+    border: 1px solid #1a73e8;
+}
+.btn-nmap:hover {
+    background-color: #1557b0;
+    border-color: #1557b0;
+}
+.btn-netcat {
+    background-color: #e91e63;
+    color: white;
+    border: 1px solid #e91e63;
+}
+.btn-netcat:hover {
+    background-color: #c2185b;
+    border-color: #c2185b;
+}
+.btn-scapy {
+    background-color: #388e3c;
+    color: white;
+    border: 1px solid #388e3c;
+}
+.btn-scapy:hover {
+    background-color: #2c6e31;
+    border-color: #2c6e31;
+}
+.btn-masscan {
+    background-color: #f57c00;
+    color: white;
+    border: 1px solid #f57c00;
+}
+.btn-masscan:hover {
+    background-color: #d06600;
+    border-color: #d06600;
+}
+.btn-hping3 {
+    background-color: #0288d1;
+    color: white;
+    border: 1px solid #0288d1;
+}
+.btn-hping3:hover {
+    background-color: #026aa7;
+    border-color: #026aa7;
+}
+.btn-curl {
+    background-color: #6f42c1;
+    color: white;
+    border: 1px solid #6f42c1;
+}
+.btn-curl:hover {
+    background-color: #563d7c;
+    border-color: #563d7c;
+}
+
+/* Mode nuit */
+body.dark-mode {
+    background-color: #212529; /* Fond gris foncé */
+    color: #f8f9fa; /* Texte blanc cassé */
+}
+
+body.dark-mode h1,
+body.dark-mode #progress-text {
+    color: #f8f9fa; /* Titres et textes en blanc cassé */
+}
+
+body.dark-mode .progress {
+    background-color: #343a40; /* Fond de la barre de progression plus sombre */
+}
+
+body.dark-mode .progress-bar {
+    background-color: #0d6efd; /* Bleu Bootstrap pour la barre remplie */
+}
+
+body.dark-mode .tile {
+    background-color: #343a40; /* Fond des tuiles sombre */
+    color: #f8f9fa; /* Texte clair dans les tuiles */
+    border: 1px solid #495057; /* Bordure subtile */
+}
+
+body.dark-mode .modal-content {
+    background-color: #343a40; /* Fond sombre pour la modale */
+    color: #f8f9fa; /* Texte clair */
+}
+
+body.dark-mode .modal-header,
+body.dark-mode .modal-footer {
+    border-color: #495057; /* Bordures subtiles dans la modale */
+}
+
+body.dark-mode .btn-close {
+    filter: invert(1); /* Inverse la couleur du bouton fermer pour visibilité */
+}
+
+body.dark-mode .dropdown-menu {
+    background-color: #343a40; /* Fond sombre pour les menus déroulants */
+    color: #f8f9fa; /* Texte clair */
+    border: 1px solid #495057;
+}
+
+body.dark-mode .dropdown-item {
+    color: #f8f9fa; /* Texte clair dans les options */
+}
+
+body.dark-mode .dropdown-item:hover {
+    background-color: #495057; /* Survol légèrement plus clair */
+}
