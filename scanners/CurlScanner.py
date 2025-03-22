@@ -7,7 +7,7 @@ import yaml
 from ScannerInterface import ScannerInterface, ScanResult
 
 
-class Hping3Scanner(ScannerInterface):
+class CurlScanner(ScannerInterface):
     def load_strategies(self) -> Dict[str, List[str]]:
         try:
             with open(self.yaml_file, 'r') as file:
@@ -26,12 +26,30 @@ class Hping3Scanner(ScannerInterface):
                              'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Scan de {ip} annulé"}})
             return ip, False, "Cancelled", {}, {}
 
-        # Ajouter une limite de paquets (-c 10)
-        cmd = ["/usr/sbin/hping3"] + [ip] + self.strategies[self.strategy] + ["-c", "10"]
+        # Récupérer les paramètres de la stratégie
+        strategy = self.strategies[self.strategy]
+
+        # Extraire le port depuis -p
+        try:
+            port_index = strategy.index("-p") + 1
+            port = int(strategy[port_index])
+        except (ValueError, IndexError):
+            port = 80  # Port par défaut si -p est absent ou invalide
+            event_queue.put({'event': 'thread_update',
+                             'data': {'thread_id': thread_id,
+                                      'message': f"[{time.ctime()}] Port non spécifié, utilisation par défaut : {port}"}})
+
+        # Construire l’URL avec l’IP et le port
+        url_base = next((arg for arg in strategy if arg.startswith("http")), "http://<ip>")
+        url = url_base.replace("<ip>", ip) + f":{port}"
+
+        # Construire la commande en remplaçant l’URL
+        cmd_template = [arg for arg in strategy if arg not in ["-p", str(port)]]  # Retirer -p et le port
+        cmd = ["/usr/bin/curl"] + [arg.replace(url_base, url) if arg == url_base else arg for arg in cmd_template]
         cmd_str = " ".join(cmd)
         event_queue.put({'event': 'thread_update',
                          'data': {'thread_id': thread_id,
-                                  'message': f"[{time.ctime()}] Début du scan de {ip} avec {cmd_str}"}})
+                                  'message': f"[{time.ctime()}] Début du scan de {ip}:{port} avec {cmd_str}"}})
 
         try:
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
@@ -39,15 +57,12 @@ class Hping3Scanner(ScannerInterface):
         except Exception as e:
             event_queue.put({'event': 'thread_update',
                              'data': {'thread_id': thread_id,
-                                      'message': f"[{time.ctime()}] Erreur lancement Hping3 : {str(e)}"}})
+                                      'message': f"[{time.ctime()}] Erreur lancement curl : {str(e)}"}})
             return ip, False, str(e), {}, {"command": cmd_str}
 
         ports = []
-        port = int(self.strategies[self.strategy][self.strategies[self.strategy].index('-p') + 1])
-
         try:
-            # Utiliser communicate avec un timeout global
-            stdout, _ = process.communicate(timeout=5)  # 5 secondes max
+            stdout, _ = process.communicate(timeout=5)
             output_lines = stdout.splitlines()
             event_queue.put({'event': 'thread_update',
                              'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Scan terminé"}})
@@ -67,10 +82,10 @@ class Hping3Scanner(ScannerInterface):
         for line in output_lines:
             event_queue.put({'event': 'thread_update',
                              'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] {line.strip()}"}})
-            if "flags=SA" in line:
+            if line.startswith("HTTP/") and (" 2" in line or " 3" in line):  # Codes 2xx ou 3xx
                 ports.append(port)
 
-        details = {"ports": list(set(ports))}
+        details = {"ports": ports}
         if ports:
             event_queue.put({'event': 'thread_update',
                              'data': {'thread_id': thread_id,

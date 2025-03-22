@@ -3,14 +3,15 @@ const progressText = document.getElementById('progress-text');
 const progressBar = document.getElementById('progress-bar');
 const threadTiles = {};
 const activeThreads = new Set();
-const scanners = ['nmap', 'netcat', 'scapy', 'masscan', 'hping3'];
+const scanners = ['nmap', 'netcat', 'scapy', 'masscan', 'hping3', 'curl'];
 
 let selectedStrategies = {
     'nmap': null,
     'netcat': null,
     'scapy': null,
     'masscan': null,
-    'hping3': null
+    'hping3': null,
+    'curl': null,
 };
 
 const source = new EventSource('/events');
@@ -67,8 +68,8 @@ source.addEventListener('thread_update', (event) => {
                     activeThreads.delete(thread_id);
                     setTimeout(() => {
                         const tile = threadTiles[thread_id].parentElement.parentElement;
-                        /* tilesContainer.removeChild(tile);
-                        delete threadTiles[thread_id]; */
+                        tilesContainer.removeChild(tile);
+                        delete threadTiles[thread_id];
                     }, 10000);  // Ferme après 10s supplémentaires
                 }
             }, 35000);  // 35s après le début (30s timeout + marge)
@@ -162,6 +163,7 @@ function selectStrategy(scannerType, strategy) {
         case 'scapy': button = document.querySelector('.btn-info'); break;
         case 'masscan': button = document.querySelector('.btn-warning'); break;
         case 'hping3': button = document.querySelector('.btn-secondary'); break;
+        case 'curl': button = document.querySelector('.btn-secondary'); break;
     }
     button.textContent = `Démarrer ${scannerType} (${strategy})`;
 }

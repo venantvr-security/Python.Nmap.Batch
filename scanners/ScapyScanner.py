@@ -1,4 +1,3 @@
-# ScapyScanner.py
 import random
 import time
 from typing import Dict

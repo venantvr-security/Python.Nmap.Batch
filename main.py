@@ -14,6 +14,7 @@ import yaml
 from dotenv import load_dotenv
 from flask import Flask, render_template, Response, request, jsonify
 
+from scanners.CurlScanner import CurlScanner
 from scanners.Hping3Scanner import Hping3Scanner
 from scanners.MasscanScanner import MasscanScanner
 from scanners.NetcatScanner import NetcatScanner
@@ -67,13 +68,16 @@ masscan_scanner = MasscanScanner(strategy="stealth", active_processes=active_pro
                                  yaml_file="strategies/masscan_strategies.yaml")
 hping3_scanner = Hping3Scanner(strategy="stealth", active_processes=active_processes,
                                yaml_file="strategies/hping3_strategies.yaml")
+curl_scanner = CurlScanner(strategy="basic", active_processes=active_processes,
+                           yaml_file="strategies/curl_strategies.yaml")
 
 scanner_map = {
     "nmap": nmap_scanner,
     "netcat": netcat_scanner,
     "scapy": scapy_scanner,
     "masscan": masscan_scanner,
-    "hping3": hping3_scanner
+    "hping3": hping3_scanner,
+    "curl": curl_scanner
 }
 current_scanner = nmap_scanner
 
@@ -181,7 +185,8 @@ def get_strategies(scanner_type):
         "netcat": "strategies/netcat_strategies.yaml",
         "scapy": "strategies/scapy_strategies.yaml",
         "masscan": "strategies/masscan_strategies.yaml",
-        "hping3": "strategies/hping3_strategies.yaml"
+        "hping3": "strategies/hping3_strategies.yaml",
+        "curl": "strategies/curl_strategies.yaml",
     }
 
     if scanner_type not in scanner_files:
@@ -363,7 +368,8 @@ def get_scanner_info(scanner_type):
         "netcat": "docs/netcat.md",
         "scapy": "docs/scapy.md",
         "masscan": "docs/masscan.md",
-        "hping3": "docs/hping3.md"
+        "hping3": "docs/hping3.md",
+        "curl": "docs/curl.md",
     }
 
     if scanner_type not in scanner_files:

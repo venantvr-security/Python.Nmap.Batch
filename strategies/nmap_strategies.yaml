@@ -24,14 +24,14 @@ strategies:
     - "-sS"
     - "-f"
     - "-p"
-    - "443"
+    - "80,443"
     - "-T2"
   stealth-http:
     - "-v"
     - "-sS"
     - "-f"
     - "-p"
-    - "443"
+    - "80,443"
     - "-T2"
     - "--script"
     - "http-headers"  # Script valide pour récupérer les en-têtes HTTP
@@ -46,5 +46,5 @@ strategies:
     - "--data-length" # Ajoute des données supplémentaires
     - "32"           # 32 octets de données supplémentaires
     - "-p"           # Ports spécifiques
-    - "443"          # Cible uniquement 443
+    - "80,443"       # Cible uniquement 80 et 443
     - "-T2"          # Timing discret

@@ -2,6 +2,8 @@ strategies:
   stealth:
     - "-S"         # SYN scan
     - "-p"         # Port cible
-    - "443"        # Port 443
+    - "80"         # Port 80
     - "-i"         # Intervalle entre paquets
     - "u50000"     # 50ms (furtif)
+    - "-c"         # Nombre de paquets
+    - "10"         # Limite à 10 paquets

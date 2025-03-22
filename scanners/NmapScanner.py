@@ -1,4 +1,3 @@
-# NmapScanner.py
 import os
 import subprocess
 import tempfile
@@ -128,7 +127,7 @@ class NmapScanner(ScannerInterface):
             extra["lan_name"] = lan_name
 
         if returncode == 0:
-            details = {"ports": ports, "os": os_info, "versions": versions, "vulns": vulns}
+            details = {"ports": list(set(ports)), "os": os_info, "versions": versions, "vulns": vulns}
             if ports:
                 event_queue.put({'event': 'thread_update', 'data': {
                     'thread_id': thread_id,

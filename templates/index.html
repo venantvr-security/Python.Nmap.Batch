@@ -70,6 +70,16 @@
             </div>
         </div>
         <div class="col">
+            <div class="btn-group w-100">
+                <button class="btn btn-primary" onclick="startScan('curl')">Démarrer Curl</button>
+                <button aria-expanded="false" class="btn btn-primary dropdown-toggle dropdown-toggle-split"
+                        data-bs-toggle="dropdown" type="button">
+                    <span class="visually-hidden">Sélectionner stratégie</span>
+                </button>
+                <ul class="dropdown-menu" id="curl-strategies"></ul>
+            </div>
+        </div>
+        <div class="col">
             <div class="d-flex gap-2">
                 <button class="btn btn-danger w-50" onclick="stopScan()">Arrêter le scan</button>
                 <button class="btn btn-warning w-50" onclick="resetProgress()">Réinitialiser</button>

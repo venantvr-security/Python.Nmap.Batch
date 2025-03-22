@@ -1,0 +1,31 @@
+strategies:
+  basic:
+    - "-s"
+    - "-I"
+    - "--connect-timeout"
+    - "2"
+    - "-m"
+    - "5"
+    - "-p"
+    - "80"
+    - "http://<ip>"
+  https:
+    - "-s"
+    - "-I"
+    - "--connect-timeout"
+    - "2"
+    - "-m"
+    - "5"
+    - "-p"
+    - "443"
+    - "https://<ip>"
+  verbose:
+    - "-v"          # Mode verbeux
+    - "-I"
+    - "--connect-timeout"
+    - "1"
+    - "-m"
+    - "3"
+    - "-p"
+    - "8080"        # Port personnalisé
+    - "http://<ip>"
