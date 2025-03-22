@@ -68,19 +68,18 @@ import yaml
 
 import yaml
 
-
-def get_first_strategy(yaml_file):
-    """Lit un fichier YAML et renvoie le nom de la première stratégie sous 'strategy'."""
-    try:
-        with open(yaml_file, 'r') as file:
-            data = yaml.safe_load(file)
-            # Récupère directement les stratégies sous 'strategy'
-            strategies = data.get('strategies', {})
-            # Renvoie la première clé sous 'strategy'
-            return next(iter(strategies.keys())) if strategies else None
-    except (FileNotFoundError, yaml.YAMLError) as e:
-        print(f"Erreur lors de la lecture de {yaml_file}: {e}")
-        return None
+# def get_first_strategy(yaml_file):
+#     """Lit un fichier YAML et renvoie le nom de la première stratégie sous 'strategy'."""
+#     try:
+#         with open(yaml_file, 'r') as file:
+#             data = yaml.safe_load(file)
+#             # Récupère directement les stratégies sous 'strategy'
+#             strategies = data.get('strategies', {})
+#             # Renvoie la première clé sous 'strategy'
+#             return next(iter(strategies.keys())) if strategies else None
+#     except (FileNotFoundError, yaml.YAMLError) as e:
+#         print(f"Erreur lors de la lecture de {yaml_file}: {e}")
+#         return None
 
 
 import os
@@ -461,6 +460,57 @@ def start_scan_endpoint(scanner_type, strategy):
     scan_thread = threading.Thread(target=scan_background)
     scan_thread.start()
     return f"Scan démarré avec {scanner_type} et stratégie {strategy}" + (f" et proxy {proxy}" if proxy else ""), 200
+
+
+def load_and_validate_scanner_definitions(definition_file=DEFINITION_FILE, strategies_dir=STRATEGIES_DIR):
+    """Charge et valide dynamiquement les définitions des scanners depuis definition.yaml."""
+    try:
+        with open(definition_file, 'r') as file:
+            data = yaml.safe_load(file)
+            scanner_definitions = data.get('scanners', {})
+    except (FileNotFoundError, yaml.YAMLError) as e:
+        logger.error(f"Erreur lors de la lecture de {definition_file}: {e}")
+        return {}
+
+    available_files = {f for f in os.listdir(strategies_dir) if f.endswith('.yaml') and f != 'definition.yaml'}
+    valid_definitions = {}
+    for scanner_key, config in scanner_definitions.items():
+        class_name = config.get('class')
+        file_name = config.get('file')
+        if not class_name or not file_name:
+            logger.warning(f"Configuration invalide pour {scanner_key}: 'class' ou 'file' manquant.")
+            continue
+        if file_name in available_files:
+            valid_definitions[scanner_key] = config
+        else:
+            logger.warning(f"Fichier {file_name} pour {scanner_key} non trouvé dans {strategies_dir}, ignoré.")
+    return valid_definitions
+
+
+# Route API pour les scanners (déjà présente)
+@app.route('/api/scanners', methods=['GET'])
+def get_scanners():
+    """Renvoie la liste des scanners disponibles avec leurs stratégies."""
+    scanners_data = []
+
+    scanner_definitions = load_and_validate_scanner_definitions()
+    for scanner_key, scanner_instance in scanner_map.items():
+        yaml_file = os.path.join(STRATEGIES_DIR, scanner_definitions[scanner_key]['file'])
+        try:
+            with open(yaml_file, 'r') as file:
+                data = yaml.safe_load(file)
+                strategies = list(data.get('strategies', {}).keys())
+        except Exception as e:
+            logger.error(f"Erreur lors de la lecture de {yaml_file} : {e}")
+            strategies = []
+
+        scanners_data.append({
+            "name": scanner_key,
+            "class": f"btn-{scanner_key}",
+            "strategies": strategies
+        })
+
+    return jsonify(scanners_data)
 
 
 @app.route('/get_scanner_info/<scanner_type>')

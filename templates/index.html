@@ -23,74 +23,8 @@
                  role="progressbar" style="width: 0%;"></div>
         </div>
     </div>
-    <div class="row row-cols-1 row-cols-md-3 g-3 mb-3" id="scanner-buttons">
-        <div class="col">
-            <div class="btn-group w-100">
-                <button class="btn btn-primary btn-nmap" onclick="startScan('nmap')">Démarrer Nmap</button>
-                <button aria-expanded="false" class="btn btn-primary btn-nmap dropdown-toggle dropdown-toggle-split"
-                        data-bs-toggle="dropdown" type="button">
-                    <span class="visually-hidden">Sélectionner stratégie</span>
-                </button>
-                <ul class="dropdown-menu" id="nmap-strategies"></ul>
-            </div>
-        </div>
-        <div class="col">
-            <div class="btn-group w-100">
-                <button class="btn btn-primary btn-netcat" onclick="startScan('netcat')">Démarrer Netcat</button>
-                <button aria-expanded="false" class="btn btn-primary btn-netcat dropdown-toggle dropdown-toggle-split"
-                        data-bs-toggle="dropdown" type="button">
-                    <span class="visually-hidden">Sélectionner stratégie</span>
-                </button>
-                <ul class="dropdown-menu" id="netcat-strategies"></ul>
-            </div>
-        </div>
-        <div class="col">
-            <div class="btn-group w-100">
-                <button class="btn btn-primary btn-scapy" onclick="startScan('scapy')">Démarrer Scapy</button>
-                <button aria-expanded="false" class="btn btn-primary btn-scapy dropdown-toggle dropdown-toggle-split"
-                        data-bs-toggle="dropdown" type="button">
-                    <span class="visually-hidden">Sélectionner stratégie</span>
-                </button>
-                <ul class="dropdown-menu" id="scapy-strategies"></ul>
-            </div>
-        </div>
-        <div class="col">
-            <div class="btn-group w-100">
-                <button class="btn btn-primary btn-masscan" onclick="startScan('masscan')">Démarrer Masscan</button>
-                <button aria-expanded="false" class="btn btn-primary btn-masscan dropdown-toggle dropdown-toggle-split"
-                        data-bs-toggle="dropdown" type="button">
-                    <span class="visually-hidden">Sélectionner stratégie</span>
-                </button>
-                <ul class="dropdown-menu" id="masscan-strategies"></ul>
-            </div>
-        </div>
-        <div class="col">
-            <div class="btn-group w-100">
-                <button class="btn btn-primary btn-hping3" onclick="startScan('hping3')">Démarrer Hping3</button>
-                <button aria-expanded="false" class="btn btn-primary btn-hping3 dropdown-toggle dropdown-toggle-split"
-                        data-bs-toggle="dropdown" type="button">
-                    <span class="visually-hidden">Sélectionner stratégie</span>
-                </button>
-                <ul class="dropdown-menu" id="hping3-strategies"></ul>
-            </div>
-        </div>
-        <div class="col">
-            <div class="btn-group w-100">
-                <button class="btn btn-primary btn-curl" onclick="startScan('curl')">Démarrer Curl</button>
-                <button aria-expanded="false" class="btn btn-primary btn-curl dropdown-toggle dropdown-toggle-split"
-                        data-bs-toggle="dropdown" type="button">
-                    <span class="visually-hidden">Sélectionner stratégie</span>
-                </button>
-                <ul class="dropdown-menu" id="curl-strategies"></ul>
-            </div>
-        </div>
-        <div class="col">
-            <div class="d-flex gap-2">
-                <button class="btn btn-danger w-50" onclick="stopScan()">Arrêter le scan</button>
-                <button class="btn btn-warning w-50" onclick="resetProgress()">Réinitialiser</button>
-            </div>
-        </div>
-    </div>
+    <!-- Conteneur pour les boutons générés dynamiquement -->
+    <div class="row row-cols-1 row-cols-md-3 g-3 mb-3" id="scanner-buttons"></div>
     <div class="row row-cols-1 row-cols-md-3 g-4" id="tiles"></div>
 </div>
 
@@ -123,18 +57,17 @@
     toggleButton.addEventListener('click', () => {
         body.classList.toggle('dark-mode');
         if (body.classList.contains('dark-mode')) {
-            icon.textContent = '☀️'; // Icône soleil pour mode jour
+            icon.textContent = '☀️';
             toggleButton.textContent = ' Mode Jour';
             toggleButton.prepend(icon);
         } else {
-            icon.textContent = '🌙'; // Icône lune pour mode nuit
+            icon.textContent = '🌙';
             toggleButton.textContent = ' Mode Nuit';
             toggleButton.prepend(icon);
         }
         localStorage.setItem('darkMode', body.classList.contains('dark-mode'));
     });
 
-    // Appliquer le mode sauvegardé au chargement
     if (localStorage.getItem('darkMode') === 'true') {
         body.classList.add('dark-mode');
         icon.textContent = '☀️';

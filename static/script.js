@@ -233,3 +233,79 @@ function resetProgress() {
 document.addEventListener('DOMContentLoaded', () => {
     scanners.forEach(scanner => populateStrategies(scanner));
 });
+
+// Générer dynamiquement les boutons depuis l'API
+async function loadScannerButtons() {
+    const scannerButtonsContainer = document.getElementById('scanner-buttons');
+
+    try {
+        const response = await fetch('/api/scanners');
+        const scanners = await response.json();
+
+        scanners.forEach(scanner => {
+            const col = document.createElement('div');
+            col.className = 'col';
+
+            const btnGroup = document.createElement('div');
+            btnGroup.className = 'btn-group w-100';
+
+            const mainButton = document.createElement('button');
+            mainButton.className = `btn ${scanner.class}`;
+            mainButton.textContent = `Démarrer ${scanner.name.charAt(0).toUpperCase() + scanner.name.slice(1)}`;
+            mainButton.onclick = () => startScan(scanner.name, scanner.strategies[0]);
+
+            const dropdownToggle = document.createElement('button');
+            dropdownToggle.className = `btn ${scanner.class} dropdown-toggle dropdown-toggle-split`;
+            dropdownToggle.setAttribute('type', 'button');
+            dropdownToggle.setAttribute('data-bs-toggle', 'dropdown');
+            dropdownToggle.setAttribute('aria-expanded', 'false');
+            const visuallyHidden = document.createElement('span');
+            visuallyHidden.className = 'visually-hidden';
+            visuallyHidden.textContent = 'Sélectionner stratégie';
+            dropdownToggle.appendChild(visuallyHidden);
+
+            const dropdownMenu = document.createElement('ul');
+            dropdownMenu.className = 'dropdown-menu';
+            dropdownMenu.id = `${scanner.name}-strategies`;
+
+            scanner.strategies.forEach(strategy => {
+                const item = document.createElement('li');
+                const link = document.createElement('a');
+                link.className = 'dropdown-item';
+                link.href = '#';
+                link.textContent = strategy;
+                link.onclick = (e) => {
+                    e.preventDefault();
+                    startScan(scanner.name, strategy);
+                };
+                item.appendChild(link);
+                dropdownMenu.appendChild(item);
+            });
+
+            btnGroup.appendChild(mainButton);
+            btnGroup.appendChild(dropdownToggle);
+            btnGroup.appendChild(dropdownMenu);
+            col.appendChild(btnGroup);
+            scannerButtonsContainer.appendChild(col);
+        });
+
+        // Ajouter les boutons Arrêter et Réinitialiser
+        const controlCol = document.createElement('div');
+        controlCol.className = 'col';
+        const controlDiv = document.createElement('div');
+        controlDiv.className = 'd-flex gap-2';
+        controlDiv.innerHTML = `
+            <button class="btn btn-danger w-50" onclick="stopScan()">Arrêter le scan</button>
+            <button class="btn btn-warning w-50" onclick="resetProgress()">Réinitialiser</button>
+        `;
+        controlCol.appendChild(controlDiv);
+        scannerButtonsContainer.appendChild(controlCol);
+
+    } catch (error) {
+        console.error('Erreur lors du chargement des scanners :', error);
+        scannerButtonsContainer.innerHTML = '<p>Erreur lors du chargement des scanners.</p>';
+    }
+}
+
+// Charger les boutons au démarrage
+document.addEventListener('DOMContentLoaded', loadScannerButtons);
