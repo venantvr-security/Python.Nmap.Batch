@@ -1,31 +1,31 @@
 strategies:
-  basic:
-    - "-s"
-    - "-I"
-    - "--connect-timeout"
-    - "2"
-    - "-m"
-    - "5"
-    - "-p"
-    - "80"
-    - "http://<ip>"
-  https:
-    - "-s"
-    - "-I"
-    - "--connect-timeout"
-    - "2"
-    - "-m"
-    - "5"
-    - "-p"
-    - "443"
-    - "https://<ip>"
-  verbose:
-    - "-v"          # Mode verbeux
-    - "-I"
-    - "--connect-timeout"
-    - "1"
-    - "-m"
-    - "3"
-    - "-p"
-    - "8080"        # Port personnalisé
-    - "http://<ip>"
+  quick-http-head-check:
+    - "-s"                # Mode silencieux, pas de sortie inutile
+    - "-I"                # Requête HEAD uniquement (en-têtes)
+    - "--connect-timeout" # Définit le timeout de connexion
+    - "2"                 # Timeout de connexion à 2 secondes
+    - "-m"                # Temps maximum total de l'opération
+    - "5"                 # Temps max fixé à 5 secondes
+    - "-p"                # Port cible
+    - "80"                # Port HTTP standard
+    - "http://<ip>"       # URL cible en HTTP
+  quick-https-head-check:
+    - "-s"                # Mode silencieux, pas de sortie inutile
+    - "-I"                # Requête HEAD uniquement (en-têtes)
+    - "--connect-timeout" # Définit le timeout de connexion
+    - "2"                 # Timeout de connexion à 2 secondes
+    - "-m"                # Temps maximum total de l'opération
+    - "5"                 # Temps max fixé à 5 secondes
+    - "-p"                # Port cible
+    - "443"               # Port HTTPS standard
+    - "https://<ip>"      # URL cible en HTTPS
+  verbose-custom-port-scan:
+    - "-v"                # Mode verbeux, affiche des détails
+    - "-I"                # Requête HEAD uniquement (en-têtes)
+    - "--connect-timeout" # Définit le timeout de connexion
+    - "1"                 # Timeout de connexion à 1 seconde
+    - "-m"                # Temps maximum total de l'opération
+    - "3"                 # Temps max fixé à 3 secondes
+    - "-p"                # Port cible
+    - "8080"              # Port personnalisé (non standard)
+    - "http://<ip>"       # URL cible en HTTP

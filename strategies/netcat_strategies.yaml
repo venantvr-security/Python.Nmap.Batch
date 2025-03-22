@@ -1,8 +1,8 @@
 strategies:
-  stealth:
-    - "-v"          # Verbeux
-    - "-z"          # Mode scan uniquement
-    - "-w"          # Timeout (secondes)
-    - "2"           # Timeout de 2 secondes
-    - "-p"          # Indique que le port suit (traité dans le code)
-    - "80"          # Port cible
+  verbose-stealth-port-80:
+    - "-v"          # Mode verbeux, affiche des détails sur les connexions
+    - "-z"          # Mode scan uniquement, ne transfère pas de données
+    - "-w"          # Définit le timeout pour chaque tentative de connexion
+    - "2"           # Timeout fixé à 2 secondes
+    - "-p"          # Spécifie le port source (souvent utilisé côté client, traité dans le code)
+    - "80"          # Port cible (ici port 80, HTTP standard)

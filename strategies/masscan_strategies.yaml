@@ -1,8 +1,8 @@
 strategies:
-  stealth:
-    - "-p"
-    - "80"
-    - "--rate"
-    - "100"
-    - "--wait"
-    - "2"
+  stealth-port-80-slow:
+    - "-p"         # Spécifie le port à scanner
+    - "80"         # Port 80 (HTTP standard)
+    - "--rate"     # Définit le taux d’envoi des paquets (paquets par seconde)
+    - "100"        # Limite à 100 paquets par seconde (relativement lent)
+    - "--wait"     # Temps d’attente pour les réponses (en secondes)
+    - "2"          # Attend 2 secondes pour les réponses

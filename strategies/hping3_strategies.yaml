@@ -1,9 +1,9 @@
 strategies:
-  stealth:
-    - "-S"         # SYN scan
-    - "-p"         # Port cible
-    - "80"         # Port 80
-    - "-i"         # Intervalle entre paquets
-    - "u50000"     # 50ms (furtif)
-    - "-c"         # Nombre de paquets
-    - "10"         # Limite à 10 paquets
+  stealth-syn-port-80:
+    - "-S"         # Active le scan SYN (drapeau TCP SYN uniquement)
+    - "-p"         # Spécifie le port cible
+    - "80"         # Port 80 (HTTP standard)
+    - "-i"         # Définit l’intervalle entre l’envoi des paquets
+    - "u50000"     # Intervalle de 50 000 microsecondes (50 ms), pour un envoi discret
+    - "-c"         # Limite le nombre total de paquets envoyés
+    - "10"         # Envoie seulement 10 paquets

@@ -1,50 +1,50 @@
 strategies:
-  basic:
-    - "-v"
-    - "-O"
-    - "-p"
-    - "21,22,80,443"
-  full:
-    - "-v"
-    - "-sV"
-    - "-O"
-    - "-sS"
-    - "-p"
-    - "1-1000"
-  vuln:
-    - "-v"
-    - "-sV"
-    - "-O"
-    - "--script"
-    - "vuln"
-    - "-p"
-    - "1-1000"
-  stealth-scan:
-    - "-v"
-    - "-sS"
-    - "-f"
-    - "-p"
-    - "80,443"
-    - "-T2"
-  stealth-http:
-    - "-v"
-    - "-sS"
-    - "-f"
-    - "-p"
-    - "80,443"
-    - "-T2"
-    - "--script"
-    - "http-headers"  # Script valide pour récupérer les en-têtes HTTP
-    - "--script-args"
-    - "http.useragent=\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36\""
-  stealth-packet:
-    - "-v"           # Verbeux pour le débogage
-    - "-sS"          # Scan SYN furtif
-    - "-f"           # Fragmentation des paquets
-    - "--mtu"        # Taille maximale des fragments
-    - "24"           # MTU de 24 octets
-    - "--data-length" # Ajoute des données supplémentaires
-    - "32"           # 32 octets de données supplémentaires
-    - "-p"           # Ports spécifiques
-    - "80,443"       # Cible uniquement 80 et 443
-    - "-T2"          # Timing discret
+  verbose-basic-os-ports:
+    - "-v"          # Mode verbeux, affiche plus de détails
+    - "-O"          # Détection du système d’exploitation
+    - "-p"          # Spécifie les ports à scanner
+    - "21,22,80,443" # Ports ciblés : FTP (21), SSH (22), HTTP (80), HTTPS (443)
+  verbose-full-service-os-ports:
+    - "-v"          # Mode verbeux, affiche plus de détails
+    - "-sV"         # Détection des versions des services
+    - "-O"          # Détection du système d’exploitation
+    - "-sS"         # Scan SYN (furtif, ne complète pas la connexion TCP)
+    - "-p"          # Spécifie les ports à scanner
+    - "1-1000"      # Balaye les ports de 1 à 1000
+  verbose-vuln-service-os-ports:
+    - "-v"          # Mode verbeux, affiche plus de détails
+    - "-sV"         # Détection des versions des services
+    - "-O"          # Détection du système d’exploitation
+    - "--script"    # Exécute un script NSE (Nmap Scripting Engine)
+    - "vuln"        # Script pour détecter les vulnérabilités connues
+    - "-p"          # Spécifie les ports à scanner
+    - "1-1000"      # Balaye les ports de 1 à 1000
+  stealth-syn-fragmented-ports:
+    - "-v"          # Mode verbeux, affiche plus de détails
+    - "-sS"         # Scan SYN (furtif, ne complète pas la connexion TCP)
+    - "-f"          # Fragmente les paquets pour éviter la détection
+    - "-p"          # Spécifie les ports à scanner
+    - "80,443"      # Ports ciblés : HTTP (80), HTTPS (443)
+    - "-T2"         # Timing T2, discret et plus lent pour éviter la détection
+  stealth-http-headers-fragmented:
+    - "-v"          # Mode verbeux, affiche plus de détails
+    - "-sS"         # Scan SYN (furtif, ne complète pas la connexion TCP)
+    - "-f"          # Fragmente les paquets pour éviter la détection
+    - "-p"          # Spécifie les ports à scanner
+    - "80,443"      # Ports ciblés : HTTP (80), HTTPS (443)
+    - "-T2"         # Timing T2, discret et plus lent pour éviter la détection
+    - "--script"    # Exécute un script NSE
+    - "http-headers" # Récupère les en-têtes HTTP des services détectés
+    - "--script-args" # Arguments passés au script
+    - "http.useragent=\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36\"" # Falsifie l’agent utilisateur pour imiter un navigateur Chrome
+  stealth-packet-fragmented-custom:
+    - "-v"           # Mode verbeux, affiche plus de détails
+    - "-sS"          # Scan SYN (furtif, ne complète pas la connexion TCP)
+    - "-f"           # Fragmente les paquets pour éviter la détection
+    - "--mtu"        # Définit la taille maximale des fragments
+    - "24"           # MTU de 24 octets pour une fragmentation fine
+    - "--data-length" # Ajoute des données supplémentaires aux paquets
+    - "32"           # 32 octets de données pour brouiller l’analyse
+    - "-p"           # Spécifie les ports à scanner
+    - "80,443"       # Ports ciblés : HTTP (80), HTTPS (443)
+    - "-T2"          # Timing T2, discret et plus lent pour éviter la détection
