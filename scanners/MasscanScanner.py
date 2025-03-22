@@ -26,7 +26,14 @@ class MasscanScanner(ScannerInterface):
                              'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Scan de {ip} annulé"}})
             return ip, False, "Cancelled", {}, {}
 
-        cmd = ["/usr/bin/masscan"] + [ip] + self.strategies[self.strategy]
+        # Récupérer la stratégie et remplacer <ports> si présent
+        strategy = self.strategies[self.strategy]
+        if '<ports>' in strategy and self.ports:
+            cmd_template = [arg if arg != '<ports>' else self.ports for arg in strategy]
+        else:
+            cmd_template = strategy  # Si pas de <ports>, utiliser la stratégie telle quelle
+
+        cmd = ["/usr/bin/masscan"] + [ip] + cmd_template
         cmd_str = " ".join(cmd)  # Commande sous forme de chaîne pour persistance
         event_queue.put({'event': 'thread_update',
                          'data': {'thread_id': thread_id,
@@ -39,7 +46,7 @@ class MasscanScanner(ScannerInterface):
             event_queue.put({'event': 'thread_update',
                              'data': {'thread_id': thread_id,
                                       'message': f"[{time.ctime()}] Erreur lancement Masscan : {e}"}})
-            return ip, False, str(e), {}, {}
+            return ip, False, str(e), {}, {"command": cmd_str}
 
         ports = []
         buffer = []
@@ -51,7 +58,7 @@ class MasscanScanner(ScannerInterface):
                 event_queue.put({'event': 'thread_update',
                                  'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Scan interrompu"}})
                 self.active_processes.remove(process)
-                return ip, False, "Interrupted", {}, {}
+                return ip, False, "Interrupted", {"ports": ports}, {"command": cmd_str}
             buffer.append(f"[{time.ctime()}] {line.strip()}")
 
             if "open" in line:
@@ -73,7 +80,7 @@ class MasscanScanner(ScannerInterface):
         process.wait()
         self.active_processes.remove(process)
         if process.returncode == 0:
-            details = {"ports": ports}
+            details = {"ports": sorted(list(set(ports)))}
             if ports:
                 event_queue.put({'event': 'thread_update',
                                  'data': {'thread_id': thread_id,

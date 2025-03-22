@@ -12,6 +12,7 @@ class ScannerInterface(ABC):
         self.active_processes = active_processes if active_processes is not None else []
         self.yaml_file = yaml_file
         self.strategies = self.load_strategies()
+        self.ports = None  # Ajouter cet attribut
 
         if strategy not in self.strategies:
             raise ValueError(f"Stratégie inconnue : {strategy}. Options valides : {list(self.strategies.keys())}")
@@ -32,3 +33,23 @@ class ScannerInterface(ABC):
         - extra (Optional[str]): Informations supplémentaires (non utilisé ici, mais pour compatibilité future).
         """
         pass
+
+    def parse_ports(self, port_string: str) -> List[int]:
+        """Parse une chaîne de ports au format Nmap (ex. '80,443' ou '1-1000')."""
+        ports = []
+        items = port_string.split(',')
+        for item in items:
+            item = item.strip()
+            if '-' in item:
+                start, end = map(int, item.split('-'))
+                if not (1 <= start <= 65535 and 1 <= end <= 65535):
+                    raise ValueError(f"Ports hors limites (1-65535) dans la plage {item}")
+                if start > end:
+                    raise ValueError(f"Plage invalide dans {item}: début > fin")
+                ports.extend(range(start, end + 1))
+            else:
+                port = int(item)
+                if not (1 <= port <= 65535):
+                    raise ValueError(f"Port hors limites (1-65535): {port}")
+                ports.append(port)
+        return sorted(list(set(ports)))

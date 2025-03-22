@@ -28,78 +28,96 @@ class NetcatScanner(ScannerInterface):
                              'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Scan de {ip} annulé"}})
             return ip, False, "Cancelled", {}, {}
 
-        # Utiliser Netcat au lieu de Nmap
-        cmd = ["/usr/bin/sudo", "/bin/nc"] + self.strategies[self.strategy] + [ip]
-        # Ajuster pour que le port soit en dernier (Netcat attend "ip port")
-        port_index = cmd.index("-p") + 1 if "-p" in cmd else -1
-        if 0 < port_index < len(cmd) - 1:
-            port = cmd.pop(port_index)  # Retire le port
-            cmd.pop(port_index - 1)  # Retire "-p"
-            cmd.append(port)  # Ajoute le port à la fin
+        # Récupérer la stratégie
+        strategy = self.strategies[self.strategy]
 
-        cmd_str = " ".join(cmd)
-        event_queue.put({'event': 'thread_update',
-                         'data': {'thread_id': thread_id,
-                                  'message': f"[{time.ctime()}] Début du scan de {ip} avec {cmd_str}"}})
-
-        try:
-            event_queue.put({'event': 'thread_update',
-                             'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Lancement de Popen"}})
-            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            self.active_processes.append(process)
-            event_queue.put({'event': 'thread_update',
-                             'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Popen lancé avec succès"}})
-        except Exception as e:
-            event_queue.put({'event': 'thread_update',
-                             'data': {'thread_id': thread_id,
-                                      'message': f"[{time.ctime()}] Erreur lancement Netcat : {str(e)}"}})
-            return ip, False, str(e), {}, {"command": cmd_str}
-
-        ports = []
-        extra = {"command": cmd_str}
-
-        try:
-            stdout, stderr = process.communicate(timeout=10)  # Timeout ajusté pour Netcat
-            output_lines = stdout.splitlines() + (stderr.splitlines() if stderr else [])
-            event_queue.put({'event': 'thread_update',
-                             'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Communicate terminé"}})
-        except subprocess.TimeoutExpired:
-            process.kill()
-            stdout, stderr = process.communicate()
-            # noinspection PyUnusedLocal
-            output_lines = stdout.splitlines() + (stderr.splitlines() if stderr else [])
-            event_queue.put({'event': 'thread_update',
-                             'data': {'thread_id': thread_id,
-                                      'message': f"[{time.ctime()}] Scan timeout après 10s"}})
-            self.active_processes.remove(process)
-            return ip, False, "Timeout", {}, extra
-
-        self.active_processes.remove(process)
-
-        # Parsing de la sortie Netcat
-        for line in output_lines:
-            event_queue.put({'event': 'thread_update',
-                             'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] {line.strip()}"}})
-            if "open" in line.lower() or "succeeded" in line.lower():
-                try:
-                    port = int(cmd[-1])  # Le dernier argument est le port
-                    ports.append(port)
-                except ValueError:
-                    pass
-
-        if process.returncode == 0:
-            details = {"ports": ports}
-            if ports:
-                event_queue.put({'event': 'thread_update', 'data': {
-                    'thread_id': thread_id,
-                    'message': f"[{time.ctime()}] {ip} actif (ports: {ports})"
-                }})
-            else:
-                event_queue.put({'event': 'thread_update', 'data': {'thread_id': thread_id,
-                                                                    'message': f"[{time.ctime()}] {ip} n’a pas de ports ouverts"}})
-            return ip, True, None, details, extra
+        # Vérifier si <ports> est présent et utiliser self.ports
+        if '<ports>' in strategy and self.ports:
+            ports_to_scan = self.parse_ports(self.ports)  # Utiliser parse_ports de la classe mère
         else:
-            error = f"Netcat a échoué avec le code {process.returncode}"
+            # Sinon, chercher -p dans la stratégie
+            try:
+                port_index = strategy.index("-p")
+                if port_index + 1 < len(strategy):  # Vérifier qu’il y a une valeur après -p
+                    port = int(strategy[port_index + 1])
+                    ports_to_scan = [port]
+                else:
+                    raise IndexError("Option -p présente mais aucun port spécifié après")
+            except (ValueError, IndexError):
+                event_queue.put({'event': 'thread_update',
+                                 'data': {'thread_id': thread_id,
+                                          'message': f"[{time.ctime()}] Erreur : Port non spécifié ou mal formé dans la stratégie"}})
+                return ip, False, "No port specified or malformed strategy", {}, {}
+
+        # Initialiser les résultats globaux
+        all_ports = []
+        all_commands = []
+
+        # Boucler sur chaque port à scanner
+        for port in ports_to_scan:
+            if stop_flag():
+                event_queue.put({'event': 'thread_update',
+                                 'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Scan de {ip} annulé"}})
+                return ip, False, "Cancelled", {"ports": all_ports}, {"commands": all_commands}
+
+            # Construire la commande : le port doit être après l’IP
+            cmd_template = [arg for arg in strategy if arg != '<ports>']  # Retirer <ports> si présent
+            if "-p" in cmd_template:
+                port_index = cmd_template.index("-p")
+                if port_index + 1 < len(cmd_template):  # Vérifier qu’il y a une valeur après -p
+                    cmd_template.pop(port_index + 1)  # Retirer la valeur après -p
+                cmd_template.pop(port_index)  # Retirer -p
+
+            cmd = ["/usr/bin/sudo", "/bin/nc"] + cmd_template + [ip, str(port)]  # IP avant le port
+            cmd_str = " ".join(cmd)
             event_queue.put({'event': 'thread_update',
-                             'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] {error}"}})
-            return ip, False, error, {}, extra
+                             'data': {'thread_id': thread_id,
+                                      'message': f"[{time.ctime()}] Début du scan de {ip}:{port} avec {cmd_str}"}})
+
+            try:
+                process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                self.active_processes.append(process)
+            except Exception as e:
+                event_queue.put({'event': 'thread_update',
+                                 'data': {'thread_id': thread_id,
+                                          'message': f"[{time.ctime()}] Erreur lancement Netcat : {str(e)}"}})
+                return ip, False, str(e), {"ports": all_ports}, {"commands": all_commands + [cmd_str]}
+
+            try:
+                stdout, stderr = process.communicate(timeout=10)  # Timeout ajusté pour Netcat
+                output_lines = stdout.splitlines() + (stderr.splitlines() if stderr else [])
+                event_queue.put({'event': 'thread_update',
+                                 'data': {'thread_id': thread_id,
+                                          'message': f"[{time.ctime()}] Scan terminé pour port {port}"}})
+            except subprocess.TimeoutExpired:
+                process.kill()
+                stdout, stderr = process.communicate()
+                output_lines = stdout.splitlines() + (stderr.splitlines() if stderr else [])
+                event_queue.put({'event': 'thread_update',
+                                 'data': {'thread_id': thread_id,
+                                          'message': f"[{time.ctime()}] Scan timeout après 10s pour port {port}"}})
+                self.active_processes.remove(process)
+                return ip, False, "Timeout", {"ports": all_ports}, {"commands": all_commands + [cmd_str]}
+
+            self.active_processes.remove(process)
+
+            # Parsing de la sortie Netcat pour ce port
+            for line in output_lines:
+                event_queue.put({'event': 'thread_update',
+                                 'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] {line.strip()}"}})
+                if "open" in line.lower() or "succeeded" in line.lower():
+                    all_ports.append(port)
+
+            all_commands.append(cmd_str)
+
+        # Résultats finaux
+        details = {"ports": sorted(list(set(all_ports)))}
+        if all_ports:
+            event_queue.put({'event': 'thread_update',
+                             'data': {'thread_id': thread_id,
+                                      'message': f"[{time.ctime()}] {ip} actif (ports: {all_ports})"}})
+        else:
+            event_queue.put({'event': 'thread_update',
+                             'data': {'thread_id': thread_id,
+                                      'message': f"[{time.ctime()}] {ip} n’a pas de ports ouverts"}})
+        return ip, True, None, details, {"commands": all_commands}

@@ -10,7 +10,6 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from queue import Queue, Empty
 
-import yaml
 from dotenv import load_dotenv
 from flask import Flask, render_template, Response, request, jsonify
 
@@ -66,25 +65,6 @@ event_queue = Queue()
 # Initialisation des scanners
 import yaml
 
-import yaml
-
-# def get_first_strategy(yaml_file):
-#     """Lit un fichier YAML et renvoie le nom de la première stratégie sous 'strategy'."""
-#     try:
-#         with open(yaml_file, 'r') as file:
-#             data = yaml.safe_load(file)
-#             # Récupère directement les stratégies sous 'strategy'
-#             strategies = data.get('strategies', {})
-#             # Renvoie la première clé sous 'strategy'
-#             return next(iter(strategies.keys())) if strategies else None
-#     except (FileNotFoundError, yaml.YAMLError) as e:
-#         print(f"Erreur lors de la lecture de {yaml_file}: {e}")
-#         return None
-
-
-import os
-import yaml
-
 # Chemin du répertoire strategies
 STRATEGIES_DIR = "strategies"
 
@@ -92,12 +72,65 @@ STRATEGIES_DIR = "strategies"
 DEFINITION_FILE = os.path.join(STRATEGIES_DIR, "definition.yaml")
 
 
+def parse_nmap_ports(port_string):
+    """
+    Parse une chaîne de ports au format Nmap (ex. "22,80,100-200,443") et renvoie une liste de ports.
+
+    Args:
+        port_string (str): Chaîne de ports séparés par des virgules, incluant des plages avec tirets.
+
+    Returns:
+        list: Liste complète des numéros de ports.
+
+    Raises:
+        ValueError: Si la syntaxe est invalide ou les ports hors limites (1-65535).
+    """
+    ports = []
+
+    # Séparer les éléments par des virgules
+    items = port_string.split(',')
+
+    for item in items:
+        item = item.strip()  # Supprimer les espaces éventuels
+
+        # Vérifier si c'est une plage (contient un tiret)
+        if '-' in item:
+            try:
+                start, end = map(int, item.split('-'))
+                # Vérifier que les valeurs sont valides
+                if not (1 <= start <= 65535 and 1 <= end <= 65535):
+                    raise ValueError(f"Ports hors limites (1-65535) dans la plage {item}")
+                if start > end:
+                    raise ValueError(f"Plage invalide dans {item}: début > fin")
+                # Ajouter tous les ports de la plage
+                ports.extend(range(start, end + 1))
+            except ValueError as e:
+                if "invalid literal" in str(e):
+                    raise ValueError(f"Syntaxe invalide dans la plage {item}: nombres attendus")
+                raise e
+        else:
+            # Cas d'un port unique
+            try:
+                port = int(item)
+                if not (1 <= port <= 65535):
+                    raise ValueError(f"Port hors limites (1-65535): {port}")
+                ports.append(port)
+            except ValueError:
+                raise ValueError(f"Syntaxe invalide pour le port {item}: nombre attendu")
+
+    # Supprimer les doublons et trier (optionnel, selon tes besoins)
+    ports = sorted(list(set(ports)))
+    return ports
+
+
 def get_first_strategy(yaml_file):
     """Lit un fichier YAML et renvoie le nom de la première stratégie sous 'strategy'."""
     try:
         with open(yaml_file, 'r') as file:
             data = yaml.safe_load(file)
+            # Récupère directement les stratégies sous 'strategy'
             strategies = data.get('strategies', {})
+            # Renvoie la première clé sous 'strategy'
             return next(iter(strategies.keys())) if strategies else None
     except (FileNotFoundError, yaml.YAMLError) as e:
         print(f"Erreur lors de la lecture de {yaml_file}: {e}")
@@ -199,6 +232,51 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 
+# Chemin du fichier ports.yaml
+PORTS_FILE = os.path.join(STRATEGIES_DIR, "ports.yaml")
+
+
+# Parser pour les ports Nmap
+def parse_nmap_ports(port_string):
+    ports = []
+    items = port_string.split(',')
+    for item in items:
+        item = item.strip()
+        if '-' in item:
+            start, end = map(int, item.split('-'))
+            if not (1 <= start <= 65535 and 1 <= end <= 65535):
+                raise ValueError(f"Ports hors limites (1-65535) dans la plage {item}")
+            if start > end:
+                raise ValueError(f"Plage invalide dans {item}: début > fin")
+            ports.extend(range(start, end + 1))
+        else:
+            port = int(item)
+            if not (1 <= port <= 65535):
+                raise ValueError(f"Port hors limites (1-65535): {port}")
+            ports.append(port)
+    return sorted(list(set(ports)))
+
+
+# Nouvelle route pour les ports
+@app.route('/api/ports', methods=['GET'])
+def get_ports():
+    """Renvoie les lignes brutes de ports à partir de strategies/ports.yaml."""
+    try:
+        with open(PORTS_FILE, 'r') as file:
+            data = yaml.safe_load(file)
+            port_entries = data.get('ports', [])
+            return jsonify({"ports": port_entries})
+    except FileNotFoundError:
+        logger.error(f"Fichier {PORTS_FILE} non trouvé")
+        return jsonify({"error": f"Fichier {PORTS_FILE} non trouvé"}), 404
+    except yaml.YAMLError as e:
+        logger.error(f"Erreur de syntaxe dans {PORTS_FILE} : {e}")
+        return jsonify({"error": f"Erreur de syntaxe dans {PORTS_FILE}"}), 500
+    except Exception as e:
+        logger.error(f"Erreur inattendue : {e}")
+        return jsonify({"error": "Erreur inattendue"}), 500
+
+
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 
@@ -259,7 +337,8 @@ def save_scan_result(scanner_type, strategy, ip, scan_result):
 #         "ip": ip,
 #         "timestamp": time.ctime(),
 #         "os": os_info if os_info else "Unknown",
-#         "ports": [{"port": p, "version": versions.get(p, "Unknown")} for p in versions] if versions else scan_result.get("ports", []),
+#         "ports": [{"port": p, "version": versions.get(p, "Unknown")} for p in
+#                   versions] if versions else scan_result.get("ports", []),
 #         "vulnerabilities": vulns if vulns else [],
 #         "raw_result": scan_result
 #     }
@@ -439,14 +518,21 @@ def events():
 def start_scan_endpoint(scanner_type, strategy):
     global stop_flag, scan_thread, nmap_scanner, netcat_scanner, current_scanner, active_processes
     proxy = request.args.get('proxy', None)
-    logger.info(f"Requête HTTP pour démarrer le scan avec {scanner_type} et stratégie : {strategy}, proxy : {proxy}")
+    ports = request.args.get('ports', None)  # Récupérer les ports depuis la requête
+    logger.info(
+        f"Requête HTTP pour démarrer le scan avec {scanner_type} et stratégie : {strategy}, ports : {ports}, proxy : {proxy}")
 
-    global stop_flag, scan_thread, current_scanner, active_processes
     if scanner_type not in scanner_map:
         return f"Type de scanner inconnu : {scanner_type}", 400
+
+    if not ports:
+        event_queue.put({'event': 'progress', 'data': {'message': f"[{time.ctime()}] Erreur : Aucun port spécifié"}})
+        return "Aucun port spécifié", 400
+
     try:
         current_scanner = scanner_map[scanner_type]
         current_scanner.strategy = strategy  # Met à jour la stratégie
+        current_scanner.ports = ports  # Met à jour les ports dans l’instance du scanner
     except (ValueError, FileNotFoundError) as e:
         event_queue.put({'event': 'progress', 'data': {'message': f"[{time.ctime()}] Erreur : {str(e)}"}})
         return str(e), 400
@@ -459,7 +545,8 @@ def start_scan_endpoint(scanner_type, strategy):
     stop_flag = False
     scan_thread = threading.Thread(target=scan_background)
     scan_thread.start()
-    return f"Scan démarré avec {scanner_type} et stratégie {strategy}" + (f" et proxy {proxy}" if proxy else ""), 200
+    return f"Scan démarré avec {scanner_type} et stratégie {strategy}" + (f" et ports {ports}" if ports else "") + (
+        f" et proxy {proxy}" if proxy else ""), 200
 
 
 def load_and_validate_scanner_definitions(definition_file=DEFINITION_FILE, strategies_dir=STRATEGIES_DIR):

@@ -26,57 +26,87 @@ class Hping3Scanner(ScannerInterface):
                              'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Scan de {ip} annulé"}})
             return ip, False, "Cancelled", {}, {}
 
-        # Ajouter une limite de paquets (-c 10)
-        cmd = ["/usr/sbin/hping3"] + [ip] + self.strategies[self.strategy] + ["-c", "10"]
-        cmd_str = " ".join(cmd)
-        event_queue.put({'event': 'thread_update',
-                         'data': {'thread_id': thread_id,
-                                  'message': f"[{time.ctime()}] Début du scan de {ip} avec {cmd_str}"}})
+        # Récupérer la stratégie
+        strategy = self.strategies[self.strategy]
 
-        try:
-            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-            self.active_processes.append(process)
-        except Exception as e:
+        # Vérifier si <ports> est présent et utiliser self.ports
+        if '<ports>' in strategy and self.ports:
+            ports_to_scan = self.parse_ports(self.ports)  # Utiliser parse_ports de la classe mère
+        else:
+            # Sinon, chercher -p dans la stratégie
+            try:
+                port_index = strategy.index('-p') + 1
+                port = int(strategy[port_index])
+                ports_to_scan = [port]
+            except (ValueError, IndexError):
+                event_queue.put({'event': 'thread_update',
+                                 'data': {'thread_id': thread_id,
+                                          'message': f"[{time.ctime()}] Erreur : Port non spécifié dans la stratégie"}})
+                return ip, False, "No port specified", {}, {}
+
+        # Initialiser les résultats globaux
+        all_ports = []
+        all_commands = []
+
+        # Boucler sur chaque port à scanner
+        for port in ports_to_scan:
+            if stop_flag():
+                event_queue.put({'event': 'thread_update',
+                                 'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Scan de {ip} annulé"}})
+                return ip, False, "Cancelled", {"ports": all_ports}, {"commands": all_commands}
+
+            # Construire la commande en remplaçant <ports> par le port actuel
+            cmd_template = [arg if arg != '<ports>' else str(port) for arg in strategy]
+            cmd = ["/usr/sbin/hping3"] + [ip] + cmd_template + ["-c", "10"]  # Limite à 10 paquets
+            cmd_str = " ".join(cmd)
             event_queue.put({'event': 'thread_update',
                              'data': {'thread_id': thread_id,
-                                      'message': f"[{time.ctime()}] Erreur lancement Hping3 : {str(e)}"}})
-            return ip, False, str(e), {}, {"command": cmd_str}
+                                      'message': f"[{time.ctime()}] Début du scan de {ip}:{port} avec {cmd_str}"}})
 
-        ports = []
-        port = int(self.strategies[self.strategy][self.strategies[self.strategy].index('-p') + 1])
+            try:
+                process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+                self.active_processes.append(process)
+            except Exception as e:
+                event_queue.put({'event': 'thread_update',
+                                 'data': {'thread_id': thread_id,
+                                          'message': f"[{time.ctime()}] Erreur lancement Hping3 : {str(e)}"}})
+                return ip, False, str(e), {"ports": all_ports}, {"commands": all_commands + [cmd_str]}
 
-        try:
-            # Utiliser communicate avec un timeout global
-            stdout, _ = process.communicate(timeout=5)  # 5 secondes max
-            output_lines = stdout.splitlines()
-            event_queue.put({'event': 'thread_update',
-                             'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Scan terminé"}})
-        except subprocess.TimeoutExpired:
-            process.kill()
-            stdout, _ = process.communicate()
-            output_lines = stdout.splitlines()
-            event_queue.put({'event': 'thread_update',
-                             'data': {'thread_id': thread_id,
-                                      'message': f"[{time.ctime()}] Scan timeout après 5s"}})
+            try:
+                stdout, _ = process.communicate(timeout=5)  # 5 secondes max par port
+                output_lines = stdout.splitlines()
+                event_queue.put({'event': 'thread_update',
+                                 'data': {'thread_id': thread_id,
+                                          'message': f"[{time.ctime()}] Scan terminé pour port {port}"}})
+            except subprocess.TimeoutExpired:
+                process.kill()
+                stdout, _ = process.communicate()
+                output_lines = stdout.splitlines()
+                event_queue.put({'event': 'thread_update',
+                                 'data': {'thread_id': thread_id,
+                                          'message': f"[{time.ctime()}] Scan timeout après 5s pour port {port}"}})
+                self.active_processes.remove(process)
+                return ip, False, "Timeout", {"ports": all_ports}, {"commands": all_commands + [cmd_str]}
+
             self.active_processes.remove(process)
-            return ip, False, "Timeout", {}, {"command": cmd_str}
 
-        self.active_processes.remove(process)
+            # Traitement des lignes pour ce port
+            for line in output_lines:
+                event_queue.put({'event': 'thread_update',
+                                 'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] {line.strip()}"}})
+                if "flags=SA" in line:  # Réponse SYN-ACK indique un port ouvert
+                    all_ports.append(port)
 
-        # Traitement des lignes
-        for line in output_lines:
-            event_queue.put({'event': 'thread_update',
-                             'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] {line.strip()}"}})
-            if "flags=SA" in line:
-                ports.append(port)
+            all_commands.append(cmd_str)
 
-        details = {"ports": list(set(ports))}
-        if ports:
+        # Résultats finaux
+        details = {"ports": list(set(all_ports))}
+        if all_ports:
             event_queue.put({'event': 'thread_update',
                              'data': {'thread_id': thread_id,
-                                      'message': f"[{time.ctime()}] {ip} actif (ports: {ports})"}})
+                                      'message': f"[{time.ctime()}] {ip} actif (ports: {all_ports})"}})
         else:
             event_queue.put({'event': 'thread_update',
                              'data': {'thread_id': thread_id,
                                       'message': f"[{time.ctime()}] {ip} n’a pas de ports ouverts"}})
-        return ip, True, None, details, {"command": cmd_str}
+        return ip, True, None, details, {"commands": all_commands}

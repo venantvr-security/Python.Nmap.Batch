@@ -3,7 +3,6 @@ const progressText = document.getElementById('progress-text');
 const progressBar = document.getElementById('progress-bar');
 const threadTiles = {};
 const activeThreads = new Set();
-const scanners = ['nmap', 'netcat', 'scapy', 'masscan', 'hping3', 'curl'];
 
 let selectedStrategies = {
     'nmap': null,
@@ -13,6 +12,8 @@ let selectedStrategies = {
     'hping3': null,
     'curl': null,
 };
+
+let selectedPorts = null; // Variable pour stocker les ports sélectionnés
 
 const source = new EventSource('/events');
 
@@ -61,7 +62,6 @@ source.addEventListener('thread_update', (event) => {
             `;
             tilesContainer.appendChild(tile);
             threadTiles[thread_id] = tile.querySelector('.card-body');
-            // Ajouter un timeout pour fermer les tuiles bloquées
             setTimeout(() => {
                 if (activeThreads.has(thread_id) && threadTiles[thread_id]) {
                     threadTiles[thread_id].innerHTML += '<p>[Timeout] Scan bloqué, forcé à fermer</p>';
@@ -70,9 +70,9 @@ source.addEventListener('thread_update', (event) => {
                         const tile = threadTiles[thread_id].parentElement.parentElement;
                         tilesContainer.removeChild(tile);
                         delete threadTiles[thread_id];
-                    }, 10000);  // Ferme après 10s supplémentaires
+                    }, 10000);
                 }
-            }, 35000);  // 35s après le début (30s timeout + marge)
+            }, 35000);
         }
     }
 
@@ -112,127 +112,29 @@ source.addEventListener('ping', (event) => {
     console.log('Ping reçu :', event.data);
 });
 
-function populateStrategies(scannerType) {
-    const dropdown = document.getElementById(`${scannerType}-strategies`);
-    fetch(`/get_strategies/${scannerType}`)
-        .then(response => {
-            if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`);
-            return response.json();
-        })
-        .then(data => {
-            if (data.error) {
-                console.error(`Erreur pour ${scannerType} : ${data.error}`);
-                progressText.textContent = `Erreur : ${data.error}`;
-                return;
-            }
-            dropdown.innerHTML = '';
-            data.strategies.forEach(strategy => {
-                const li = document.createElement('li');
-                const a = document.createElement('a');
-                a.className = 'dropdown-item';
-                a.href = '#';
-                a.textContent = strategy;
-                a.onclick = () => selectStrategy(scannerType, strategy);
-                li.appendChild(a);
-                dropdown.appendChild(li);
-            });
-            if (data.strategies.length > 0) selectStrategy(scannerType, data.strategies[0]);
-            // Ajout du lien pour les infos
-            const infoLi = document.createElement('li');
-            const infoA = document.createElement('a');
-            infoA.className = 'dropdown-item text-info';
-            infoA.href = '#';
-            infoA.textContent = 'Détails techniques';
-            infoA.onclick = () => showScannerInfo(scannerType);
-            infoLi.appendChild(infoA);
-            dropdown.appendChild(infoLi);
-        })
-        .catch(error => {
-            console.error(`Erreur pour ${scannerType} :`, error);
-            progressText.textContent = `Erreur : ${error.message}`;
-        });
-}
-
-function selectStrategy(scannerType, strategy) {
-    selectedStrategies[scannerType] = strategy;
-    console.log(`Stratégie sélectionnée pour ${scannerType} : ${strategy}`);
-    let button;
-    switch (scannerType) {
-        case 'nmap': button = document.querySelector('.btn-nmap'); break;
-        case 'netcat': button = document.querySelector('.btn-netcat'); break;
-        case 'scapy': button = document.querySelector('.btn-scapy'); break;
-        case 'masscan': button = document.querySelector('.btn-masscan'); break;
-        case 'hping3': button = document.querySelector('.btn-hping3'); break;
-        case 'curl': button = document.querySelector('.btn-curl'); break;
-    }
-    button.textContent = `Démarrer ${scannerType} (${strategy})`;
-}
-
+// Fonction pour démarrer un scan
 function startScan(scannerType) {
     const strategy = selectedStrategies[scannerType];
     if (!strategy) {
         progressText.textContent = `Erreur : Aucune stratégie sélectionnée pour ${scannerType}`;
         return;
     }
-    console.log(`Envoi de start_scan pour ${scannerType} avec stratégie ${strategy}`);
-    fetch(`/start_scan/${scannerType}/${strategy}`)
+    if (!selectedPorts) {
+        progressText.textContent = `Erreur : Aucun port sélectionné`;
+        return;
+    }
+    console.log(`Envoi de start_scan pour ${scannerType} avec stratégie ${strategy} et ports ${selectedPorts}`);
+    fetch(`/start_scan/${scannerType}/${strategy}?ports=${encodeURIComponent(selectedPorts)}`)
         .then(response => {
-            console.log('Start scan réponse :', response.status);
             if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`);
+            return response.text();
         })
+        .then(message => console.log(message))
         .catch(error => {
             console.error('Erreur start_scan :', error);
             progressText.textContent = `Erreur : ${error.message}`;
         });
 }
-
-function stopScan() {
-    console.log('Envoi de stop_scan');
-    fetch('/stop_scan')
-        .then(response => {
-            console.log('Stop scan réponse :', response.status);
-            if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`);
-        })
-        .catch(error => {
-            console.error('Erreur stop_scan :', error);
-            progressText.textContent = `Erreur : ${error.message}`;
-        });
-}
-
-function showScannerInfo(scannerType) {
-    fetch(`/get_scanner_info/${scannerType}`)
-        .then(response => {
-            if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`);
-            return response.json();
-        })
-        .then(data => {
-            if (data.error) {
-                console.error(`Erreur pour ${scannerType} : ${data.error}`);
-                progressText.textContent = `Erreur : ${data.error}`;
-                return;
-            }
-            const contentDiv = document.getElementById('scanner-info-content');
-            contentDiv.innerHTML = marked.parse(data.content); // Conversion Markdown en HTML
-            document.getElementById('scannerInfoModalLabel').textContent = `Détails du Scanner : ${scannerType.toUpperCase()}`;
-            const modal = new bootstrap.Modal(document.getElementById('scannerInfoModal'));
-            modal.show();
-        })
-        .catch(error => {
-            console.error('Erreur lors de la récupération des infos :', error);
-            progressText.textContent = `Erreur : ${error.message}`;
-        });
-}
-
-function resetProgress() {
-    fetch('/reset_progress', { method: 'POST' })
-        .then(response => response.text())
-        .then(message => console.log(message))
-        .catch(error => console.error('Erreur :', error));
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    scanners.forEach(scanner => populateStrategies(scanner));
-});
 
 // Générer dynamiquement les boutons depuis l'API
 async function loadScannerButtons() {
@@ -252,7 +154,7 @@ async function loadScannerButtons() {
             const mainButton = document.createElement('button');
             mainButton.className = `btn ${scanner.class}`;
             mainButton.textContent = `Démarrer ${scanner.name.charAt(0).toUpperCase() + scanner.name.slice(1)}`;
-            mainButton.onclick = () => startScan(scanner.name, scanner.strategies[0]);
+            mainButton.onclick = () => startScan(scanner.name);
 
             const dropdownToggle = document.createElement('button');
             dropdownToggle.className = `btn ${scanner.class} dropdown-toggle dropdown-toggle-split`;
@@ -276,20 +178,35 @@ async function loadScannerButtons() {
                 link.textContent = strategy;
                 link.onclick = (e) => {
                     e.preventDefault();
-                    startScan(scanner.name, strategy);
+                    selectedStrategies[scanner.name] = strategy;
+                    mainButton.textContent = `Démarrer ${scanner.name.charAt(0).toUpperCase() + scanner.name.slice(1)} (${strategy})`;
+                    console.log(`Stratégie sélectionnée pour ${scanner.name} : ${strategy}`);
                 };
                 item.appendChild(link);
                 dropdownMenu.appendChild(item);
             });
+
+            const infoItem = document.createElement('li');
+            const infoLink = document.createElement('a');
+            infoLink.className = 'dropdown-item text-info';
+            infoLink.href = '#';
+            infoLink.textContent = 'Détails techniques';
+            infoLink.onclick = () => showScannerInfo(scanner.name);
+            infoItem.appendChild(infoLink);
+            dropdownMenu.appendChild(infoItem);
 
             btnGroup.appendChild(mainButton);
             btnGroup.appendChild(dropdownToggle);
             btnGroup.appendChild(dropdownMenu);
             col.appendChild(btnGroup);
             scannerButtonsContainer.appendChild(col);
+
+            if (scanner.strategies.length > 0) {
+                selectedStrategies[scanner.name] = scanner.strategies[0];
+                mainButton.textContent = `Démarrer ${scanner.name.charAt(0).toUpperCase() + scanner.name.slice(1)} (${scanner.strategies[0]})`;
+            }
         });
 
-        // Ajouter les boutons Arrêter et Réinitialiser
         const controlCol = document.createElement('div');
         controlCol.className = 'col';
         const controlDiv = document.createElement('div');
@@ -306,6 +223,125 @@ async function loadScannerButtons() {
         scannerButtonsContainer.innerHTML = '<p>Erreur lors du chargement des scanners.</p>';
     }
 }
+
+// Fonctions pour arrêter et réinitialiser
+function stopScan() {
+    console.log('Envoi de stop_scan');
+    fetch('/stop_scan')
+        .then(response => {
+            if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`);
+            return response.text();
+        })
+        .then(message => console.log(message))
+        .catch(error => {
+            console.error('Erreur stop_scan :', error);
+            progressText.textContent = `Erreur : ${error.message}`;
+        });
+}
+
+function resetProgress() {
+    fetch('/reset_progress', { method: 'POST' })
+        .then(response => {
+            if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`);
+            return response.text();
+        })
+        .then(message => {
+            console.log(message);
+            progressBar.style.width = '0%';
+            progressBar.setAttribute('aria-valuenow', 0);
+            progressBar.textContent = '';
+            progressText.textContent = 'En attente...';
+        })
+        .catch(error => {
+            console.error('Erreur reset_progress :', error);
+            progressText.textContent = `Erreur : ${error.message}`;
+        });
+}
+
+function showScannerInfo(scannerType) {
+    fetch(`/get_scanner_info/${scannerType}`)
+        .then(response => {
+            if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`);
+            return response.json();
+        })
+        .then(data => {
+            if (data.error) {
+                console.error(`Erreur pour ${scannerType} : ${data.error}`);
+                progressText.textContent = `Erreur : ${data.error}`;
+                return;
+            }
+            const contentDiv = document.getElementById('scanner-info-content');
+            contentDiv.innerHTML = marked.parse(data.content);
+            document.getElementById('scannerInfoModalLabel').textContent = `Détails du Scanner : ${scannerType.toUpperCase()}`;
+            const modal = new bootstrap.Modal(document.getElementById('scannerInfoModal'));
+            modal.show();
+        })
+        .catch(error => {
+            console.error('Erreur lors de la récupération des infos :', error);
+            progressText.textContent = `Erreur : ${error.message}`;
+        });
+}
+
+// Gestion du mode nuit
+const toggleButton = document.getElementById('dark-mode-toggle');
+const body = document.body;
+const icon = toggleButton.querySelector('.dark-mode-icon');
+
+toggleButton.addEventListener('click', () => {
+    body.classList.toggle('dark-mode');
+    if (body.classList.contains('dark-mode')) {
+        icon.textContent = '☀️';
+        toggleButton.textContent = ' Mode Jour';
+        toggleButton.prepend(icon);
+    } else {
+        icon.textContent = '🌙';
+        toggleButton.textContent = ' Mode Nuit';
+        toggleButton.prepend(icon);
+    }
+    localStorage.setItem('darkMode', body.classList.contains('dark-mode'));
+});
+
+if (localStorage.getItem('darkMode') === 'true') {
+    body.classList.add('dark-mode');
+    icon.textContent = '☀️';
+    toggleButton.textContent = ' Mode Jour';
+    toggleButton.prepend(icon);
+}
+
+// Charger les ports dans la dropdown et mettre à jour le bouton
+fetch('/api/ports')
+    .then(response => {
+        if (!response.ok) throw new Error('Erreur lors du chargement des ports');
+        return response.json();
+    })
+    .then(data => {
+        const portsList = document.getElementById('ports-list');
+        const portsButton = document.getElementById('portsDropdown');
+        portsList.innerHTML = '';
+        data.ports.forEach(port => {
+            const li = document.createElement('li');
+            const a = document.createElement('a');
+            a.className = 'dropdown-item';
+            a.href = '#';
+            a.textContent = port;
+            a.onclick = (e) => {
+                e.preventDefault();
+                selectedPorts = port;
+                portsButton.textContent = `Ports : ${port}`;
+                console.log(`Ports sélectionnés : ${port}`);
+            };
+            li.appendChild(a);
+            portsList.appendChild(li);
+        });
+        if (data.ports.length > 0) {
+            selectedPorts = data.ports[0];
+            portsButton.textContent = `Ports : ${data.ports[0]}`;
+        }
+    })
+    .catch(error => {
+        console.error('Erreur :', error);
+        document.getElementById('ports-list').innerHTML = '<li><a class="dropdown-item" href="#">Erreur de chargement</a></li>';
+    });
 
 // Charger les boutons au démarrage
 document.addEventListener('DOMContentLoaded', loadScannerButtons);

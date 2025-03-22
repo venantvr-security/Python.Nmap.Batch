@@ -4,22 +4,28 @@
     overflow-y: auto;
     font-size: 0.9rem;
 }
+
 .tile p {
     margin: 0;
 }
+
 #progress-container {
     margin: 10px 0;
 }
+
 #progress-bar {
     transition: width 0.5s ease-in-out;
 }
+
 #scanner-buttons .btn-group, #scanner-buttons .btn {
     font-size: 0.9rem;
 }
+
 @media (max-width: 767px) {
     #scanner-buttons .btn-group, #scanner-buttons .btn {
         margin-bottom: 10px;
     }
+
     .modal-dialog {
         margin: 0.5rem;
     }
@@ -31,51 +37,62 @@
     color: white;
     border: 1px solid #1a73e8;
 }
+
 .btn-nmap:hover {
     background-color: #1557b0;
     border-color: #1557b0;
 }
+
 .btn-netcat {
     background-color: #e91e63;
     color: white;
     border: 1px solid #e91e63;
 }
+
 .btn-netcat:hover {
     background-color: #c2185b;
     border-color: #c2185b;
 }
+
 .btn-scapy {
     background-color: #388e3c;
     color: white;
     border: 1px solid #388e3c;
 }
+
 .btn-scapy:hover {
     background-color: #2c6e31;
     border-color: #2c6e31;
 }
+
 .btn-masscan {
     background-color: #f57c00;
     color: white;
     border: 1px solid #f57c00;
 }
+
 .btn-masscan:hover {
     background-color: #d06600;
     border-color: #d06600;
 }
+
 .btn-hping3 {
     background-color: #0288d1;
     color: white;
     border: 1px solid #0288d1;
 }
+
 .btn-hping3:hover {
     background-color: #026aa7;
     border-color: #026aa7;
 }
+
 .btn-curl {
     background-color: #6f42c1;
     color: white;
     border: 1px solid #6f42c1;
 }
+
 .btn-curl:hover {
     background-color: #563d7c;
     border-color: #563d7c;

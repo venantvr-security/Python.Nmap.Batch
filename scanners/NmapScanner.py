@@ -30,7 +30,14 @@ class NmapScanner(ScannerInterface):
                              'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Scan de {ip} annulé"}})
             return ip, False, "Cancelled", {}, {}
 
-        cmd = ["/usr/bin/sudo", "/usr/bin/nmap"] + [ip] + self.strategies[self.strategy]
+        # Récupérer la stratégie et remplacer <ports> si présent
+        strategy = self.strategies[self.strategy]
+        if '<ports>' in strategy and self.ports:
+            cmd_template = [arg if arg != '<ports>' else self.ports for arg in strategy]
+        else:
+            cmd_template = strategy  # Si pas de <ports>, utiliser la stratégie telle quelle
+
+        cmd = ["/usr/bin/sudo", "/usr/bin/nmap"] + [ip] + cmd_template
         cmd_str = " ".join(cmd)
         event_queue.put({'event': 'thread_update',
                          'data': {'thread_id': thread_id,
@@ -57,7 +64,6 @@ class NmapScanner(ScannerInterface):
                                               'message': f"[{time.ctime()}] Scan timeout après 3600s"}})
                     self.active_processes.remove(process)
                     with open(temp_filename, 'r') as f:
-                        # noinspection PyUnusedLocal
                         output_lines = f.read().splitlines()
                     os.remove(temp_filename)
                     return ip, False, "Timeout", {}, {"command": cmd_str}

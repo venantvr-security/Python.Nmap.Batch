@@ -5,4 +5,4 @@ strategies:
     - "-w"          # Définit le timeout pour chaque tentative de connexion
     - "2"           # Timeout fixé à 2 secondes
     - "-p"          # Spécifie le port source (souvent utilisé côté client, traité dans le code)
-    - "80"          # Port cible (ici port 80, HTTP standard)
+    - "<ports>"          # Port cible (ici port 80, HTTP standard)

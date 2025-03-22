@@ -22,38 +22,78 @@ class ScapyScanner(ScannerInterface):
         except KeyError:
             raise ValueError(f"Le fichier {self.yaml_file} doit contenir une clé 'strategies'.")
 
-    # noinspection PyTypeChecker
     def scan(self, ip: str, thread_id: str, event_queue, stop_flag) -> ScanResult:
-        # Tuple[str, bool, Optional[str], Dict, Optional[str]]
         if stop_flag():
             event_queue.put({'event': 'thread_update',
                              'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Scan de {ip} annulé"}})
             return ip, False, "Cancelled", {}, None
 
-        strategy_params = self.strategies[self.strategy]
-        port = int(strategy_params.get("port", 443))
-        delay = float(strategy_params.get("delay", 0.5))
-        timeout = float(strategy_params.get("timeout", 2))
+        # Récupérer la stratégie (un dictionnaire)
+        strategy = self.strategies[self.strategy]
 
-        event_queue.put({'event': 'thread_update',
-                         'data': {'thread_id': thread_id,
-                                  'message': f"[{time.ctime()}] Début du scan de {ip}:{port} avec Scapy"}})
-
-        time.sleep(random.uniform(0, delay))
-        packet = IP(dst=ip) / TCP(sport=random.randint(1024, 65535), dport=port, flags="S")
-        response = sr1(packet, timeout=timeout, verbose=0)
-
-        if response:
-            if response.haslayer(TCP) and response[TCP].flags & 0x12 == 0x12:  # SYN-ACK
+        # Vérifier si <ports> est présent dans la stratégie et utiliser self.ports
+        if strategy.get("ports") == "<ports>" and self.ports:
+            ports_to_scan = self.parse_ports(self.ports)  # Utiliser parse_ports de la classe mère
+        else:
+            # Sinon, utiliser la valeur de "ports" dans la stratégie ou un défaut
+            try:
+                port = int(strategy.get("ports", 443))
+                ports_to_scan = [port]
+            except ValueError:
+                ports_to_scan = [443]  # Port par défaut si non spécifié ou invalide
                 event_queue.put({'event': 'thread_update',
-                                 'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Port {port} ouvert"}})
-                return ip, True, None, {"ports": [port]}, None
-            elif response[TCP].flags & 0x14 == 0x14:  # RST-ACK
+                                 'data': {'thread_id': thread_id,
+                                          'message': f"[{time.ctime()}] Port non spécifié ou invalide, utilisation par défaut : 443"}})
+
+        # Extraire delay et timeout de la stratégie (valeurs par défaut si absentes)
+        delay = float(strategy.get("delay", 0.5))
+        timeout = float(strategy.get("timeout", 2))
+
+        # Initialiser les résultats globaux
+        all_ports = []
+
+        # Boucler sur chaque port à scanner
+        for port in ports_to_scan:
+            if stop_flag():
                 event_queue.put({'event': 'thread_update',
-                                 'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Port {port} fermé"}})
-                return ip, True, None, {"ports": []}, None
+                                 'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Scan de {ip} annulé"}})
+                return ip, False, "Cancelled", {"ports": all_ports}, None
+
+            event_queue.put({'event': 'thread_update',
+                             'data': {'thread_id': thread_id,
+                                      'message': f"[{time.ctime()}] Début du scan de {ip}:{port} avec Scapy (delay={delay}, timeout={timeout})"}})
+
+            time.sleep(random.uniform(0, delay))
+            packet = IP(dst=ip) / TCP(sport=random.randint(1024, 65535), dport=port, flags="S")
+            response = sr1(packet, timeout=timeout, verbose=0)
+
+            if response:
+                if response.haslayer(TCP) and response[TCP].flags & 0x12 == 0x12:  # SYN-ACK
+                    event_queue.put({'event': 'thread_update',
+                                     'data': {'thread_id': thread_id,
+                                              'message': f"[{time.ctime()}] Port {port} ouvert"}})
+                    all_ports.append(port)
+                elif response[TCP].flags & 0x14 == 0x14:  # RST-ACK
+                    event_queue.put({'event': 'thread_update',
+                                     'data': {'thread_id': thread_id,
+                                              'message': f"[{time.ctime()}] Port {port} fermé"}})
+                else:
+                    event_queue.put({'event': 'thread_update',
+                                     'data': {'thread_id': thread_id,
+                                              'message': f"[{time.ctime()}] Port {port} réponse inattendue"}})
+            else:
+                event_queue.put({'event': 'thread_update',
+                                 'data': {'thread_id': thread_id,
+                                          'message': f"[{time.ctime()}] Port {port} filtré ou pas de réponse"}})
+
+        # Résultats finaux
+        details = {"ports": sorted(list(set(all_ports)))}
+        if all_ports:
+            event_queue.put({'event': 'thread_update',
+                             'data': {'thread_id': thread_id,
+                                      'message': f"[{time.ctime()}] {ip} actif (ports: {all_ports})"}})
         else:
             event_queue.put({'event': 'thread_update',
                              'data': {'thread_id': thread_id,
-                                      'message': f"[{time.ctime()}] Port {port} filtré ou pas de réponse"}})
-            return ip, True, None, {"ports": []}, None
+                                      'message': f"[{time.ctime()}] {ip} n’a pas de ports ouverts"}})
+        return ip, True, None, details, None

@@ -6,9 +6,7 @@ strategies:
     - "2"                 # Timeout de connexion à 2 secondes
     - "-m"                # Temps maximum total de l'opération
     - "5"                 # Temps max fixé à 5 secondes
-    - "-p"                # Port cible
-    - "80"                # Port HTTP standard
-    - "http://<ip>"       # URL cible en HTTP
+    - "http://<ip>:<ports>"  # URL cible avec ports dynamiques
   quick-https-head-check:
     - "-s"                # Mode silencieux, pas de sortie inutile
     - "-I"                # Requête HEAD uniquement (en-têtes)
@@ -16,9 +14,7 @@ strategies:
     - "2"                 # Timeout de connexion à 2 secondes
     - "-m"                # Temps maximum total de l'opération
     - "5"                 # Temps max fixé à 5 secondes
-    - "-p"                # Port cible
-    - "443"               # Port HTTPS standard
-    - "https://<ip>"      # URL cible en HTTPS
+    - "https://<ip>:<ports>" # URL cible en HTTPS avec ports dynamiques
   verbose-custom-port-scan:
     - "-v"                # Mode verbeux, affiche des détails
     - "-I"                # Requête HEAD uniquement (en-têtes)
@@ -26,6 +22,4 @@ strategies:
     - "1"                 # Timeout de connexion à 1 seconde
     - "-m"                # Temps maximum total de l'opération
     - "3"                 # Temps max fixé à 3 secondes
-    - "-p"                # Port cible
-    - "8080"              # Port personnalisé (non standard)
-    - "http://<ip>"       # URL cible en HTTP
+    - "http://<ip>:<ports>"  # URL cible avec ports dynamiques
