@@ -7,7 +7,6 @@ Scanner Nmap parallélisé avec interface Flask et logs WebSocket.
 - Scans parallèles (adaptatifs).
 - Web UI : start/stop/shutdown.
 - Logs live dans le browser.
-- Append : `active_ips.txt`, `summary.txt`.
 - `.env` pour `IP_RANGES`.
 
 ## Setup
@@ -27,9 +26,9 @@ Ouvre `http://localhost:5000`.
 
 ## Output
 
-- `active_ips.txt` : IPs actives.
+- `active-ips.txt` : IPs actives.
 - `summary.txt` : Stats.
-- `progress_ips.txt` : Progression.
+- `progress.txt` : Progression.
 
 ## Config
 

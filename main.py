@@ -42,9 +42,7 @@ logging.basicConfig(
 logger = logging.getLogger()
 
 # Fichiers JSON
-# ACTIVE_IPS_FILE = "active_ips.json"
-PROGRESS_FILE = "progress_ips.txt"
-# SUMMARY_FILE = "summary.json"
+PROGRESS_FILE = "progress.txt"
 
 # Liste des plages d'IP à scanner
 IP_RANGES = os.getenv("IP_RANGES", "30.31.32.33").split(",")
@@ -328,32 +326,6 @@ def save_scan_result(scanner_type, strategy, ip, scan_result):
         logger.info(f"Résultat du scan sauvegardé dans {result_file}")
     except Exception as e:
         logger.error(f"Erreur lors de la sauvegarde du résultat dans {result_file} : {e}")
-
-
-# Sauvegarder les IPs actives en JSON
-# noinspection PyTypeChecker
-# def save_active_ip(ip, scan_result, os_info, versions, vulns):
-#     entry = {
-#         "ip": ip,
-#         "timestamp": time.ctime(),
-#         "os": os_info if os_info else "Unknown",
-#         "ports": [{"port": p, "version": versions.get(p, "Unknown")} for p in
-#                   versions] if versions else scan_result.get("ports", []),
-#         "vulnerabilities": vulns if vulns else [],
-#         "raw_result": scan_result
-#     }
-#     try:
-#         if os.path.exists(ACTIVE_IPS_FILE):
-#             with open(ACTIVE_IPS_FILE, "r") as f:
-#                 data = json.load(f)
-#         else:
-#             data = []
-#         data.append(entry)
-#         with open(ACTIVE_IPS_FILE, "w") as f:
-#             json.dump(data, f, indent=4)
-#         logger.info(f"IP {ip} sauvegardée dans {ACTIVE_IPS_FILE}")
-#     except Exception as e:
-#         logger.error(f"Erreur lors de l'écriture dans {ACTIVE_IPS_FILE} : {e}")
 
 
 # Nouvelle route pour récupérer les stratégies
