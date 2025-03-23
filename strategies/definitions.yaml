@@ -1,19 +1,19 @@
 scanners:
   nmap:
     class: NmapScanner
-    file: nmap_strategies.yaml
+    file: nmap-strategies.yaml
   netcat:
     class: NetcatScanner
-    file: netcat_strategies.yaml
+    file: netcat-strategies.yaml
   scapy:
     class: ScapyScanner
-    file: scapy_strategies.yaml
+    file: scapy-strategies.yaml
   masscan:
     class: MasscanScanner
-    file: masscan_strategies.yaml
+    file: masscan-strategies.yaml
   hping3:
     class: Hping3Scanner
-    file: hping3_strategies.yaml
+    file: hping3-strategies.yaml
   curl:
     class: CurlScanner
-    file: curl_strategies.yaml
+    file: curl-strategies.yaml

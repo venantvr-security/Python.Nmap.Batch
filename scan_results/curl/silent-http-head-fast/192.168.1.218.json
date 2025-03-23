@@ -1,0 +1,15 @@
+{
+  "ip": "192.168.1.218",
+  "success": true,
+  "error": null,
+  "details": {
+    "ports": []
+  },
+  "extra": {
+    "commands": [
+      "/usr/bin/curl -s -I --connect-timeout 2 -m 5 http://192.168.1.218:80",
+      "/usr/bin/curl -s -I --connect-timeout 2 -m 5 http://192.168.1.218:443"
+    ]
+  },
+  "timestamp": "Sun Mar 23 17:45:11 2025"
+}

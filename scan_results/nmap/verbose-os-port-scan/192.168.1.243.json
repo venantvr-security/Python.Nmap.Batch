@@ -1,0 +1,17 @@
+{
+  "ip": "192.168.1.243",
+  "success": true,
+  "error": null,
+  "details": {
+    "ports": [],
+    "os": "Too many fingerprints match this host to give specific OS details",
+    "versions": {},
+    "vulns": []
+  },
+  "extra": {
+    "command": "/usr/bin/sudo /usr/bin/nmap 192.168.1.243 -v -O -p 80,443",
+    "mac_address": "10:8E:E0:15:FE:42",
+    "lan_name": "Galaxy-Tab-A-2016.lan"
+  },
+  "timestamp": "Sun Mar 23 18:35:19 2025"
+}

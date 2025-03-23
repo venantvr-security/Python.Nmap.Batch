@@ -69,7 +69,7 @@ import yaml
 STRATEGIES_DIR = "strategies"
 
 # Chemin du fichier de définition
-DEFINITION_FILE = os.path.join(STRATEGIES_DIR, "definition.yaml")
+DEFINITION_FILE = os.path.join(STRATEGIES_DIR, "definitions.yaml")
 
 
 def parse_nmap_ports(port_string):
@@ -138,7 +138,7 @@ def get_first_strategy(yaml_file):
 
 
 def load_scanner_definitions(definition_file):
-    """Charge les définitions des scanners depuis definition.yaml."""
+    """Charge les définitions des scanners depuis definitions.yaml."""
     try:
         with open(definition_file, 'r') as file:
             data = yaml.safe_load(file)
@@ -162,7 +162,7 @@ def build_scanners_config_and_map(strategies_dir=STRATEGIES_DIR, definition_file
         return scanners_config, scanner_map
 
     # Vérifie les fichiers dans le répertoire strategies/
-    available_files = {f for f in os.listdir(strategies_dir) if f.endswith('.yaml') and f != 'definition.yaml'}
+    available_files = {f for f in os.listdir(strategies_dir) if f.endswith('.yaml') and f != 'definitions.yaml'}
 
     # Construit scanners_config et initialise les scanners
     for scanner_key, config in scanner_definitions.items():
@@ -361,12 +361,12 @@ def save_scan_result(scanner_type, strategy, ip, scan_result):
 def get_strategies(scanner_type):
     # Dictionnaire des scanners et leurs fichiers YAML
     scanner_files = {
-        "nmap": "strategies/nmap_strategies.yaml",
-        "netcat": "strategies/netcat_strategies.yaml",
-        "scapy": "strategies/scapy_strategies.yaml",
-        "masscan": "strategies/masscan_strategies.yaml",
-        "hping3": "strategies/hping3_strategies.yaml",
-        "curl": "strategies/curl_strategies.yaml",
+        "nmap": "strategies/nmap-strategies.yaml",
+        "netcat": "strategies/netcat-strategies.yaml",
+        "scapy": "strategies/scapy-strategies.yaml",
+        "masscan": "strategies/masscan-strategies.yaml",
+        "hping3": "strategies/hping3-strategies.yaml",
+        "curl": "strategies/curl-strategies.yaml",
     }
 
     if scanner_type not in scanner_files:
@@ -550,7 +550,7 @@ def start_scan_endpoint(scanner_type, strategy):
 
 
 def load_and_validate_scanner_definitions(definition_file=DEFINITION_FILE, strategies_dir=STRATEGIES_DIR):
-    """Charge et valide dynamiquement les définitions des scanners depuis definition.yaml."""
+    """Charge et valide dynamiquement les définitions des scanners depuis definitions.yaml."""
     try:
         with open(definition_file, 'r') as file:
             data = yaml.safe_load(file)
@@ -559,7 +559,7 @@ def load_and_validate_scanner_definitions(definition_file=DEFINITION_FILE, strat
         logger.error(f"Erreur lors de la lecture de {definition_file}: {e}")
         return {}
 
-    available_files = {f for f in os.listdir(strategies_dir) if f.endswith('.yaml') and f != 'definition.yaml'}
+    available_files = {f for f in os.listdir(strategies_dir) if f.endswith('.yaml') and f != 'definitions.yaml'}
     valid_definitions = {}
     for scanner_key, config in scanner_definitions.items():
         class_name = config.get('class')
@@ -659,6 +659,6 @@ def reset_progress_endpoint():
 if __name__ == "__main__":
     logger.info("Démarrage du serveur Flask sur 0.0.0.0:5000")
     try:
-        app.run(host='0.0.0.0', port=5000, threaded=True)
+        app.run(host='0.0.0.0', port=5001, threaded=True)
     except KeyboardInterrupt:
         signal_handler(signal.SIGINT, None)
