@@ -124,7 +124,7 @@ function startScan(scannerType) {
         return;
     }
     console.log(`Envoi de start_scan pour ${scannerType} avec stratégie ${strategy} et ports ${selectedPorts}`);
-    fetch(`/start_scan/${scannerType}/${strategy}?ports=${encodeURIComponent(selectedPorts)}`)
+    fetch(`/scan/start/${scannerType}/${strategy}?ports=${encodeURIComponent(selectedPorts)}`)
         .then(response => {
             if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`);
             return response.text();
@@ -227,7 +227,7 @@ async function loadScannerButtons() {
 // Fonctions pour arrêter et réinitialiser
 function stopScan() {
     console.log('Envoi de stop_scan');
-    fetch('/stop_scan')
+    fetch('/scan/stop')
         .then(response => {
             if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`);
             return response.text();
@@ -240,7 +240,7 @@ function stopScan() {
 }
 
 function resetProgress() {
-    fetch('/reset_progress', { method: 'POST' })
+    fetch('/progress/reset', { method: 'POST' })
         .then(response => {
             if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`);
             return response.text();
@@ -259,7 +259,7 @@ function resetProgress() {
 }
 
 function showScannerInfo(scannerType) {
-    fetch(`/get_scanner_info/${scannerType}`)
+    fetch(`/scanner/info/get/${scannerType}`)
         .then(response => {
             if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`);
             return response.json();

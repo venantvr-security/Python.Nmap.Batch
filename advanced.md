@@ -171,13 +171,13 @@ pip install -r requirements.txt  # Si un fichier requirements.txt existe
    mkdir -p strategies
    ```
    Ajoutez les fichiers YAML nécessaires :
-    - `strategies/nmap_strategies.yaml`
-    - `strategies/netcat_strategies.yaml`
-    - `strategies/scapy_strategies.yaml`
-    - `strategies/masscan_strategies.yaml`
-    - `strategies/hping3_strategies.yaml`
+    - `strategies/nmap-strategies.yaml`
+    - `strategies/netcat-strategies.yaml`
+    - `strategies/scapy-strategies.yaml`
+    - `strategies/masscan-strategies.yaml`
+    - `strategies/hping3-strategies.yaml`
 
-   Exemple pour `nmap_strategies.yaml` :
+   Exemple pour `nmap-strategies.yaml` :
    ```yaml
    strategies:
      basic:

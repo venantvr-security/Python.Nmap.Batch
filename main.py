@@ -316,9 +316,9 @@ def save_progress(ip):
         logger.error(f"Erreur lors de l'écriture dans {PROGRESS_FILE} : {e}")
 
 
-# Sauvegarder les résultats dans scan_results/<type_de_script>/<stratégie>/<ip>.json
+# Sauvegarder les résultats dans scan-results/<type_de_script>/<stratégie>/<ip>.json
 def save_scan_result(scanner_type, strategy, ip, scan_result):
-    base_dir = f"scan_results/{scanner_type}/{strategy}"
+    base_dir = f"scan-results/{scanner_type}/{strategy}"
     os.makedirs(base_dir, exist_ok=True)  # Crée les répertoires si nécessaire
     result_file = f"{base_dir}/{ip}.json"
     try:
@@ -357,7 +357,7 @@ def save_scan_result(scanner_type, strategy, ip, scan_result):
 
 
 # Nouvelle route pour récupérer les stratégies
-@app.route('/get_strategies/<scanner_type>')
+@app.route('/strategies/get/<scanner_type>')
 def get_strategies(scanner_type):
     # Dictionnaire des scanners et leurs fichiers YAML
     scanner_files = {
@@ -451,7 +451,7 @@ def scan_background():
                         "extra": extra,
                         "timestamp": time.ctime()
                     }
-                    # Sauvegarder le résultat dans scan_results/<type>/<stratégie>/<ip>.json
+                    # Sauvegarder le résultat dans scan-results/<type>/<stratégie>/<ip>.json
                     save_scan_result(scanner_type, strategy, ip, scan_result)
 
                     if success:
@@ -514,7 +514,7 @@ def events():
 
 
 # noinspection PyUnresolvedReferences
-@app.route('/start_scan/<scanner_type>/<strategy>')
+@app.route('/scan/start/<scanner_type>/<strategy>')
 def start_scan_endpoint(scanner_type, strategy):
     global stop_flag, scan_thread, nmap_scanner, netcat_scanner, current_scanner, active_processes
     proxy = request.args.get('proxy', None)
@@ -600,7 +600,7 @@ def get_scanners():
     return jsonify(scanners_data)
 
 
-@app.route('/get_scanner_info/<scanner_type>')
+@app.route('/scanner/info/get/<scanner_type>')
 def get_scanner_info(scanner_type):
     scanner_files = {
         "nmap": "docs/nmap.md",
@@ -625,7 +625,7 @@ def get_scanner_info(scanner_type):
         return jsonify({"error": f"Erreur inattendue : {str(e)}"}), 500
 
 
-@app.route('/stop_scan')
+@app.route('/scan/stop')
 def stop_scan_endpoint():
     global stop_flag
     logger.info("Requête HTTP pour arrêter le scan")
@@ -635,7 +635,7 @@ def stop_scan_endpoint():
     return "Arrêt demandé", 200
 
 
-@app.route('/reset_progress', methods=['POST'])
+@app.route('/progress/reset', methods=['POST'])
 def reset_progress_endpoint():
     global PROGRESS_FILE
     logger.info("Requête HTTP pour réinitialiser le fichier de progression")
