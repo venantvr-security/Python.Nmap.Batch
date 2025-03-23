@@ -1,43 +1,43 @@
 strategies:
-  verbose-basic-os-ports:
+  verbose-os-port-scan:
     - "-v"          # Mode verbeux, affiche plus de détails
     - "-O"          # Détection du système d’exploitation
     - "-p"          # Spécifie les ports à scanner
-    - "<ports>" # Ports ciblés : FTP (21), SSH (22), HTTP (80), HTTPS (443)
-  verbose-full-service-os-ports:
+    - "<ports>"     # Ports ciblés : FTP (21), SSH (22), HTTP (80), HTTPS (443)
+  verbose-service-os-syn:
     - "-v"          # Mode verbeux, affiche plus de détails
     - "-sV"         # Détection des versions des services
     - "-O"          # Détection du système d’exploitation
     - "-sS"         # Scan SYN (furtif, ne complète pas la connexion TCP)
     - "-p"          # Spécifie les ports à scanner
-    - "<ports>"      # Balaye les ports de 1 à 1000
-  verbose-vuln-service-os-ports:
+    - "<ports>"     # Balaye les ports de 1 à 1000
+  verbose-vuln-os-service:
     - "-v"          # Mode verbeux, affiche plus de détails
     - "-sV"         # Détection des versions des services
     - "-O"          # Détection du système d’exploitation
     - "--script"    # Exécute un script NSE (Nmap Scripting Engine)
     - "vuln"        # Script pour détecter les vulnérabilités connues
     - "-p"          # Spécifie les ports à scanner
-    - "<ports>"      # Balaye les ports de 1 à 1000
-  stealth-syn-fragmented-ports:
+    - "<ports>"     # Balaye les ports de 1 à 1000
+  stealth-syn-fragmented-polite:
     - "-v"          # Mode verbeux, affiche plus de détails
     - "-sS"         # Scan SYN (furtif, ne complète pas la connexion TCP)
     - "-f"          # Fragmente les paquets pour éviter la détection
     - "-p"          # Spécifie les ports à scanner
-    - "<ports>"      # Ports ciblés : HTTP (80), HTTPS (443)
+    - "<ports>"     # Ports ciblés : HTTP (80), HTTPS (443)
     - "-T2"         # Timing T2, discret et plus lent pour éviter la détection
   stealth-http-headers-fragmented:
     - "-v"          # Mode verbeux, affiche plus de détails
     - "-sS"         # Scan SYN (furtif, ne complète pas la connexion TCP)
     - "-f"          # Fragmente les paquets pour éviter la détection
     - "-p"          # Spécifie les ports à scanner
-    - "<ports>"      # Ports ciblés : HTTP (80), HTTPS (443)
     - "-T2"         # Timing T2, discret et plus lent pour éviter la détection
+    - "<ports>"     # Ports ciblés : HTTP (80), HTTPS (443)
     - "--script"    # Exécute un script NSE
     - "http-headers" # Récupère les en-têtes HTTP des services détectés
     - "--script-args" # Arguments passés au script
-    - "http.useragent=\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36\"" # Falsifie l’agent utilisateur pour imiter un navigateur Chrome
-  stealth-packet-fragmented-custom:
+    - "http.useragent=\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36\"" # Falsifie l’agent utilisateur
+  stealth-fragmented-custom-mtu:
     - "-v"           # Mode verbeux, affiche plus de détails
     - "-sS"          # Scan SYN (furtif, ne complète pas la connexion TCP)
     - "-f"           # Fragmente les paquets pour éviter la détection
@@ -46,5 +46,19 @@ strategies:
     - "--data-length" # Ajoute des données supplémentaires aux paquets
     - "32"           # 32 octets de données pour brouiller l’analyse
     - "-p"           # Spécifie les ports à scanner
-    - "<ports>"       # Ports ciblés : HTTP (80), HTTPS (443)
+    - "<ports>"      # Ports ciblés : HTTP (80), HTTPS (443)
     - "-T2"          # Timing T2, discret et plus lent pour éviter la détection
+  stealth-slow-decoy-scan:  # Conservé tel quel (ChatGPT)
+    - "-sS"           # Scan SYN furtif
+    - "-Pn"           # Pas de ping préalable
+    - "-T2"           # Timing Polite
+    - "--scan-delay"  # Délai entre paquets
+    - "5s"            # 5 secondes de délai
+    - "--max-rate"    # Taux maximum de paquets
+    - "1"             # 1 paquet par seconde
+    - "-f"            # Fragmentation des paquets
+    - "-D"            # Leurres (decoys)
+    - "RND:10"        # 10 adresses leurres aléatoires
+  ultra-stealth-paranoid-scan:  # Conservé tel quel (Grok)
+    - "-sS"  # Scan SYN furtif
+    - "-T0"  # Timing Paranoid (5 minutes entre chaque paquet)

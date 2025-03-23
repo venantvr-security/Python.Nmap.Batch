@@ -1,8 +1,8 @@
 strategies:
-  stealth-syn-port-80:
+  stealth-syn-short-delayed:
     - "-S"         # Active le scan SYN (drapeau TCP SYN uniquement)
     - "-p"         # Spécifie le port cible
-    - "<ports>"         # Port 80 (HTTP standard)
+    - "<ports>"    # Placeholder pour les ports dynamiques
     - "-i"         # Définit l’intervalle entre l’envoi des paquets
     - "u50000"     # Intervalle de 50 000 microsecondes (50 ms), pour un envoi discret
     - "-c"         # Limite le nombre total de paquets envoyés

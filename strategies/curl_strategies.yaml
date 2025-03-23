@@ -1,5 +1,5 @@
 strategies:
-  quick-http-head-check:
+  silent-http-head-fast:
     - "-s"                # Mode silencieux, pas de sortie inutile
     - "-I"                # Requête HEAD uniquement (en-têtes)
     - "--connect-timeout" # Définit le timeout de connexion
@@ -7,7 +7,7 @@ strategies:
     - "-m"                # Temps maximum total de l'opération
     - "5"                 # Temps max fixé à 5 secondes
     - "http://<ip>:<ports>"  # URL cible avec ports dynamiques
-  quick-https-head-check:
+  silent-https-head-fast:
     - "-s"                # Mode silencieux, pas de sortie inutile
     - "-I"                # Requête HEAD uniquement (en-têtes)
     - "--connect-timeout" # Définit le timeout de connexion
@@ -15,7 +15,7 @@ strategies:
     - "-m"                # Temps maximum total de l'opération
     - "5"                 # Temps max fixé à 5 secondes
     - "https://<ip>:<ports>" # URL cible en HTTPS avec ports dynamiques
-  verbose-custom-port-scan:
+  verbose-http-head-quick:
     - "-v"                # Mode verbeux, affiche des détails
     - "-I"                # Requête HEAD uniquement (en-têtes)
     - "--connect-timeout" # Définit le timeout de connexion

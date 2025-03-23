@@ -1,5 +1,5 @@
 strategies:
-  stealth-port-80-delayed:
-    ports: "<ports>"        # Port cible pour le scan (HTTP standard)
-    delay: 0.5      # Délai entre l’envoi des paquets (0,5 seconde, pour discrétion)
-    timeout: 2      # Temps d’attente maximum pour une réponse (2 secondes)
+  stealth-delayed-port-scan:
+    ports: "<ports>"  # Port cible pour le scan (remplacé dynamiquement par self.ports)
+    delay: 0.5        # Délai entre l’envoi des paquets (0,5 seconde, pour discrétion)
+    timeout: 2        # Temps d’attente maximum pour une réponse (2 secondes)
