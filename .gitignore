@@ -1,4 +1,4 @@
 .venv
 .env
 /progress.txt
-# /scan-results/
+/results/

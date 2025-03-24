@@ -314,9 +314,9 @@ def save_progress(ip):
         logger.error(f"Erreur lors de l'écriture dans {PROGRESS_FILE} : {e}")
 
 
-# Sauvegarder les résultats dans scan-results/<type_de_script>/<stratégie>/<ip>.json
+# Sauvegarder les résultats dans results/<type_de_script>/<stratégie>/<ip>.json
 def save_scan_result(scanner_type, strategy, ip, scan_result):
-    base_dir = f"scan-results/{scanner_type}/{strategy}"
+    base_dir = f"results/{scanner_type}/{strategy}"
     os.makedirs(base_dir, exist_ok=True)  # Crée les répertoires si nécessaire
     result_file = f"{base_dir}/{ip}.json"
     try:
@@ -423,7 +423,7 @@ def scan_background():
                         "extra": extra,
                         "timestamp": time.ctime()
                     }
-                    # Sauvegarder le résultat dans scan-results/<type>/<stratégie>/<ip>.json
+                    # Sauvegarder le résultat dans results/<type>/<stratégie>/<ip>.json
                     save_scan_result(scanner_type, strategy, ip, scan_result)
 
                     if success:
