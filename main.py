@@ -11,6 +11,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from queue import Queue, Empty
 
+import toml
 from dotenv import load_dotenv
 from flask import Flask, render_template, Response, request, jsonify
 
@@ -27,6 +28,20 @@ from scanners.NmapScanner import NmapScanner
 # noinspection PyUnresolvedReferences
 from scanners.ScapyScanner import ScapyScanner
 
+# --- Configuration Robuste des Chemins ---
+# Chemin absolu de la racine du projet (là où se trouve ce script)
+APP_ROOT = os.path.dirname(os.path.abspath(__file__))
+
+# Charger la configuration depuis config.toml
+CONFIG_FILE = os.path.join(APP_ROOT, 'config.toml')
+with open(CONFIG_FILE, 'r') as f:
+    config = toml.load(f)
+
+# Construire les chemins absolus à partir de la racine de l'application
+PATHS = {
+    key: os.path.join(APP_ROOT, path) for key, path in config['paths'].items()
+}
+
 # Charger le fichier .env
 load_dotenv()
 
@@ -41,9 +56,6 @@ logging.basicConfig(
     handlers=[logging.StreamHandler()]
 )
 logger = logging.getLogger()
-
-# Fichiers JSON
-PROGRESS_FILE = "progress.txt"
 
 # Liste des plages d'IP à scanner
 IP_RANGES = os.getenv("IP_RANGES", "30.31.32.33").split(",")
@@ -66,11 +78,8 @@ tor_identity_change_freq = 0
 # Initialisation des scanners
 import yaml
 
-# Chemin du répertoire strategies
-STRATEGIES_DIR = "strategies"
-
 # Chemin du fichier de définition
-DEFINITION_FILE = os.path.join(STRATEGIES_DIR, "definitions.yaml")
+DEFINITION_FILE = os.path.join(PATHS['strategies_dir'], "definitions.yaml")
 
 
 def parse_nmap_ports(port_string):
@@ -149,7 +158,7 @@ def load_scanner_definitions(definition_file):
         return {}
 
 
-def build_scanners_config_and_map(strategies_dir=STRATEGIES_DIR, definition_file=DEFINITION_FILE):
+def build_scanners_config_and_map(strategies_dir=PATHS['strategies_dir'], definition_file=DEFINITION_FILE):
     """Construit dynamiquement scanners_config et scanner_map."""
     scanners_config = []
     scanners = {}
@@ -234,7 +243,7 @@ def signal_handler(sig, frame):
 
 
 # Chemin du fichier ports.yaml
-PORTS_FILE = os.path.join(STRATEGIES_DIR, "ports.yaml")
+PORTS_FILE = os.path.join(PATHS['strategies_dir'], "ports.yaml")
 
 
 # Parser pour les ports Nmap
@@ -298,30 +307,32 @@ def generate_all_ips(ranges):
 
 # Charger les IPs déjà scannées
 def load_progress():
-    if os.path.exists(PROGRESS_FILE):
+    progress_file_path = PATHS['progress_file']
+    if os.path.exists(progress_file_path):
         try:
-            with open(PROGRESS_FILE, "r") as f:
+            with open(progress_file_path, "r") as f:
                 return set(line.strip() for line in f if line.strip())
         except Exception as e:
-            logger.error(f"Erreur lors de la lecture de {PROGRESS_FILE} : {e}")
+            logger.error(f"Erreur lors de la lecture de {progress_file_path} : {e}")
             return set()
     return set()
 
 
 # Sauvegarder une IP terminée
 def save_progress(ip):
+    progress_file_path = PATHS['progress_file']
     try:
-        with open(PROGRESS_FILE, "a") as f:
+        with open(progress_file_path, "a") as f:
             f.write(f"{ip}\n")
     except Exception as e:
-        logger.error(f"Erreur lors de l'écriture dans {PROGRESS_FILE} : {e}")
+        logger.error(f"Erreur lors de l'écriture dans {progress_file_path} : {e}")
 
 
 # Sauvegarder les résultats dans results/<type_de_script>/<stratégie>/<ip>.json
 def save_scan_result(scanner_type, strategy, ip, scan_result):
-    base_dir = f"results/{scanner_type}/{strategy}"
+    base_dir = os.path.join(PATHS['results_dir'], scanner_type, strategy)
     os.makedirs(base_dir, exist_ok=True)  # Crée les répertoires si nécessaire
-    result_file = f"{base_dir}/{ip}.json"
+    result_file = os.path.join(base_dir, f"{ip}.json")
     try:
         with open(result_file, "w") as f:
             # noinspection PyTypeChecker
@@ -336,19 +347,19 @@ def save_scan_result(scanner_type, strategy, ip, scan_result):
 def get_strategies(scanner_type):
     # Dictionnaire des scanners et leurs fichiers YAML
     scanner_files = {
-        "nmap": "strategies/nmap-strategies.yaml",
-        "netcat": "strategies/netcat-strategies.yaml",
-        "scapy": "strategies/scapy-strategies.yaml",
-        "masscan": "strategies/masscan-strategies.yaml",
-        "hping3": "strategies/hping3-strategies.yaml",
-        "curl": "strategies/curl-strategies.yaml",
+        "nmap": "nmap-strategies.yaml",
+        "netcat": "netcat-strategies.yaml",
+        "scapy": "scapy-strategies.yaml",
+        "masscan": "masscan-strategies.yaml",
+        "hping3": "hping3-strategies.yaml",
+        "curl": "curl-strategies.yaml",
     }
 
     if scanner_type not in scanner_files:
         return jsonify(
             {"error": f"Type de scanner inconnu : {scanner_type}. Options valides : {list(scanner_files.keys())}"}), 400
 
-    yaml_file = scanner_files[scanner_type]
+    yaml_file = os.path.join(PATHS['strategies_dir'], scanner_files[scanner_type])
     try:
         with open(yaml_file, 'r') as file:
             data = yaml.safe_load(file)
@@ -524,7 +535,7 @@ def start_scan_endpoint(scanner_type, strategy):
         f" et proxy {proxy}" if proxy else ""), 200
 
 
-def load_and_validate_scanner_definitions(definition_file=DEFINITION_FILE, strategies_dir=STRATEGIES_DIR):
+def load_and_validate_scanner_definitions(definition_file=DEFINITION_FILE, strategies_dir=PATHS['strategies_dir']):
     """Charge et valide dynamiquement les définitions des scanners depuis definitions.yaml."""
     try:
         with open(definition_file, 'r') as file:
@@ -557,7 +568,7 @@ def get_scanners():
 
     scanner_definitions = load_and_validate_scanner_definitions()
     for scanner_key, scanner_instance in scanner_map.items():
-        yaml_file = os.path.join(STRATEGIES_DIR, scanner_definitions[scanner_key]['file'])
+        yaml_file = os.path.join(PATHS['strategies_dir'], scanner_definitions[scanner_key]['file'])
         try:
             with open(yaml_file, 'r') as file:
                 data = yaml.safe_load(file)
@@ -578,18 +589,18 @@ def get_scanners():
 @app.route('/scanner/info/get/<scanner_type>')
 def get_scanner_info(scanner_type):
     scanner_files = {
-        "nmap": "docs/nmap.md",
-        "netcat": "docs/netcat.md",
-        "scapy": "docs/scapy.md",
-        "masscan": "docs/masscan.md",
-        "hping3": "docs/hping3.md",
-        "curl": "docs/curl.md",
+        "nmap": "nmap.md",
+        "netcat": "netcat.md",
+        "scapy": "scapy.md",
+        "masscan": "masscan.md",
+        "hping3": "hping3.md",
+        "curl": "curl.md",
     }
 
     if scanner_type not in scanner_files:
         return jsonify({"error": f"Type de scanner inconnu : {scanner_type}"}), 400
 
-    md_file = scanner_files[scanner_type]
+    md_file = os.path.join(PATHS['docs_dir'], scanner_files[scanner_type])
     try:
         with open(md_file, 'r', encoding='utf-8') as file:
             content = file.read()
@@ -612,23 +623,51 @@ def stop_scan_endpoint():
 
 @app.route('/progress/reset', methods=['POST'])
 def reset_progress_endpoint():
-    global PROGRESS_FILE
+    progress_file_path = PATHS['progress_file']
     logger.info("Requête HTTP pour réinitialiser le fichier de progression")
     try:
-        if os.path.exists(PROGRESS_FILE):
-            os.remove(PROGRESS_FILE)
-            logger.info(f"Fichier {PROGRESS_FILE} supprimé avec succès")
+        if os.path.exists(progress_file_path):
+            os.remove(progress_file_path)
+            logger.info(f"Fichier {progress_file_path} supprimé avec succès")
             event_queue.put(
                 {'event': 'progress', 'data': {'message': f"[{time.ctime()}] Fichier de progression réinitialisé"}})
             return "Fichier de progression réinitialisé", 200
         else:
-            logger.info(f"Le fichier {PROGRESS_FILE} n'existe pas")
+            logger.info(f"Le fichier {progress_file_path} n'existe pas")
             return "Aucun fichier de progression à supprimer", 200
     except Exception as e:
-        logger.error(f"Erreur lors de la suppression de {PROGRESS_FILE} : {e}")
+        logger.error(f"Erreur lors de la suppression de {progress_file_path} : {e}")
         event_queue.put(
             {'event': 'progress', 'data': {'message': f"[{time.ctime()}] Erreur lors de la réinitialisation : {e}"}})
         return f"Erreur : {str(e)}", 500
+
+
+@app.route('/api/docs/list', methods=['GET'])
+def list_docs():
+    """Liste les fichiers .MD de la documentation."""
+    docs_dir = PATHS['docs_dir']
+    try:
+        files = [f for f in os.listdir(docs_dir) if f.endswith('.md') and f.lower() != 'readme.md']
+        return jsonify(sorted(files))
+    except FileNotFoundError:
+        logger.error(f"Le répertoire de documentation {docs_dir} est introuvable.")
+        return jsonify({"error": "Répertoire docs non trouvé"}), 404
+
+
+@app.route('/api/docs/content/<filename>', methods=['GET'])
+def get_doc_content(filename):
+    """Renvoie le contenu d'un fichier de documentation."""
+    docs_dir = PATHS['docs_dir']
+    # Sécurité : Assurez-vous que le nom de fichier ne contient pas de ".." pour éviter le path traversal
+    if '..' in filename or not filename.endswith('.md'):
+        return jsonify({"error": "Nom de fichier invalide"}), 400
+    try:
+        file_path = os.path.join(docs_dir, filename)
+        with open(file_path, 'r', encoding='utf-8') as file:
+            content = file.read()
+        return jsonify({"title": filename, "content": content})
+    except FileNotFoundError:
+        return jsonify({"error": f"Fichier {filename} non trouvé"}), 404
 
 
 def check_tor_status():

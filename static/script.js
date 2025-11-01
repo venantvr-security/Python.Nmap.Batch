@@ -459,6 +459,53 @@ function showAIEvasionInfo() {
     modal.show();
 }
 
+// Fonctions pour la documentation
+function loadDocList() {
+    fetch('/api/docs/list')
+        .then(response => response.json())
+        .then(files => {
+            const docList = document.getElementById('doc-list-nav');
+            docList.innerHTML = '';
+            files.forEach(file => {
+                const li = document.createElement('li');
+                const a = document.createElement('a');
+                a.className = 'dropdown-item';
+                a.href = '#';
+                a.textContent = file.replace('.md', '').replace(/-/g, ' ');
+                a.onclick = (e) => {
+                    e.preventDefault();
+                    showDoc(file);
+                };
+                li.appendChild(a);
+                docList.appendChild(li);
+            });
+        })
+        .catch(error => {
+            console.error('Erreur chargement doc list:', error);
+            document.getElementById('doc-list-nav').innerHTML = '<li><a class="dropdown-item" href="#">Erreur</a></li>';
+        });
+}
+
+function showDoc(filename) {
+    fetch(`/api/docs/content/${filename}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Erreur: ' + data.error);
+                return;
+            }
+            document.getElementById('docModalLabel').textContent = data.title.replace('.md', '').replace(/-/g, ' ');
+            const modalBody = document.getElementById('doc-modal-body');
+            modalBody.innerHTML = marked.parse(data.content);
+            const docModal = new bootstrap.Modal(document.getElementById('docModal'));
+            docModal.show();
+        })
+        .catch(error => {
+            console.error('Erreur chargement doc content:', error);
+            alert('Erreur de chargement du document.');
+        });
+}
+
 // Filtrage par mot-clé
 function filterStrategies() {
     const query = document.getElementById('search-filter').value.toLowerCase().trim();
@@ -528,6 +575,7 @@ function filterStrategies() {
 document.addEventListener('DOMContentLoaded', () => {
     loadScannerButtons();
     checkTorStatus();
+    loadDocList(); // Charger la liste des documents
     setInterval(checkTorStatus, 30000);
 
     // Attacher filtrage

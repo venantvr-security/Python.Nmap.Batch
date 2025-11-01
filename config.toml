@@ -1,0 +1,5 @@
+[paths]
+docs_dir = "docs"
+strategies_dir = "strategies"
+results_dir = "results"
+progress_file = "progress.txt"

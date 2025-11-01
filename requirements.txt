@@ -6,3 +6,4 @@ python3-nmap~=1.9.1
 PyYAML~=6.0.2
 scapy~=2.6.1
 stem~=1.8.2
+toml~=0.10.2

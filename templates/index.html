@@ -189,6 +189,12 @@
                         </li>
                     </ul>
                 </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" id="docNavDropdown" role="button">
+                        Documentation
+                    </a>
+                    <ul class="dropdown-menu" id="doc-list-nav"></ul>
+                </li>
             </ul>
             <div class="d-flex align-items-center gap-3">
                 <div class="badge bg-secondary" id="tor-status" style="font-size: 0.95rem; padding: 8px 16px;">
@@ -229,6 +235,24 @@
         <div class="card-body">
             <h5 class="card-title mb-3">Live Output</h5>
             <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3" id="tiles"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Documentation Modal -->
+<div aria-hidden="true" aria-labelledby="docModalLabel" class="modal fade" id="docModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="docModalLabel">Documentation</h5>
+                <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
+            </div>
+            <div class="modal-body" id="doc-modal-body" style="max-height: 80vh; overflow-y: auto;">
+                <!-- Contenu du MD chargé ici -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Fermer</button>
+            </div>
         </div>
     </div>
 </div>
