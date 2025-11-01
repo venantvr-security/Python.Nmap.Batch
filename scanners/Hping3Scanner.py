@@ -20,6 +20,7 @@ class Hping3Scanner(ScannerInterface):
         except KeyError:
             raise ValueError(f"Le fichier {self.yaml_file} doit contenir une clé 'strategies'.")
 
+    # noinspection PyTypeHints
     def scan(self, ip: str, thread_id: str, event_queue, stop_flag) -> ScanResult:
         if stop_flag():
             event_queue.put({'event': 'thread_update',

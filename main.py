@@ -491,7 +491,7 @@ def events():
 # noinspection PyUnresolvedReferences
 @app.route('/scan/start/<scanner_type>/<strategy>')
 def start_scan_endpoint(scanner_type, strategy):
-    global stop_flag, scan_thread, nmap_scanner, netcat_scanner, current_scanner, active_processes
+    global stop_flag, scan_thread, current_scanner, active_processes
     proxy = request.args.get('proxy', None)
     ports = request.args.get('ports', None)  # Récupérer les ports depuis la requête
     logger.info(
