@@ -3,7 +3,7 @@ import random
 import time
 from typing import Dict, List, Tuple
 
-from scapy.layers.inet import IP, TCP, IPOption
+from scapy.layers.inet import IP, TCP
 from scapy.packet import Packet, Raw
 
 
@@ -123,6 +123,24 @@ class AdvancedEvasion:
         return base_ttl
 
     @staticmethod
+    def get_random_ipid(mode: str = "random") -> int:
+        """Génère IPID avec différents modes"""
+        if mode == "random":
+            # Totalement aléatoire (éviter corrélation)
+            return random.randint(0, 65535)
+        elif mode == "incremental":
+            # Séquentiel (comportement OS classique)
+            return random.randint(1000, 10000)
+        elif mode == "zero":
+            # IPID=0 (certains OS modernes)
+            return 0
+        elif mode == "odd":
+            # Uniquement impairs (BSD)
+            return random.randrange(1, 65535, 2)
+        else:
+            return random.randint(0, 65535)
+
+    @staticmethod
     def get_ephemeral_port(os_type: str) -> int:
         """Port source éphémère réaliste selon OS"""
         ranges = {
@@ -169,7 +187,11 @@ class AdvancedEvasion:
                 os_type, strategy.get("randomize_ttl", False)
             )
 
-        # 5. Protocol mimicry
+        # 5. IPID manipulation
+        if packet.haslayer(IP) and strategy.get("ipid_mode"):
+            packet[IP].id = AdvancedEvasion.get_random_ipid(strategy["ipid_mode"])
+
+        # 6. Protocol mimicry
         if strategy.get("protocol_mimicry") and packet.haslayer(TCP):
             port = packet[TCP].dport
             packet = AdvancedEvasion.add_protocol_mimicry(packet, port)

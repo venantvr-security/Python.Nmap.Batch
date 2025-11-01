@@ -23,6 +23,10 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <input class="form-control form-control-sm" id="search-filter" placeholder="🔍 Filter strategies..." style="width: 200px; margin-top: 8px;"
+                           type="text">
+                </li>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" id="portsNavDropdown" role="button">
                         <span id="ports-nav-text">Ports</span>
@@ -75,6 +79,32 @@
                                     <option value="gaming">Gaming Traffic</option>
                                     <option value="voip">VoIP/SIP</option>
                                     <option value="browser">Browser Traffic</option>
+                                </optgroup>
+                                <optgroup label="Behavioral">
+                                    <option value="human-browsing">Human Browsing Pattern</option>
+                                    <option value="timing-stego">Timing Steganography</option>
+                                    <option value="cdn-edge">CDN Edge Server</option>
+                                    <option value="bitcoin-node">Bitcoin Node</option>
+                                </optgroup>
+                                <optgroup label="Anti-Forensic">
+                                    <option value="forensic-confusion">Forensic Confusion</option>
+                                    <option value="protocol-poly">Protocol Polymorphism</option>
+                                </optgroup>
+                                <optgroup label="Contextual">
+                                    <option value="container">Container/K8s</option>
+                                    <option value="industrial">Industrial IoT</option>
+                                    <option value="smart-home">Smart Home</option>
+                                    <option value="tor-exit">TOR Exit Node</option>
+                                </optgroup>
+                                <optgroup label="Emerging">
+                                    <option value="satellite">Satellite Internet</option>
+                                    <option value="ml-cluster">ML Training Cluster</option>
+                                    <option value="webrtc">WebRTC P2P</option>
+                                    <option value="streaming">Video Streaming</option>
+                                </optgroup>
+                                <optgroup label="Exotic">
+                                    <option value="time-oracle">Time Oracle (ultra-slow)</option>
+                                    <option value="quantum">Quantum Entropy</option>
                                 </optgroup>
                             </select>
                         </li>
@@ -349,6 +379,42 @@
                     <li><strong>gaming-traffic-mimicry:</strong> Fast timing (0.3s), Steam/Epic ports</li>
                     <li><strong>voip-sip-mimicry:</strong> SIP ports (5060/5061), 8KB window</li>
                     <li><strong>legitimate-browser-scan:</strong> Windows 11 browser, 7-day uptime</li>
+                </ul>
+
+                <p><strong>Behavioral:</strong></p>
+                <ul>
+                    <li><strong>human-browsing-pattern:</strong> Mimics human behavior, Fibonacci timing, 3 decoys only</li>
+                    <li><strong>timing-steganography:</strong> Covert channel via timing, prime pattern, no decoys</li>
+                    <li><strong>cdn-edge-server:</strong> CDN mimicry, 40 decoys, 500-day uptime, 10 edge ports</li>
+                    <li><strong>bitcoin-node-sync:</strong> Blockchain node, Bitcoin ports (8333), 400-day uptime</li>
+                </ul>
+
+                <p><strong>Anti-Forensic:</strong></p>
+                <ul>
+                    <li><strong>forensic-confusion:</strong> Fragmentation + 77B padding, 30 decoys, random timing</li>
+                    <li><strong>protocol-polymorphism:</strong> Variable protocol mimicry, 35 decoys, TTL randomization</li>
+                </ul>
+
+                <p><strong>Contextual:</strong></p>
+                <ul>
+                    <li><strong>container-orchestration:</strong> Docker/K8s ports, 2-day uptime, 15 decoys</li>
+                    <li><strong>industrial-iot:</strong> SCADA/Modbus ports, 1000-day uptime, TTL 32, 2 decoys</li>
+                    <li><strong>smart-home-device:</strong> MQTT/CoAP, TTL 1, 1KB window, no decoys</li>
+                    <li><strong>tor-exit-node:</strong> TOR ports (9001/9030), 50 decoys, 200-day uptime</li>
+                </ul>
+
+                <p><strong>Emerging:</strong></p>
+                <ul>
+                    <li><strong>satellite-internet:</strong> 8s delay (latency), TTL 48, 10s timeout</li>
+                    <li><strong>ml-training-cluster:</strong> TensorBoard/MLflow ports, 90-day uptime, 0.1s delay</li>
+                    <li><strong>webrtc-p2p:</strong> STUN/TURN ports, random timing, 6 decoys</li>
+                    <li><strong>video-streaming:</strong> HTTPS streaming, exponential timing, 65KB window</li>
+                </ul>
+
+                <p><strong>Exotic:</strong></p>
+                <ul>
+                    <li><strong>time-oracle-scan:</strong> ULTRA-SLOW: 60s delay, no decoys, 30s timeout</li>
+                    <li><strong>quantum-entropy:</strong> Maximum randomness, TTL/IPID randomized, 25 decoys</li>
                 </ul>
             </div>
             <div class="modal-footer">

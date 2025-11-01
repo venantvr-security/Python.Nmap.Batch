@@ -459,9 +459,77 @@ function showAIEvasionInfo() {
     modal.show();
 }
 
+// Filtrage par mot-clé
+function filterStrategies() {
+    const query = document.getElementById('search-filter').value.toLowerCase().trim();
+
+    // Filtrer AI Evasion dropdown
+    const evasionSelect = document.getElementById('evasion-preset');
+    const optgroups = evasionSelect.querySelectorAll('optgroup');
+
+    optgroups.forEach(optgroup => {
+        let hasVisibleOptions = false;
+        const options = optgroup.querySelectorAll('option');
+
+        options.forEach(option => {
+            const text = option.textContent.toLowerCase();
+            const value = option.value.toLowerCase();
+            const label = optgroup.label.toLowerCase();
+
+            if (query === '' || text.includes(query) || value.includes(query) || label.includes(query)) {
+                option.style.display = '';
+                hasVisibleOptions = true;
+            } else {
+                option.style.display = 'none';
+            }
+        });
+
+        // Masquer optgroup si aucune option visible
+        optgroup.style.display = hasVisibleOptions ? '' : 'none';
+    });
+
+    // Filtrer boutons scanners
+    const scannerButtons = document.querySelectorAll('#scanner-buttons .col');
+    scannerButtons.forEach(col => {
+        const btnGroup = col.querySelector('.btn-group');
+        if (!btnGroup) return;
+
+        const mainButton = btnGroup.querySelector('button:first-child');
+        const dropdownMenu = btnGroup.querySelector('.dropdown-menu');
+
+        if (!mainButton || !dropdownMenu) return;
+
+        const scannerName = mainButton.textContent.toLowerCase();
+        let hasVisibleStrategies = false;
+
+        // Vérifier items dropdown
+        const dropdownItems = dropdownMenu.querySelectorAll('li a.dropdown-item:not(.text-info)');
+        dropdownItems.forEach(item => {
+            const strategyText = item.textContent.toLowerCase();
+
+            if (query === '' || scannerName.includes(query) || strategyText.includes(query)) {
+                item.parentElement.style.display = '';
+                hasVisibleStrategies = true;
+            } else {
+                item.parentElement.style.display = 'none';
+            }
+        });
+
+        // Masquer scanner si aucune correspondance
+        if (query === '' || scannerName.includes(query) || hasVisibleStrategies) {
+            col.style.display = '';
+        } else {
+            col.style.display = 'none';
+        }
+    });
+}
+
 // Charger les boutons au démarrage
 document.addEventListener('DOMContentLoaded', () => {
     loadScannerButtons();
     checkTorStatus();
     setInterval(checkTorStatus, 30000);
+
+    // Attacher filtrage
+    document.getElementById('search-filter').addEventListener('input', filterStrategies);
 });

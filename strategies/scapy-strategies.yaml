@@ -482,3 +482,312 @@ strategies:
 
     window_size: 8192
     decoys: 5
+
+  # === STRATÉGIES COMPORTEMENTALES ===
+
+  human-browsing-pattern:
+    ports: "<ports>"
+    scan_type: "syn"
+    delay: 2.5
+    timeout: 3
+
+    advanced_evasion: true
+    os_fingerprint: "windows11"
+    realistic_tcp_options: true
+    realistic_window: true
+
+    timing_pattern: "fibonacci"
+    src_ports: [ 443, 8080, 3000, 5173 ]
+    protocol_mimicry: true
+
+    fake_uptime_days: 14
+    decoys: 3
+    send_rst: true
+
+  timing-steganography:
+    ports: "<ports>"
+    scan_type: "syn"
+    delay: 3.0
+    timeout: 4
+
+    advanced_evasion: true
+    os_fingerprint: "linux"
+    realistic_tcp_options: true
+
+    timing_pattern: "prime"
+    protocol_mimicry: true
+
+    fragment: true
+    padding: 32
+    decoys: 0
+
+  cdn-edge-server:
+    ports: "<ports>"
+    scan_type: "syn"
+    delay: 0.2
+    timeout: 2
+
+    advanced_evasion: true
+    os_fingerprint: "linux"
+    realistic_tcp_options: true
+    realistic_window: true
+
+    timing_pattern: "exponential"
+    src_ports: [ 443, 8443, 2052, 2053, 2082, 2083, 2086, 2087, 2095, 2096 ]
+
+    ttl: 56
+    fake_uptime_days: 500
+
+    decoys: 40
+
+  bitcoin-node-sync:
+    ports: "<ports>"
+    scan_type: "syn"
+    delay: 1.8
+    timeout: 3
+
+    advanced_evasion: true
+    os_fingerprint: "linux"
+    realistic_tcp_options: true
+
+    timing_pattern: "random"
+    src_ports: [ 8333, 8332, 18333, 18332 ]
+    protocol_mimicry: true
+
+    fake_uptime_days: 400
+    window_size: 65535
+
+    decoys: 20
+
+  # === STRATÉGIES ANTI-FORENSIC ===
+
+  forensic-confusion:
+    ports: "<ports>"
+    scan_type: "syn"
+    delay: 4.0
+    timeout: 5
+
+    advanced_evasion: true
+    os_fingerprint: "windows10"
+    realistic_tcp_options: true
+
+    fragment: true
+    padding: 77
+
+    timing_pattern: "random"
+    randomize_ttl: true
+
+    decoys: 30
+
+  protocol-polymorphism:
+    ports: "<ports>"
+    scan_type: "syn"
+    delay: 2.5
+    timeout: 4
+
+    advanced_evasion: true
+    os_fingerprint: "android"
+    realistic_tcp_options: true
+
+    timing_pattern: "random"
+    protocol_mimicry: true
+
+    fragment: true
+    padding: 64
+    randomize_ttl: true
+
+    decoys: 35
+
+  # === STRATÉGIES CONTEXTUELLES ===
+
+  container-orchestration:
+    ports: "<ports>"
+    scan_type: "syn"
+    delay: 0.6
+    timeout: 3
+
+    advanced_evasion: true
+    os_fingerprint: "linux"
+    realistic_tcp_options: true
+
+    timing_pattern: "exponential"
+    src_ports: [ 443, 6443, 8080, 2375, 2376, 10250, 10251, 10252 ]
+    protocol_mimicry: true
+
+    fake_uptime_days: 2
+    window_size: 29200
+
+    decoys: 15
+
+  industrial-iot:
+    ports: "<ports>"
+    scan_type: "syn"
+    delay: 5.0
+    timeout: 5
+
+    advanced_evasion: true
+    os_fingerprint: "linux"
+    realistic_tcp_options: true
+
+    timing_pattern: "sine"
+    src_ports: [ 502, 4840, 44818, 102 ]
+
+    ttl: 32
+    fake_uptime_days: 1000
+
+    protocol_mimicry: true
+    window_size: 8192
+
+    decoys: 2
+
+  smart-home-device:
+    ports: "<ports>"
+    scan_type: "syn"
+    delay: 3.0
+    timeout: 3
+
+    advanced_evasion: true
+    os_fingerprint: "linux"
+    realistic_tcp_options: true
+
+    timing_pattern: "sine"
+    src_ports: [ 1883, 8883, 5683 ]
+
+    ttl: 1
+    fake_uptime_days: 4
+
+    protocol_mimicry: true
+    window_size: 1024
+
+    decoys: 0
+
+  tor-exit-node:
+    ports: "<ports>"
+    scan_type: "syn"
+    delay: 4.0
+    timeout: 5
+
+    advanced_evasion: true
+    os_fingerprint: "linux"
+    realistic_tcp_options: true
+
+    timing_pattern: "random"
+    src_ports: [ 9001, 9030, 443, 80 ]
+
+    randomize_ttl: true
+    ttl: 52
+    fake_uptime_days: 200
+
+    protocol_mimicry: true
+    decoys: 50
+
+  # === STRATÉGIES ÉMERGENTES ===
+
+  satellite-internet:
+    ports: "<ports>"
+    scan_type: "syn"
+    delay: 8.0
+    timeout: 10
+
+    advanced_evasion: true
+    os_fingerprint: "linux"
+    realistic_tcp_options: true
+
+    timing_pattern: "sine"
+    randomize_ttl: true
+    ttl: 48
+
+    protocol_mimicry: true
+    window_size: 65535
+
+    decoys: 5
+
+  ml-training-cluster:
+    ports: "<ports>"
+    scan_type: "syn"
+    delay: 0.1
+    timeout: 2
+
+    advanced_evasion: true
+    os_fingerprint: "linux"
+    realistic_tcp_options: true
+
+    timing_pattern: "exponential"
+    src_ports: [ 6006, 5000, 8080 ]
+
+    fake_uptime_days: 90
+    protocol_mimicry: true
+
+    window_size: 65535
+    decoys: 8
+
+  webrtc-p2p:
+    ports: "<ports>"
+    scan_type: "syn"
+    delay: 0.4
+    timeout: 2
+
+    advanced_evasion: true
+    os_fingerprint: "windows11"
+    realistic_tcp_options: true
+
+    timing_pattern: "random"
+    src_ports: [ 3478, 19302, 49152, 49153 ]
+    protocol_mimicry: true
+
+    fake_uptime_days: 1
+    decoys: 6
+
+  video-streaming:
+    ports: "<ports>"
+    scan_type: "syn"
+    delay: 0.8
+    timeout: 3
+
+    advanced_evasion: true
+    os_fingerprint: "android"
+    realistic_tcp_options: true
+
+    timing_pattern: "exponential"
+    src_ports: [ 443, 8443 ]
+    protocol_mimicry: true
+
+    fake_uptime_days: 10
+    window_size: 65535
+
+    decoys: 4
+
+  # === STRATÉGIES EXOTIQUES ===
+
+  time-oracle-scan:
+    ports: "<ports>"
+    scan_type: "syn"
+    delay: 60.0
+    timeout: 30
+
+    advanced_evasion: true
+    os_fingerprint: "linux"
+    realistic_tcp_options: true
+
+    timing_pattern: "random"
+    protocol_mimicry: true
+    randomize_ttl: true
+
+    decoys: 0
+
+  quantum-entropy:
+    ports: "<ports>"
+    scan_type: "syn"
+    delay: 2.0
+    timeout: 4
+
+    advanced_evasion: true
+    os_fingerprint: "linux"
+    realistic_tcp_options: true
+
+    timing_pattern: "random"
+    protocol_mimicry: true
+
+    randomize_ttl: true
+    ipid_mode: "random"
+    decoys: 25
