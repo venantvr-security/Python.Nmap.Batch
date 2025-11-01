@@ -84,16 +84,9 @@ class NetcatScanner(ScannerInterface):
 
             try:
                 process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-                self.active_processes.append(process)
 
-                # Enregistrer dans ProcessManager
-                try:
-                    from main import process_manager
-
-                    scanner_type = "netcat"
-                    process_manager.register(process, scanner_type, self.strategy, ip, thread_id)
-                except Exception:
-                    pass
+                if self.process_manager:
+                    self.process_manager.register(process, "netcat", self.strategy, ip, thread_id)
             except Exception as e:
                 event_queue.put({'event': 'thread_update',
                                  'data': {'thread_id': thread_id,
@@ -113,10 +106,7 @@ class NetcatScanner(ScannerInterface):
                 event_queue.put({'event': 'thread_update',
                                  'data': {'thread_id': thread_id,
                                           'message': f"[{time.ctime()}] Scan timeout après 10s pour port {port}"}})
-                self.active_processes.remove(process)
                 return ip, False, "Timeout", {"ports": all_ports}, {"commands": all_commands + [cmd_str]}
-
-            self.active_processes.remove(process)
 
             # Parsing de la sortie Netcat pour ce port
             for line in output_lines:

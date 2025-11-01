@@ -67,16 +67,9 @@ class Hping3Scanner(ScannerInterface):
 
             try:
                 process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-                self.active_processes.append(process)
 
-                # Enregistrer dans ProcessManager
-                try:
-                    from main import process_manager
-
-                    scanner_type = "hping3"
-                    process_manager.register(process, scanner_type, self.strategy, ip, thread_id)
-                except Exception:
-                    pass
+                if self.process_manager:
+                    self.process_manager.register(process, "hping3", self.strategy, ip, thread_id)
             except Exception as e:
                 event_queue.put({'event': 'thread_update',
                                  'data': {'thread_id': thread_id,
@@ -96,10 +89,7 @@ class Hping3Scanner(ScannerInterface):
                 event_queue.put({'event': 'thread_update',
                                  'data': {'thread_id': thread_id,
                                           'message': f"[{time.ctime()}] Scan timeout après 5s pour port {port}"}})
-                self.active_processes.remove(process)
                 return ip, False, "Timeout", {"ports": all_ports}, {"commands": all_commands + [cmd_str]}
-
-            self.active_processes.remove(process)
 
             # Traitement des lignes pour ce port
             for line in output_lines:

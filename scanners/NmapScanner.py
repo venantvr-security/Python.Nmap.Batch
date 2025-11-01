@@ -59,15 +59,9 @@ class NmapScanner(ScannerInterface):
                 # FIX: Utiliser liste args au lieu de shell=True pour éviter injection
                 with open(temp_filename, 'w') as outfile:
                     process = subprocess.Popen(cmd, stdout=outfile, stderr=subprocess.STDOUT)
-                self.active_processes.append(process)
 
-                # Enregistrer dans ProcessManager
-                try:
-                    from main import process_manager
-
-                    process_manager.register(process, "nmap", self.strategy, ip, thread_id)
-                except Exception:
-                    pass  # Fallback si import échoue
+                if self.process_manager:
+                    self.process_manager.register(process, "nmap", self.strategy, ip, thread_id)
 
                 event_queue.put({'event': 'thread_update',
                                  'data': {'thread_id': thread_id,
@@ -80,7 +74,6 @@ class NmapScanner(ScannerInterface):
                     event_queue.put({'event': 'thread_update',
                                      'data': {'thread_id': thread_id,
                                               'message': f"[{time.ctime()}] Scan timeout après 3600s"}})
-                    self.active_processes.remove(process)
                     with open(temp_filename, 'r') as f:
                         output_lines = f.read().splitlines()
                     os.remove(temp_filename)
@@ -96,15 +89,11 @@ class NmapScanner(ScannerInterface):
                 event_queue.put({'event': 'thread_update',
                                  'data': {'thread_id': thread_id,
                                           'message': f"[{time.ctime()}] Erreur lancement Nmap : {str(e)}"}})
-                if process in self.active_processes:
-                    self.active_processes.remove(process)
                 os.remove(temp_filename)
                 return ip, False, str(e), {}, {"command": cmd_str}
 
             finally:
                 os.remove(temp_filename)
-
-        self.active_processes.remove(process)
         ports = []
         os_info = None
         versions = {}

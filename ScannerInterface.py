@@ -1,5 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict, Tuple, TypedDict
+from typing import List, Dict, Tuple, TypedDict, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ProcessManager import ProcessManager
 
 # Alias de type pour le retour des méthodes scan
 # ScanResult = Tuple[str, bool, Optional[str], Dict, Dict[str, str]]
@@ -8,12 +11,12 @@ ScanResult = Tuple[str, bool, str or None, dict, TypedDict]
 
 class ScannerInterface(ABC):
 
-    def __init__(self, strategy: str, active_processes: List, yaml_file: str):
+    def __init__(self, strategy: str, yaml_file: str, process_manager: 'ProcessManager'):
         self.strategy = strategy
-        self.active_processes = active_processes if active_processes is not None else []
         self.yaml_file = yaml_file
+        self.process_manager = process_manager
         self.strategies = self.load_strategies()
-        self.ports = None  # Ajouter cet attribut
+        self.ports = None
 
         if strategy not in self.strategies:
             raise ValueError(f"Stratégie inconnue : {strategy}. Options valides : {list(self.strategies.keys())}")

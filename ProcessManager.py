@@ -91,18 +91,32 @@ class ProcessManager:
             if not data:
                 return False
 
+            # ÉTAPE 1: Trouver le processus
             try:
                 proc = data["process"]
                 p = psutil.Process(proc.pid)
-                p.terminate()  # SIGTERM
-                try:
-                    p.wait(timeout=3)
-                except psutil.TimeoutExpired:
-                    p.kill()  # SIGKILL
-                data["status"] = "killed"
-                return True
             except (psutil.NoSuchProcess, psutil.AccessDenied):
+                # Le processus n'existe déjà plus ou on n'a pas les droits
+                data["status"] = "terminated"
                 return False
+
+            # ÉTAPE 2: Tenter de le terminer poliment (terminate)
+            try:
+                p.terminate()
+                p.wait(timeout=3)
+                # S'il se termine à temps, 'p.wait()' ne lève pas d'exception
+            except psutil.TimeoutExpired:
+                # Il n'a pas voulu s'arrêter, on force (kill)
+                try:
+                    p.kill()
+                except (psutil.NoSuchProcess, psutil.AccessDenied, ProcessLookupError):
+                    pass  # Mort entre-temps, ou permissions
+            except (psutil.NoSuchProcess, psutil.AccessDenied, ProcessLookupError):
+                # Mort entre-temps, ou permissions
+                pass
+
+            data["status"] = "killed"
+            return True
 
     def kill_all(self):
         """Tue tous les processus enregistrés."""

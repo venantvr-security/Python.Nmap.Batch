@@ -43,16 +43,9 @@ class MasscanScanner(ScannerInterface):
 
         try:
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-            self.active_processes.append(process)
 
-            # Enregistrer dans ProcessManager
-            try:
-                from main import process_manager
-
-                scanner_type = "masscan"
-                process_manager.register(process, scanner_type, self.strategy, ip, thread_id)
-            except Exception:
-                pass
+            if self.process_manager:
+                self.process_manager.register(process, "masscan", self.strategy, ip, thread_id)
         except Exception as e:
             event_queue.put({'event': 'thread_update',
                              'data': {'thread_id': thread_id,
@@ -68,7 +61,6 @@ class MasscanScanner(ScannerInterface):
                 process.terminate()
                 event_queue.put({'event': 'thread_update',
                                  'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Scan interrompu"}})
-                self.active_processes.remove(process)
                 return ip, False, "Interrupted", {"ports": ports}, {"command": cmd_str}
             buffer.append(f"[{time.ctime()}] {line.strip()}")
 
@@ -89,7 +81,6 @@ class MasscanScanner(ScannerInterface):
             event_queue.put({'event': 'thread_update', 'data': {'thread_id': thread_id, 'message': "\n".join(buffer)}})
 
         process.wait()
-        self.active_processes.remove(process)
         if process.returncode == 0:
             details = {"ports": sorted(list(set(ports)))}
             if ports:
