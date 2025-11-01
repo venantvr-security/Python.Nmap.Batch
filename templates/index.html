@@ -35,6 +35,94 @@
                         <label class="form-check-label text-light" for="randomize-ports-checkbox">Random</label>
                     </div>
                 </li>
+                <li class="nav-item dropdown d-flex align-items-center">
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" id="evasionDropdown" role="button">
+                        AI Evasion
+                    </a>
+                    <a href="#" onclick="showAIEvasionInfo(); return false;" class="text-info ms-1" style="text-decoration: none; font-size: 0.9rem;">ℹ️</a>
+                    <ul class="dropdown-menu p-3" style="min-width: 350px;">
+                        <li class="mb-3">
+                            <h6 class="dropdown-header">Strategy Preset</h6>
+                            <select class="form-select form-select-sm" id="evasion-preset">
+                                <option value="">None (use scanner strategy)</option>
+                                <optgroup label="Basic AI Evasion">
+                                    <option value="ai-windows10">Windows 10 Profile</option>
+                                    <option value="ai-linux">Linux Profile</option>
+                                    <option value="ai-macos">macOS Profile</option>
+                                    <option value="ai-android">Android Profile</option>
+                                </optgroup>
+                                <optgroup label="Geo-Targeted">
+                                    <option value="china-gfw">China GFW Bypass</option>
+                                    <option value="russia-dpi">Russia DPI Bypass</option>
+                                </optgroup>
+                                <optgroup label="Target-Specific">
+                                    <option value="corporate">Corporate Firewall</option>
+                                    <option value="cloud">Cloud Provider</option>
+                                    <option value="iot">IoT Devices</option>
+                                </optgroup>
+                                <optgroup label="Anti-Detection">
+                                    <option value="honeypot">Honeypot-Aware</option>
+                                    <option value="tarpit">Anti-Tarpit</option>
+                                </optgroup>
+                                <optgroup label="Advanced ML Evasion">
+                                    <option value="adaptive">Adaptive Learning</option>
+                                    <option value="ml-confusion">ML Confusion</option>
+                                    <option value="ultra-stealth">Ultra Stealth</option>
+                                </optgroup>
+                                <optgroup label="Mobile/Real-Time">
+                                    <option value="mobile-5g">Mobile 5G</option>
+                                    <option value="ios">iOS Device</option>
+                                    <option value="gaming">Gaming Traffic</option>
+                                    <option value="voip">VoIP/SIP</option>
+                                    <option value="browser">Browser Traffic</option>
+                                </optgroup>
+                            </select>
+                        </li>
+                        <li class="mb-3">
+                            <h6 class="dropdown-header">Custom OS Fingerprint</h6>
+                            <select class="form-select form-select-sm" id="os-fingerprint">
+                                <option value="">Default (from preset/strategy)</option>
+                                <option value="windows10">Windows 10</option>
+                                <option value="windows11">Windows 11</option>
+                                <option value="linux">Linux</option>
+                                <option value="macos">macOS</option>
+                                <option value="ios">iOS</option>
+                                <option value="android">Android</option>
+                            </select>
+                        </li>
+                        <li class="mb-3">
+                            <h6 class="dropdown-header">Custom Timing Pattern</h6>
+                            <select class="form-select form-select-sm" id="timing-pattern">
+                                <option value="">Default (from preset/strategy)</option>
+                                <option value="fibonacci">Fibonacci (balanced)</option>
+                                <option value="sine">Sine wave (smooth)</option>
+                                <option value="prime">Prime numbers (irregular)</option>
+                                <option value="exponential">Exponential (escalating)</option>
+                                <option value="random">Random (chaotic)</option>
+                            </select>
+                        </li>
+                        <li class="mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input" id="protocol-mimicry" type="checkbox">
+                                <label class="form-check-label">
+                                    Protocol mimicry <span class="text-info" style="cursor: help;" title="Add legitimate protocol payloads (HTTP, TLS, DNS)">ℹ️</span>
+                                </label>
+                            </div>
+                        </li>
+                        <li class="mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input" id="realistic-tcp" type="checkbox">
+                                <label class="form-check-label">
+                                    Realistic TCP options <span class="text-info" style="cursor: help;" title="Use OS-specific TCP options">ℹ️</span>
+                                </label>
+                            </div>
+                        </li>
+                        <li>
+                            <label class="form-label">Fake uptime (days)</label>
+                            <input class="form-control form-control-sm" id="fake-uptime" placeholder="0 = disabled" type="number" value="0">
+                        </li>
+                    </ul>
+                </li>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" id="torNavDropdown" role="button">
                         TOR Controls
@@ -176,6 +264,92 @@
                     <li>Ajouter un bridge Snowflake (disponible sur torproject.org)</li>
                     <li>Redémarrer TOR</li>
                 </ol>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Popup pour AI Evasion Info -->
+<div aria-hidden="true" aria-labelledby="aiEvasionModalLabel" class="modal fade" id="aiEvasionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="aiEvasionModalLabel">AI Firewall Evasion Techniques</h5>
+                <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
+            </div>
+            <div class="modal-body">
+                <h6>OS Fingerprinting</h6>
+                <p>Mimics TCP/IP behavior of real operating systems (Windows, Linux, macOS, iOS, Android) with realistic TCP options, window sizes, and TTL values.</p>
+
+                <h6>Timing Patterns</h6>
+                <ul>
+                    <li><strong>Fibonacci:</strong> Balanced pattern, good for evading ML-based detection</li>
+                    <li><strong>Sine:</strong> Smooth wave pattern, appears more organic</li>
+                    <li><strong>Prime:</strong> Irregular prime number intervals</li>
+                    <li><strong>Exponential:</strong> Gradually escalating delays</li>
+                    <li><strong>Random:</strong> Chaotic, unpredictable timing</li>
+                </ul>
+
+                <h6>Protocol Mimicry</h6>
+                <p>Adds legitimate protocol payloads (HTTP requests, TLS ClientHello, DNS queries) to scan packets, making them appear as normal traffic.</p>
+
+                <h6>Realistic TCP Options</h6>
+                <p>Uses OS-specific TCP options (MSS, Window Scale, SACK, Timestamps) to avoid fingerprint detection by AI-powered firewalls.</p>
+
+                <h6>Fake Uptime</h6>
+                <p>Generates TCP timestamps that simulate a specific system uptime, adding legitimacy to packets.</p>
+
+                <h6>Strategy Categories</h6>
+
+                <p><strong>Basic AI Evasion:</strong></p>
+                <ul>
+                    <li><strong>ai-evasion-windows10:</strong> Windows 10 mimicry, Fibonacci timing, 20 decoys</li>
+                    <li><strong>ai-evasion-linux:</strong> Linux profile, fragmentation, 25 decoys</li>
+                    <li><strong>ai-evasion-macos:</strong> macOS profile, prime timing, 15 decoys</li>
+                    <li><strong>ai-evasion-android:</strong> Android profile, exponential timing, 30 decoys</li>
+                </ul>
+
+                <p><strong>Geo-Targeted:</strong></p>
+                <ul>
+                    <li><strong>chinese-great-firewall-evasion:</strong> DPI bypass, 50 decoys, 128B padding, random timing</li>
+                    <li><strong>russian-dpi-bypass:</strong> Telegram/VK ports, sine timing, fragmentation</li>
+                </ul>
+
+                <p><strong>Target-Specific:</strong></p>
+                <ul>
+                    <li><strong>corporate-firewall-bypass:</strong> Windows 11, O365/Teams ports, 30-day uptime</li>
+                    <li><strong>cloud-provider-scan:</strong> Linux VM profile, 365-day uptime, cloud ports</li>
+                    <li><strong>iot-device-scan:</strong> Low window size, TTL 32, minimal decoys</li>
+                </ul>
+
+                <p><strong>Anti-Detection:</strong></p>
+                <ul>
+                    <li><strong>honeypot-aware-scan:</strong> Very slow (10s delay), prime timing, no mass decoys</li>
+                    <li><strong>anti-tarpit-scan:</strong> 1s timeout, 25 decoys to saturate tarpits</li>
+                </ul>
+
+                <p><strong>Advanced ML Evasion:</strong></p>
+                <ul>
+                    <li><strong>adaptive-learning-evasion:</strong> FIN scan, Fibonacci, 35 decoys, multi-technique</li>
+                    <li><strong>ml-classifier-confusion:</strong> 45 decoys, 96B padding, random timing, max entropy</li>
+                    <li><strong>ultra-stealth-ai-evasion:</strong> 40 decoys, 64B padding, random timing, FIN scan</li>
+                </ul>
+
+                <p><strong>Mobile/5G:</strong></p>
+                <ul>
+                    <li><strong>mobile-5g-profile:</strong> Android, 3-day uptime, mobile app ports</li>
+                    <li><strong>ios-device-profile:</strong> iOS fingerprint, 7-day uptime, 12 decoys</li>
+                </ul>
+
+                <p><strong>Real-Time Traffic:</strong></p>
+                <ul>
+                    <li><strong>gaming-traffic-mimicry:</strong> Fast timing (0.3s), Steam/Epic ports</li>
+                    <li><strong>voip-sip-mimicry:</strong> SIP ports (5060/5061), 8KB window</li>
+                    <li><strong>legitimate-browser-scan:</strong> Windows 11 browser, 7-day uptime</li>
+                </ul>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Fermer</button>

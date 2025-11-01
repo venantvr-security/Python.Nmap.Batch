@@ -454,6 +454,11 @@ function showSnowflakeInfo() {
     modal.show();
 }
 
+function showAIEvasionInfo() {
+    const modal = new bootstrap.Modal(document.getElementById('aiEvasionModal'));
+    modal.show();
+}
+
 // Charger les boutons au démarrage
 document.addEventListener('DOMContentLoaded', () => {
     loadScannerButtons();

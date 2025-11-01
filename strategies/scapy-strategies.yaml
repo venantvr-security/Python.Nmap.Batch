@@ -1,5 +1,484 @@
 strategies:
   stealth-delayed-port-scan:
-    ports: "<ports>"  # Port cible pour le scan (remplacé dynamiquement par self.ports)
-    delay: 0.5        # Délai entre l’envoi des paquets (0,5 seconde, pour discrétion)
-    timeout: 2        # Temps d’attente maximum pour une réponse (2 secondes)
+    ports: "<ports>"
+    scan_type: "syn"
+    delay: 0.5
+    timeout: 2
+    send_rst: true
+
+  fin-scan-fragmented:
+    ports: "<ports>"
+    scan_type: "fin"
+    delay: 1.0
+    timeout: 3
+    fragment: true
+    ttl: 64
+    src_ports: [53, 80, 443]
+
+  xmas-decoy-scan:
+    ports: "<ports>"
+    scan_type: "xmas"
+    decoys: 10
+    delay: 2.0
+    timeout: 3
+    src_ports: [53, 80, 443]
+    ttl: 128
+
+  null-scan-padding:
+    ports: "<ports>"
+    scan_type: "null"
+    padding: 32
+    delay: 1.5
+    timeout: 2
+    ttl: 128
+    randomize_ttl: true
+
+  ack-firewall-probe:
+    ports: "<ports>"
+    scan_type: "ack"
+    delay: 0.8
+    timeout: 2
+    ttl: 64
+    window_size: 1024
+
+  maimon-scan:
+    ports: "<ports>"
+    scan_type: "maimon"
+    delay: 1.2
+    timeout: 3
+    src_ports: [53, 80]
+
+  syn-decoy-fragmented:
+    ports: "<ports>"
+    scan_type: "syn"
+    decoys: 15
+    fragment: true
+    delay: 1.5
+    timeout: 3
+    padding: 16
+    randomize_ttl: true
+    send_rst: true
+
+  ultra-stealth-random:
+    ports: "<ports>"
+    scan_type: "fin"
+    decoys: 20
+    delay: 3.0
+    timeout: 4
+    fragment: true
+    padding: 32
+    ttl: 64
+    randomize_ttl: true
+    src_ports: [53, 80, 443, 8080]
+
+  window-scan:
+    ports: "<ports>"
+    scan_type: "ack"
+    delay: 0.5
+    timeout: 2
+    window_size: 0
+    ttl: 64
+
+  # === TECHNIQUES ANTI-IA AVANCÉES ===
+
+  ai-evasion-windows10:
+    ports: "<ports>"
+    scan_type: "syn"
+    delay: 1.5
+    timeout: 3
+
+    # Évasion avancée
+    advanced_evasion: true
+    os_fingerprint: "windows10"
+    realistic_tcp_options: true
+    realistic_window: true
+    realistic_ttl: true
+    seq_mode: "timestamp_based"
+    fake_uptime_days: 45
+
+    # Timing polymorphique
+    timing_pattern: "fibonacci"
+
+    # Mimétisme protocole
+    protocol_mimicry: true
+
+    # Decoys
+    decoys: 20
+
+    send_rst: true
+
+  ai-evasion-linux:
+    ports: "<ports>"
+    scan_type: "syn"
+    delay: 2.0
+    timeout: 4
+
+    advanced_evasion: true
+    os_fingerprint: "linux"
+    realistic_tcp_options: true
+    realistic_window: true
+    realistic_ttl: true
+    randomize_ttl: true
+    seq_mode: "timestamp_based"
+    fake_uptime_days: 120
+
+    timing_pattern: "sine"
+    protocol_mimicry: true
+
+    fragment: true
+    padding: 32
+    decoys: 25
+
+    send_rst: true
+
+  ai-evasion-macos:
+    ports: "<ports>"
+    scan_type: "syn"
+    delay: 1.8
+    timeout: 3
+
+    advanced_evasion: true
+    os_fingerprint: "macos"
+    realistic_tcp_options: true
+    realistic_window: true
+    realistic_ttl: true
+    seq_mode: "timestamp_based"
+    fake_uptime_days: 90
+
+    timing_pattern: "prime"
+    protocol_mimicry: true
+
+    decoys: 15
+    send_rst: true
+
+  ai-evasion-android:
+    ports: "<ports>"
+    scan_type: "syn"
+    delay: 2.5
+    timeout: 4
+
+    advanced_evasion: true
+    os_fingerprint: "android"
+    realistic_tcp_options: true
+    realistic_window: true
+    realistic_ttl: true
+    randomize_ttl: true
+    seq_mode: "timestamp_based"
+    fake_uptime_days: 15
+
+    timing_pattern: "exponential"
+    protocol_mimicry: true
+
+    fragment: true
+    padding: 16
+    decoys: 30
+
+  ultra-stealth-ai-evasion:
+    ports: "<ports>"
+    scan_type: "fin"
+    delay: 3.0
+    timeout: 5
+
+    advanced_evasion: true
+    os_fingerprint: "linux"
+    realistic_tcp_options: true
+    realistic_window: true
+    realistic_ttl: true
+    randomize_ttl: true
+    seq_mode: "timestamp_based"
+    fake_uptime_days: 200
+
+    timing_pattern: "random"
+    protocol_mimicry: true
+
+    fragment: true
+    padding: 64
+    decoys: 40
+
+  legitimate-browser-scan:
+    ports: "<ports>"
+    scan_type: "syn"
+    delay: 1.2
+    timeout: 3
+
+    advanced_evasion: true
+    os_fingerprint: "windows11"
+    realistic_tcp_options: true
+    realistic_window: true
+    realistic_ttl: true
+    seq_mode: "timestamp_based"
+    fake_uptime_days: 7
+
+    timing_pattern: "exponential"
+    protocol_mimicry: true
+
+    decoys: 10
+    send_rst: true
+
+  # === STRATÉGIES GÉO-CIBLÉES ===
+
+  chinese-great-firewall-evasion:
+    ports: "<ports>"
+    scan_type: "syn"
+    delay: 5.0
+    timeout: 5
+
+    advanced_evasion: true
+    os_fingerprint: "android"
+    realistic_tcp_options: true
+    realistic_window: true
+
+    timing_pattern: "random"
+    fragment: true
+    padding: 128
+
+    src_ports: [443, 8443, 9443]
+    protocol_mimicry: true
+
+    decoys: 50
+    randomize_ttl: true
+    fake_uptime_days: 5
+
+  russian-dpi-bypass:
+    ports: "<ports>"
+    scan_type: "syn"
+    delay: 3.0
+    timeout: 4
+
+    advanced_evasion: true
+    os_fingerprint: "windows10"
+    realistic_tcp_options: true
+    realistic_window: true
+
+    timing_pattern: "sine"
+    fragment: true
+    padding: 64
+
+    src_ports: [443, 5222, 8888]
+    protocol_mimicry: true
+
+    decoys: 30
+    randomize_ttl: true
+    seq_mode: "timestamp_based"
+    fake_uptime_days: 60
+
+  # === STRATÉGIES PAR TYPE DE CIBLE ===
+
+  corporate-firewall-bypass:
+    ports: "<ports>"
+    scan_type: "syn"
+    delay: 1.0
+    timeout: 3
+
+    advanced_evasion: true
+    os_fingerprint: "windows11"
+    realistic_tcp_options: true
+    realistic_window: true
+    realistic_ttl: true
+
+    timing_pattern: "exponential"
+    src_ports: [443, 3389, 1194, 1723]
+    protocol_mimicry: true
+
+    seq_mode: "timestamp_based"
+    fake_uptime_days: 30
+
+    decoys: 15
+    send_rst: true
+
+  cloud-provider-scan:
+    ports: "<ports>"
+    scan_type: "syn"
+    delay: 0.8
+    timeout: 3
+
+    advanced_evasion: true
+    os_fingerprint: "linux"
+    realistic_tcp_options: true
+    realistic_window: true
+    realistic_ttl: true
+
+    timing_pattern: "fibonacci"
+    src_ports: [443, 8080, 8443, 9090]
+    protocol_mimicry: true
+
+    seq_mode: "timestamp_based"
+    fake_uptime_days: 365
+
+    decoys: 20
+
+  iot-device-scan:
+    ports: "<ports>"
+    scan_type: "syn"
+    delay: 2.0
+    timeout: 3
+
+    advanced_evasion: true
+    os_fingerprint: "linux"
+    realistic_tcp_options: true
+
+    timing_pattern: "random"
+    window_size: 512
+    ttl: 32
+
+    protocol_mimicry: true
+    decoys: 5
+
+  # === STRATÉGIES ANTI-HONEYPOT ===
+
+  honeypot-aware-scan:
+    ports: "<ports>"
+    scan_type: "syn"
+    delay: 10.0
+    timeout: 4
+
+    advanced_evasion: true
+    os_fingerprint: "macos"
+    realistic_tcp_options: true
+    realistic_window: true
+
+    timing_pattern: "prime"
+    randomize_ttl: true
+    seq_mode: "timestamp_based"
+
+    protocol_mimicry: true
+    fake_uptime_days: 180
+    send_rst: true
+
+  anti-tarpit-scan:
+    ports: "<ports>"
+    scan_type: "syn"
+    delay: 0.5
+    timeout: 1
+
+    advanced_evasion: true
+    os_fingerprint: "windows10"
+    realistic_tcp_options: true
+
+    decoys: 25
+    send_rst: true
+
+  # === STRATÉGIES MULTI-VECTEURS ===
+
+  adaptive-learning-evasion:
+    ports: "<ports>"
+    scan_type: "fin"
+    delay: 2.5
+    timeout: 4
+
+    advanced_evasion: true
+    os_fingerprint: "linux"
+    realistic_tcp_options: true
+    realistic_window: true
+
+    timing_pattern: "fibonacci"
+    fragment: true
+    padding: 48
+    protocol_mimicry: true
+
+    randomize_ttl: true
+    seq_mode: "timestamp_based"
+    fake_uptime_days: 150
+
+    decoys: 35
+
+  ml-classifier-confusion:
+    ports: "<ports>"
+    scan_type: "syn"
+    delay: 3.0
+    timeout: 5
+
+    advanced_evasion: true
+    os_fingerprint: "android"
+    realistic_tcp_options: true
+    realistic_window: true
+
+    timing_pattern: "random"
+    padding: 96
+    fragment: true
+
+    protocol_mimicry: true
+    seq_mode: "timestamp_based"
+    fake_uptime_days: 25
+
+    decoys: 45
+
+  # === STRATÉGIES MOBILE/5G ===
+
+  mobile-5g-profile:
+    ports: "<ports>"
+    scan_type: "syn"
+    delay: 1.5
+    timeout: 3
+
+    advanced_evasion: true
+    os_fingerprint: "android"
+    realistic_tcp_options: true
+    realistic_window: true
+
+    timing_pattern: "exponential"
+    src_ports: [443, 8443, 9000]
+    protocol_mimicry: true
+
+    ttl: 64
+    randomize_ttl: true
+    fake_uptime_days: 3
+
+    decoys: 10
+    send_rst: true
+
+  ios-device-profile:
+    ports: "<ports>"
+    scan_type: "syn"
+    delay: 1.2
+    timeout: 3
+
+    advanced_evasion: true
+    os_fingerprint: "ios"
+    realistic_tcp_options: true
+    realistic_window: true
+    realistic_ttl: true
+
+    timing_pattern: "fibonacci"
+    protocol_mimicry: true
+
+    fake_uptime_days: 7
+    decoys: 12
+    send_rst: true
+
+  # === STRATÉGIES TEMPS-RÉEL ===
+
+  gaming-traffic-mimicry:
+    ports: "<ports>"
+    scan_type: "syn"
+    delay: 0.3
+    timeout: 2
+
+    advanced_evasion: true
+    os_fingerprint: "windows11"
+    realistic_tcp_options: true
+    realistic_window: true
+
+    timing_pattern: "exponential"
+    src_ports: [27015, 3074, 5222]
+    protocol_mimicry: true
+
+    decoys: 8
+    send_rst: true
+
+  voip-sip-mimicry:
+    ports: "<ports>"
+    scan_type: "syn"
+    delay: 0.5
+    timeout: 2
+
+    advanced_evasion: true
+    os_fingerprint: "linux"
+    realistic_tcp_options: true
+
+    timing_pattern: "sine"
+    src_ports: [5060, 5061]
+    protocol_mimicry: true
+
+    window_size: 8192
+    decoys: 5
