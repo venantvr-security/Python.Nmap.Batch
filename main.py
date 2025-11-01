@@ -71,14 +71,12 @@ MAX_WORKERS = 10
 stop_flag = False
 success_rate = 0.0
 scan_thread = None
-active_processes = []
 event_queue = Queue()
 tor_enabled = False
 tor_identity_change_freq = 0
 process_manager = ProcessManager()
 
 # Locks pour concurrence
-active_processes_lock = threading.Lock()
 current_scanner_lock = threading.Lock()
 stop_flag_lock = threading.Lock()
 
@@ -240,11 +238,8 @@ def signal_handler(sig, frame):
     with stop_flag_lock:
         stop_flag = True
     logger.info("Signal d'arrêt reçu (Ctrl+C), arrêt en cours...")
-    with active_processes_lock:
-        for proc in active_processes:
-            if proc.poll() is None:
-                proc.kill()  # Force la terminaison
-                logger.info(f"Processus {proc.pid} tué")
+    process_manager.kill_all()
+    logger.info("Tous les processus ont été tués")
     if scan_thread and scan_thread.is_alive():
         scan_thread.join(timeout=5)
     logger.info("Serveur arrêté proprement")
@@ -545,7 +540,7 @@ def events():
 # noinspection PyUnresolvedReferences
 @app.route('/scan/start/<scanner_type>/<strategy>')
 def start_scan_endpoint(scanner_type, strategy):
-    global stop_flag, scan_thread, current_scanner, active_processes, IP_RANGES
+    global stop_flag, scan_thread, current_scanner, IP_RANGES
     proxy = request.args.get('proxy', None)
     ports = request.args.get('ports', None)  # Récupérer les ports depuis la requête
     ip_ranges_param = request.args.get('ip_ranges', None)  # Récupérer IP ranges depuis la requête
