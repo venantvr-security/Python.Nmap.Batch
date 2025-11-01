@@ -38,7 +38,12 @@ class NmapScanner(ScannerInterface):
         else:
             cmd_template = strategy  # Si pas de <ports>, utiliser la stratégie telle quelle
 
-        cmd = ["/usr/bin/sudo", "/usr/bin/nmap"] + [ip] + cmd_template
+        # Vérifier si déjà root
+        if os.geteuid() == 0:
+            cmd = ["/usr/bin/nmap"] + [ip] + cmd_template
+        else:
+            cmd = ["/usr/bin/sudo", "/usr/bin/nmap"] + [ip] + cmd_template
+
         cmd_str = " ".join(cmd)
         event_queue.put({'event': 'thread_update',
                          'data': {'thread_id': thread_id,
@@ -50,7 +55,9 @@ class NmapScanner(ScannerInterface):
             try:
                 event_queue.put({'event': 'thread_update',
                                  'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Lancement de Popen"}})
-                process = subprocess.Popen(f"{cmd_str} > {temp_filename} 2>&1", shell=True)
+                # FIX: Utiliser liste args au lieu de shell=True pour éviter injection
+                with open(temp_filename, 'w') as outfile:
+                    process = subprocess.Popen(cmd, stdout=outfile, stderr=subprocess.STDOUT)
                 self.active_processes.append(process)
 
                 # Enregistrer dans ProcessManager

@@ -1,3 +1,4 @@
+import os
 import subprocess
 import time
 from typing import List, Dict
@@ -69,7 +70,12 @@ class NetcatScanner(ScannerInterface):
                     cmd_template.pop(port_index + 1)  # Retirer la valeur après -p
                 cmd_template.pop(port_index)  # Retirer -p
 
-            cmd = ["/usr/bin/sudo", "/bin/nc"] + cmd_template + [ip, str(port)]  # IP avant le port
+            # Vérifier si déjà root
+            if os.geteuid() == 0:
+                cmd = ["/bin/nc"] + cmd_template + [ip, str(port)]
+            else:
+                cmd = ["/usr/bin/sudo", "/bin/nc"] + cmd_template + [ip, str(port)]
+
             cmd_str = " ".join(cmd)
             event_queue.put({'event': 'thread_update',
                              'data': {'thread_id': thread_id,

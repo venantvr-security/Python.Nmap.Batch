@@ -113,32 +113,6 @@ source.addEventListener('ping', (event) => {
     console.log('Ping reçu :', event.data);
 });
 
-// Fonction pour parser et randomiser les ports
-function parseAndRandomizePorts(portString) {
-    let ports = [];
-    const items = portString.split(',');
-
-    for (let item of items) {
-        item = item.trim();
-        if (item.includes('-')) {
-            const [start, end] = item.split('-').map(x => parseInt(x.trim()));
-            for (let p = start; p <= end; p++) {
-                ports.push(p);
-            }
-        } else {
-            ports.push(parseInt(item));
-        }
-    }
-
-    // Randomiser l'ordre
-    for (let i = ports.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [ports[i], ports[j]] = [ports[j], ports[i]];
-    }
-
-    return ports.join(',');
-}
-
 // Fonction pour démarrer un scan
 function startScan(scannerType) {
     const strategy = selectedStrategies[scannerType];

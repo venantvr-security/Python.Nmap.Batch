@@ -80,16 +80,6 @@ class AdvancedEvasion:
             return packet / Raw(AdvancedEvasion.PROTOCOL_PAYLOADS[port])
         return packet
 
-    @staticmethod
-    def create_overlapping_fragments(packet: Packet, dst_ip: str) -> List[Packet]:
-        """Crée fragments qui se chevauchent (IDS evasion)"""
-        # Fragment 1: offset 0, data corrompu
-        frag1 = IP(dst=dst_ip, flags="MF", frag=0, id=random.randint(1, 65535)) / Raw(b"JUNK" * 20)
-
-        # Fragment 2: offset 0 (chevauchement!), vrai paquet
-        frag2 = IP(dst=dst_ip, frag=0, id=frag1[IP].id) / packet[TCP]
-
-        return [frag1, frag2]
 
     @staticmethod
     def get_realistic_window_size(os_type: str) -> int:
@@ -198,33 +188,3 @@ class AdvancedEvasion:
 
         return packet
 
-    @staticmethod
-    def idle_scan_probe(zombie_ip: str, target_ip: str, port: int, timeout: int = 2) -> bool:
-        """Effectue idle scan via zombie (ultra-furtif)"""
-        from scapy.sendrecv import sr1, send
-
-        try:
-            # 1. Probe zombie IPID initial
-            probe1 = IP(dst=zombie_ip) / TCP(dport=80, flags="SA")
-            resp1 = sr1(probe1, timeout=timeout, verbose=0)
-            if not resp1:
-                return False
-            ipid1 = resp1[IP].id
-
-            # 2. Spoof SYN from zombie to target
-            spoofed = IP(src=zombie_ip, dst=target_ip) / TCP(dport=port, flags="S")
-            send(spoofed, verbose=0)
-            time.sleep(0.5)
-
-            # 3. Probe zombie IPID après
-            probe2 = IP(dst=zombie_ip) / TCP(dport=80, flags="SA")
-            resp2 = sr1(probe2, timeout=timeout, verbose=0)
-            if not resp2:
-                return False
-            ipid2 = resp2[IP].id
-
-            # IPID increment = 2 → port open, 1 → closed/filtered
-            return (ipid2 - ipid1) == 2
-
-        except Exception:
-            return False

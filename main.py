@@ -77,6 +77,11 @@ tor_enabled = False
 tor_identity_change_freq = 0
 process_manager = ProcessManager()
 
+# Locks pour concurrence
+active_processes_lock = threading.Lock()
+current_scanner_lock = threading.Lock()
+stop_flag_lock = threading.Lock()
+
 # Initialisation des scanners
 import yaml
 
@@ -232,12 +237,14 @@ current_scanner = list(scanner_map.values())[0]  # nmap_scanner
 # noinspection PyUnresolvedReferences,PyUnusedLocal
 def signal_handler(sig, frame):
     global stop_flag
-    stop_flag = True
+    with stop_flag_lock:
+        stop_flag = True
     logger.info("Signal d'arrêt reçu (Ctrl+C), arrêt en cours...")
-    for proc in active_processes:
-        if proc.poll() is None:
-            proc.kill()  # Force la terminaison
-            logger.info(f"Processus {proc.pid} tué")
+    with active_processes_lock:
+        for proc in active_processes:
+            if proc.poll() is None:
+                proc.kill()  # Force la terminaison
+                logger.info(f"Processus {proc.pid} tué")
     if scan_thread and scan_thread.is_alive():
         scan_thread.join(timeout=5)
     logger.info("Serveur arrêté proprement")
@@ -248,25 +255,6 @@ def signal_handler(sig, frame):
 PORTS_FILE = os.path.join(PATHS['strategies_dir'], "ports.yaml")
 
 
-# Parser pour les ports Nmap
-def parse_nmap_ports(port_string):
-    ports = []
-    items = port_string.split(',')
-    for item in items:
-        item = item.strip()
-        if '-' in item:
-            start, end = map(int, item.split('-'))
-            if not (1 <= start <= 65535 and 1 <= end <= 65535):
-                raise ValueError(f"Ports hors limites (1-65535) dans la plage {item}")
-            if start > end:
-                raise ValueError(f"Plage invalide dans {item}: début > fin")
-            ports.extend(range(start, end + 1))
-        else:
-            port = int(item)
-            if not (1 <= port <= 65535):
-                raise ValueError(f"Port hors limites (1-65535): {port}")
-            ports.append(port)
-    return sorted(list(set(ports)))
 
 
 # Nouvelle route pour les ports
@@ -343,9 +331,26 @@ def save_progress(ip):
 
 # Sauvegarder les résultats dans results/<type_de_script>/<stratégie>/<ip>.json
 def save_scan_result(scanner_type, strategy, ip, scan_result):
+    # Validation anti-path traversal
+    if '..' in scanner_type or '/' in scanner_type or '\\' in scanner_type:
+        logger.error(f"scanner_type invalide (path traversal): {scanner_type}")
+        return
+    if '..' in strategy or '/' in strategy or '\\' in strategy:
+        logger.error(f"strategy invalide (path traversal): {strategy}")
+        return
+
+    # Sanitize IP pour nom fichier
+    safe_ip = ip.replace('/', '_').replace('\\', '_')
+
     base_dir = os.path.join(PATHS['results_dir'], scanner_type, strategy)
-    os.makedirs(base_dir, exist_ok=True)  # Crée les répertoires si nécessaire
-    result_file = os.path.join(base_dir, f"{ip}.json")
+    os.makedirs(base_dir, exist_ok=True)
+    result_file = os.path.join(base_dir, f"{safe_ip}.json")
+
+    # Double vérification que le fichier est bien dans results_dir
+    if not os.path.abspath(result_file).startswith(os.path.abspath(PATHS['results_dir'])):
+        logger.error(f"Tentative path traversal détectée: {result_file}")
+        return
+
     try:
         with open(result_file, "w") as f:
             # noinspection PyTypeChecker
@@ -441,9 +446,10 @@ def scan_background():
     all_ports = []
     all_vulns = []
 
-    # Récupérer le type de scanner pour la sauvegarde
-    scanner_type = [key for key, value in scanner_map.items() if value == current_scanner][0]
-    strategy = current_scanner.strategy
+    # Récupérer le type de scanner pour la sauvegarde (avec lock)
+    with current_scanner_lock:
+        scanner_type = [key for key, value in scanner_map.items() if value == current_scanner][0]
+        strategy = current_scanner.strategy
 
     while ips_to_scan and not stop_flag:
         batch_size = min(current_workers, len(ips_to_scan))
@@ -562,9 +568,10 @@ def start_scan_endpoint(scanner_type, strategy):
         return "Aucun port spécifié", 400
 
     try:
-        current_scanner = scanner_map[scanner_type]
-        current_scanner.strategy = strategy  # Met à jour la stratégie
-        current_scanner.ports = ports  # Met à jour les ports dans l’instance du scanner
+        with current_scanner_lock:
+            current_scanner = scanner_map[scanner_type]
+            current_scanner.strategy = strategy  # Met à jour la stratégie
+            current_scanner.ports = ports  # Met à jour les ports dans l'instance du scanner
     except (ValueError, FileNotFoundError) as e:
         event_queue.put({'event': 'progress', 'data': {'message': f"[{time.ctime()}] Erreur : {str(e)}"}})
         return str(e), 400
@@ -574,7 +581,8 @@ def start_scan_endpoint(scanner_type, strategy):
         event_queue.put({'event': 'progress', 'data': {'message': f"[{time.ctime()}] Un scan est déjà en cours !"}})
         return "Scan déjà en cours", 200
 
-    stop_flag = False
+    with stop_flag_lock:
+        stop_flag = False
     scan_thread = threading.Thread(target=scan_background)
     scan_thread.start()
     return f"Scan démarré avec {scanner_type} et stratégie {strategy}" + (f" et ports {ports}" if ports else "") + (
@@ -711,7 +719,8 @@ def get_process_stats():
 def stop_scan_endpoint():
     global stop_flag
     logger.info("Requête HTTP pour arrêter le scan")
-    stop_flag = True
+    with stop_flag_lock:
+        stop_flag = True
     event_queue.put({'event': 'progress',
                      'data': {'message': f"[{time.ctime()}] Arrêt demandé. Attente de la fin du batch en cours..."}})
     return "Arrêt demandé", 200
