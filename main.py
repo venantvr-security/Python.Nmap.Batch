@@ -769,6 +769,7 @@ def get_doc_content(filename):
 
 
 def check_tor_status():
+    # noinspection PyBroadException
     try:
         req = urllib.request.Request('https://check.torproject.org/api/ip')
         req.add_header('User-Agent', 'Mozilla/5.0')

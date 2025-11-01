@@ -78,7 +78,7 @@ class ProcessManager:
                     "memory_mb": p.memory_info().rss / 1024 / 1024,
                     "num_threads": p.num_threads(),
                     "open_files": len(p.open_files()),
-                    "connections": len(p.connections()),
+                    "connections": len(p.net_connections()),
                     "cmdline": " ".join(p.cmdline())
                 }
             except (psutil.NoSuchProcess, psutil.AccessDenied):
@@ -129,11 +129,12 @@ class ProcessManager:
         with self.lock:
             to_remove = []
             for proc_id, data in self.processes.items():
+                # noinspection PyBroadException
                 try:
                     proc = data["process"]
                     if proc.poll() is not None:  # Terminé
                         to_remove.append(proc_id)
-                except Exception:
+                except:
                     to_remove.append(proc_id)
 
             for proc_id in to_remove:
