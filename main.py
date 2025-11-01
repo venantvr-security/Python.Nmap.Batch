@@ -15,6 +15,7 @@ import toml
 from dotenv import load_dotenv
 from flask import Flask, render_template, Response, request, jsonify
 
+from ProcessManager import ProcessManager
 # noinspection PyUnresolvedReferences
 from scanners.CurlScanner import CurlScanner
 # noinspection PyUnresolvedReferences
@@ -74,6 +75,7 @@ active_processes = []
 event_queue = Queue()
 tor_enabled = False
 tor_identity_change_freq = 0
+process_manager = ProcessManager()
 
 # Initialisation des scanners
 import yaml
@@ -268,6 +270,12 @@ def parse_nmap_ports(port_string):
 
 
 # Nouvelle route pour les ports
+@app.route('/api/ip-ranges', methods=['GET'])
+def get_ip_ranges():
+    """Renvoie les IP ranges par défaut depuis .env."""
+    return jsonify({"ip_ranges": ','.join(IP_RANGES)})
+
+
 @app.route('/api/ports', methods=['GET'])
 def get_ports():
     """Renvoie les ports avec labels à partir de strategies/ports.yaml."""
@@ -507,6 +515,11 @@ def index():
     return render_template('index.html')
 
 
+@app.route('/processes')
+def processes():
+    return render_template('processes.html')
+
+
 @app.route('/events')
 def events():
     def stream():
@@ -528,11 +541,18 @@ def events():
 # noinspection PyUnresolvedReferences
 @app.route('/scan/start/<scanner_type>/<strategy>')
 def start_scan_endpoint(scanner_type, strategy):
-    global stop_flag, scan_thread, current_scanner, active_processes
+    global stop_flag, scan_thread, current_scanner, active_processes, IP_RANGES
     proxy = request.args.get('proxy', None)
     ports = request.args.get('ports', None)  # Récupérer les ports depuis la requête
+    ip_ranges_param = request.args.get('ip_ranges', None)  # Récupérer IP ranges depuis la requête
+
+    # Mettre à jour IP_RANGES si fourni
+    if ip_ranges_param:
+        IP_RANGES = [ip.strip() for ip in ip_ranges_param.split(',')]
+        logger.info(f"IP_RANGES mis à jour: {IP_RANGES}")
+
     logger.info(
-        f"Requête HTTP pour démarrer le scan avec {scanner_type} et stratégie : {strategy}, ports : {ports}, proxy : {proxy}")
+        f"Requête HTTP pour démarrer le scan avec {scanner_type} et stratégie : {strategy}, ports : {ports}, IP ranges : {IP_RANGES}, proxy : {proxy}")
 
     if scanner_type not in scanner_map:
         return f"Type de scanner inconnu : {scanner_type}", 400
@@ -656,6 +676,35 @@ def get_scanner_info(scanner_type):
         return jsonify({"error": f"Fichier {md_file} non trouvé"}), 404
     except Exception as e:
         return jsonify({"error": f"Erreur inattendue : {str(e)}"}), 500
+
+
+@app.route('/api/processes', methods=['GET'])
+def get_processes():
+    """Retourne tous les processus actifs."""
+    return jsonify(process_manager.get_all())
+
+
+@app.route('/api/processes/<process_id>', methods=['GET'])
+def get_process(process_id):
+    """Détails d'un processus spécifique."""
+    proc = process_manager.get_by_id(process_id)
+    if proc:
+        return jsonify(proc)
+    return jsonify({"error": "Process not found"}), 404
+
+
+@app.route('/api/processes/<process_id>/kill', methods=['POST'])
+def kill_process(process_id):
+    """Tue un processus spécifique."""
+    if process_manager.kill(process_id):
+        return jsonify({"success": True, "message": f"Process {process_id} killed"})
+    return jsonify({"success": False, "error": "Process not found or already terminated"}), 404
+
+
+@app.route('/api/processes/stats', methods=['GET'])
+def get_process_stats():
+    """Statistiques globales des processus."""
+    return jsonify(process_manager.get_stats())
 
 
 @app.route('/scan/stop')

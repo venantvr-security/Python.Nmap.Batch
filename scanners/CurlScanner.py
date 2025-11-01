@@ -72,6 +72,15 @@ class CurlScanner(ScannerInterface):
             try:
                 process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
                 self.active_processes.append(process)
+
+                # Enregistrer dans ProcessManager
+                try:
+                    from main import process_manager
+
+                    scanner_type = "curl"
+                    process_manager.register(process, scanner_type, self.strategy, ip, thread_id)
+                except Exception:
+                    pass
             except Exception as e:
                 event_queue.put({'event': 'thread_update',
                                  'data': {'thread_id': thread_id,

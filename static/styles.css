@@ -189,3 +189,7 @@ body.dark-mode .navbar-toggler {
 body.dark-mode .navbar-toggler-icon {
     filter: invert(1);
 }
+
+.nav-item {
+    margin-left: 10px;
+}

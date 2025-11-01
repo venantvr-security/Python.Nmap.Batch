@@ -152,15 +152,19 @@ function startScan(scannerType) {
     }
 
     let portsToScan = selectedPorts;
-    const randomize = document.getElementById('randomize-ports-checkbox').checked;
 
-    if (randomize) {
-        portsToScan = parseAndRandomizePorts(selectedPorts);
-        console.log(`Ports randomisés: ${portsToScan}`);
+    // Récupérer IP ranges
+    const ipRangesInput = document.getElementById('ip-ranges-input').value.trim();
+
+    console.log(`Envoi de start_scan pour ${scannerType} avec stratégie ${strategy}, ports ${portsToScan}, IP ranges ${ipRangesInput}`);
+
+    // Construire URL avec paramètres
+    let url = `/scan/start/${scannerType}/${strategy}?ports=${encodeURIComponent(portsToScan)}`;
+    if (ipRangesInput) {
+        url += `&ip_ranges=${encodeURIComponent(ipRangesInput)}`;
     }
 
-    console.log(`Envoi de start_scan pour ${scannerType} avec stratégie ${strategy} et ports ${portsToScan}`);
-    fetch(`/scan/start/${scannerType}/${strategy}?ports=${encodeURIComponent(portsToScan)}`)
+    fetch(url)
         .then(response => {
             if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`);
             return response.text();
@@ -613,6 +617,16 @@ function filterStrategies() {
         }
     });
 }
+
+// Charger IP_RANGES depuis .env et pré-remplir
+fetch('/api/ip-ranges')
+    .then(response => response.json())
+    .then(data => {
+        if (data.ip_ranges) {
+            document.getElementById('ip-ranges-input').placeholder = data.ip_ranges;
+        }
+    })
+    .catch(error => console.error('Erreur chargement IP ranges:', error));
 
 // Charger les boutons au démarrage
 document.addEventListener('DOMContentLoaded', () => {

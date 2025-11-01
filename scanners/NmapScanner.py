@@ -52,9 +52,18 @@ class NmapScanner(ScannerInterface):
                                  'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Lancement de Popen"}})
                 process = subprocess.Popen(f"{cmd_str} > {temp_filename} 2>&1", shell=True)
                 self.active_processes.append(process)
+
+                # Enregistrer dans ProcessManager
+                try:
+                    from main import process_manager
+
+                    process_manager.register(process, "nmap", self.strategy, ip, thread_id)
+                except Exception:
+                    pass  # Fallback si import échoue
+
                 event_queue.put({'event': 'thread_update',
                                  'data': {'thread_id': thread_id,
-                                          'message': f"[{time.ctime()}] Popen lancé avec succès"}})
+                                          'message': f"[{time.ctime()}] Popen lancé avec succès (PID: {process.pid})"}})
 
                 try:
                     returncode = process.wait(timeout=3600)
