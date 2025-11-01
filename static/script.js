@@ -501,6 +501,13 @@ function showSnowflakeInfo() {
     modal.show();
 }
 
+function showProcesses() {
+    const iframe = document.getElementById('processes-iframe');
+    iframe.src = '/processes';
+    const modal = new bootstrap.Modal(document.getElementById('processesModal'));
+    modal.show();
+}
+
 function showAIEvasionInfo() {
     const modal = new bootstrap.Modal(document.getElementById('aiEvasionModal'));
     modal.show();
