@@ -141,6 +141,9 @@ class ProcessManager:
 
     def get_stats(self) -> Dict:
         """Statistiques globales."""
+
+        self.cleanup_terminated()
+
         with self.lock:
             total = len(self.processes)
             running = sum(1 for d in self.processes.values() if d["status"] == "running")
