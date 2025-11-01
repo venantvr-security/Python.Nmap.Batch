@@ -27,6 +27,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 ## 🎯 Catégorie 1: Basic AI Evasion
 
 ### ai-evasion-windows10
+
 - **OS:** Windows 10 mimicry complet
 - **Timing:** Fibonacci (balanced)
 - **Decoys:** 20
@@ -34,6 +35,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **Use Case:** Scan général furtif imitant workstation Windows
 
 ### ai-evasion-linux
+
 - **OS:** Linux avec fragmentation
 - **Timing:** Sine wave (smooth)
 - **Decoys:** 25
@@ -42,6 +44,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **Use Case:** Serveurs Linux, plus agressif
 
 ### ai-evasion-macos
+
 - **OS:** macOS profile
 - **Timing:** Prime numbers (irregular)
 - **Decoys:** 15
@@ -49,6 +52,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **Use Case:** Mimétisme Mac pour réseaux créatifs/design
 
 ### ai-evasion-android
+
 - **OS:** Android mobile
 - **Timing:** Exponential
 - **Decoys:** 30
@@ -61,6 +65,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 ## 🌍 Catégorie 2: Geo-Targeted
 
 ### chinese-great-firewall-evasion
+
 - **OS:** Android (populaire en Chine)
 - **Timing:** Random (imprévisible)
 - **Decoys:** 50 (maximum)
@@ -69,6 +74,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **Use Case:** Contourner Great Firewall chinois
 
 ### russian-dpi-bypass
+
 - **OS:** Windows 10
 - **Timing:** Sine wave
 - **Decoys:** 30
@@ -80,6 +86,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 ## 🎯 Catégorie 3: Target-Specific
 
 ### corporate-firewall-bypass
+
 - **OS:** Windows 11 (corporate standard)
 - **Timing:** Exponential
 - **Decoys:** 15
@@ -88,6 +95,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **Use Case:** Firewalls entreprise avec DPI
 
 ### cloud-provider-scan
+
 - **OS:** Linux (VMs cloud)
 - **Timing:** Fibonacci
 - **Decoys:** 20
@@ -96,6 +104,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **Use Case:** AWS, GCP, Azure avec WAF
 
 ### iot-device-scan
+
 - **OS:** Linux embedded
 - **Timing:** Random
 - **Decoys:** 5 (peu de connexions)
@@ -108,6 +117,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 ## 🕵️ Catégorie 4: Anti-Detection
 
 ### honeypot-aware-scan
+
 - **OS:** macOS
 - **Timing:** Prime numbers
 - **Delay:** 10.0s (ultra-lent)
@@ -117,6 +127,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **Use Case:** Éviter honeypots avec détection comportementale
 
 ### anti-tarpit-scan
+
 - **OS:** Windows 10
 - **Timeout:** 1s (court, éviter tarpit)
 - **Decoys:** 25 (saturer tarpit)
@@ -127,6 +138,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 ## 🤖 Catégorie 5: Advanced ML Evasion
 
 ### adaptive-learning-evasion
+
 - **Scan Type:** FIN (furtif)
 - **OS:** Linux
 - **Timing:** Fibonacci
@@ -136,6 +148,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **Use Case:** ML adaptatif (auto-learning firewalls)
 
 ### ml-classifier-confusion
+
 - **OS:** Android
 - **Timing:** Random (max entropy)
 - **Decoys:** 45 (maximum)
@@ -144,6 +157,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **Use Case:** Confusion ML/AI classifiers via entropy maximale
 
 ### ultra-stealth-ai-evasion
+
 - **Scan Type:** FIN
 - **OS:** Linux
 - **Timing:** Random
@@ -157,6 +171,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 ## 📱 Catégorie 6: Mobile/5G
 
 ### mobile-5g-profile
+
 - **OS:** Android
 - **Timing:** Exponential
 - **Decoys:** 10
@@ -166,6 +181,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **Use Case:** Trafic mobile 5G
 
 ### ios-device-profile
+
 - **OS:** iOS
 - **Timing:** Fibonacci
 - **Decoys:** 12
@@ -177,6 +193,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 ## ⚡ Catégorie 7: Real-Time Traffic
 
 ### gaming-traffic-mimicry
+
 - **OS:** Windows 11
 - **Timing:** Exponential (burst pattern)
 - **Delay:** 0.3s (très rapide)
@@ -185,6 +202,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **Use Case:** QoS gaming traffic prioritaire
 
 ### voip-sip-mimicry
+
 - **OS:** Linux (Asterisk servers)
 - **Timing:** Sine wave (flux vocal constant)
 - **Delay:** 0.5s
@@ -194,6 +212,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **Use Case:** VoIP/téléphonie IP prioritaire
 
 ### legitimate-browser-scan
+
 - **OS:** Windows 11
 - **Timing:** Exponential
 - **Decoys:** 10
@@ -206,6 +225,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 ## 🧠 Catégorie 8: Behavioral
 
 ### human-browsing-pattern
+
 - **OS:** Windows 11
 - **Timing:** Fibonacci (humain naturel)
 - **Delay:** 2.5s (pauses humaines)
@@ -215,6 +235,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **Use Case:** Mimétisme comportement humain contre ML
 
 ### timing-steganography
+
 - **OS:** Linux
 - **Timing:** Prime (covert channel)
 - **Delay:** 3.0s
@@ -223,6 +244,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **Use Case:** Canal caché temporel (stéganographie)
 
 ### cdn-edge-server
+
 - **OS:** Linux
 - **Timing:** Exponential (burst CDN)
 - **Delay:** 0.2s (très rapide)
@@ -233,6 +255,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **Use Case:** Mimétisme CDN edge nodes
 
 ### bitcoin-node-sync
+
 - **OS:** Linux
 - **Timing:** Random (block propagation)
 - **Delay:** 1.8s
@@ -247,6 +270,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 ## 🔬 Catégorie 9: Anti-Forensic
 
 ### forensic-confusion
+
 - **OS:** Windows 10
 - **Timing:** Random
 - **Delay:** 4.0s
@@ -255,6 +279,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **Use Case:** Confusion analyse forensique
 
 ### protocol-polymorphism
+
 - **OS:** Android
 - **Timing:** Random
 - **Delay:** 2.5s
@@ -267,6 +292,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 ## 🏭 Catégorie 10: Contextual
 
 ### container-orchestration
+
 - **OS:** Linux
 - **Timing:** Exponential (microservices)
 - **Delay:** 0.6s
@@ -276,6 +302,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **Use Case:** Docker/Kubernetes traffic
 
 ### industrial-iot
+
 - **OS:** Linux
 - **Timing:** Sine (polling SCADA périodique)
 - **Delay:** 5.0s
@@ -287,6 +314,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **Use Case:** ICS/SCADA industriel
 
 ### smart-home-device
+
 - **OS:** Linux embedded
 - **Timing:** Sine (heartbeat périodique)
 - **Delay:** 3.0s
@@ -298,6 +326,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **Use Case:** Smart home (Zigbee, MQTT)
 
 ### tor-exit-node
+
 - **OS:** Linux
 - **Timing:** Random (multi-hop latency)
 - **Delay:** 4.0s
@@ -312,6 +341,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 ## 🚀 Catégorie 11: Emerging
 
 ### satellite-internet
+
 - **OS:** Linux
 - **Timing:** Sine
 - **Delay:** 8.0s (latence satellite)
@@ -322,6 +352,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **Use Case:** Starlink/satellite internet
 
 ### ml-training-cluster
+
 - **OS:** Linux
 - **Timing:** Exponential (burst epochs)
 - **Delay:** 0.1s (très rapide)
@@ -332,6 +363,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **Use Case:** GPU clusters ML/AI
 
 ### webrtc-p2p
+
 - **OS:** Windows 11
 - **Timing:** Random (P2P)
 - **Delay:** 0.4s
@@ -341,6 +373,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **Use Case:** WebRTC peer-to-peer
 
 ### video-streaming
+
 - **OS:** Android
 - **Timing:** Exponential (buffer filling)
 - **Delay:** 0.8s
@@ -355,6 +388,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 ## 🔮 Catégorie 12: Exotic
 
 ### time-oracle-scan
+
 - **OS:** Linux
 - **Timing:** Random
 - **Delay:** 60.0s (1 MINUTE entre paquets!)
@@ -363,6 +397,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **Use Case:** Ultra-furtif, éviter corrélation temporelle, time-based blind scan
 
 ### quantum-entropy
+
 - **OS:** Linux
 - **Timing:** Random (maximum entropy)
 - **Delay:** 2.0s
@@ -398,6 +433,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 ## 🛠️ Paramètres Clés
 
 ### Timing Patterns
+
 - **fibonacci:** Balanced, naturel (1, 1, 2, 3, 5, 8, 13...)
 - **sine:** Smooth wave, organique
 - **prime:** Irregular (2, 3, 5, 7, 11, 13, 17...)
@@ -405,24 +441,28 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **random:** Chaotic, imprévisible
 
 ### IPID Modes
+
 - **random:** Full range 0-65535 (maximum entropy, évite corrélation)
 - **incremental:** Sequential 1000-10000 (mimics classic OS behavior)
 - **zero:** IPID=0 (modern OS like recent Linux kernels)
 - **odd:** Only odd numbers (BSD-style behavior)
 
 ### Decoys
+
 - **0:** Canal caché, timing stego
 - **3-8:** Comportement humain/simple
 - **10-25:** Standard furtif
 - **30-50:** Maximum (DPI/GFW)
 
 ### Delay
+
 - **< 1s:** Temps-réel (gaming, streaming)
 - **1-5s:** Standard
 - **5-10s:** Lent (ICS, honeypot-aware)
 - **60s:** Ultra-furtif (time-oracle)
 
 ### Uptime
+
 - **1-7j:** Mobile, browser, containers
 - **30-90j:** Workstations
 - **365-1000j:** Serveurs, ICS
@@ -432,12 +472,12 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 ## 📖 Notes d'Utilisation
 
 1. **Toutes les stratégies** supportent `advanced_evasion: true` pour activer:
-   - TCP options réalistes par OS
-   - Window size réaliste
-   - TTL réaliste
-   - SEQ number timestamp-based
-   - Protocol mimicry (HTTP/TLS/DNS)
-   - IPID manipulation (4 modes disponibles)
+    - TCP options réalistes par OS
+    - Window size réaliste
+    - TTL réaliste
+    - SEQ number timestamp-based
+    - Protocol mimicry (HTTP/TLS/DNS)
+    - IPID manipulation (4 modes disponibles)
 
 2. **Overlapping fragments** implémenté dans `AdvancedEvasion.create_overlapping_fragments()`
 
@@ -454,6 +494,7 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 ## 🎓 Utilisation Éducative
 
 Ce scanner est conçu pour la **recherche académique sur les firewalls IA**. Toutes les stratégies visent à:
+
 - Comprendre détection comportementale ML/AI
 - Tester robustesse des pare-feu modernes
 - Étudier patterns de trafic légitimes

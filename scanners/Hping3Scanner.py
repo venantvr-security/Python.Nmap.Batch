@@ -8,6 +8,7 @@ from ScannerInterface import ScannerInterface, ScanResult
 
 
 class Hping3Scanner(ScannerInterface):
+
     def load_strategies(self) -> Dict[str, List[str]]:
         try:
             with open(self.yaml_file, 'r') as file:

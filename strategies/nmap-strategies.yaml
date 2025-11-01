@@ -48,7 +48,7 @@ strategies:
     - "-p"           # Spécifie les ports à scanner
     - "<ports>"      # Ports ciblés : HTTP (80), HTTPS (443)
     - "-T2"          # Timing T2, discret et plus lent pour éviter la détection
-  stealth-slow-decoy-scan:  # Conservé tel quel (ChatGPT)
+  stealth-slow-decoy-scan: # Conservé tel quel (ChatGPT)
     - "-sS"           # Scan SYN furtif
     - "-Pn"           # Pas de ping préalable
     - "-T2"           # Timing Polite
@@ -59,7 +59,7 @@ strategies:
     - "-f"            # Fragmentation des paquets
     - "-D"            # Leurres (decoys)
     - "RND:10"        # 10 adresses leurres aléatoires
-  ultra-stealth-paranoid-scan:  # Conservé tel quel (Grok)
+  ultra-stealth-paranoid-scan: # Conservé tel quel (Grok)
     - "-sS"  # Scan SYN furtif
     - "-T0"  # Timing Paranoid (5 minutes entre chaque paquet)
     - "-p"

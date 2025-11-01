@@ -255,8 +255,6 @@ def signal_handler(sig, frame):
 PORTS_FILE = os.path.join(PATHS['strategies_dir'], "ports.yaml")
 
 
-
-
 # Nouvelle route pour les ports
 @app.route('/api/ip-ranges', methods=['GET'])
 def get_ip_ranges():

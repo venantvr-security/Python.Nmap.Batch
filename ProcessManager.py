@@ -1,7 +1,8 @@
-import psutil
 import threading
 from datetime import datetime
 from typing import Dict, List, Optional
+
+import psutil
 
 
 class ProcessManager:

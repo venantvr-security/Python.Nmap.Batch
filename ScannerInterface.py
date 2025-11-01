@@ -7,6 +7,7 @@ ScanResult = Tuple[str, bool, str or None, dict, TypedDict]
 
 
 class ScannerInterface(ABC):
+
     def __init__(self, strategy: str, active_processes: List, yaml_file: str):
         self.strategy = strategy
         self.active_processes = active_processes if active_processes is not None else []

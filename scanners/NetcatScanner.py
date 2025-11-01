@@ -11,6 +11,7 @@ from ScannerInterface import ScannerInterface, ScanResult
 # echo "rvv ALL=(ALL) NOPASSWD: /bin/nc" | sudo tee -a /etc/sudoers.d/netcat
 # sudo chmod 440 /etc/sudoers.d/netcat
 class NetcatScanner(ScannerInterface):
+
     def load_strategies(self) -> Dict[str, List[str]]:
         try:
             with open(self.yaml_file, 'r') as file:

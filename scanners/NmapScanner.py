@@ -12,6 +12,7 @@ from ScannerInterface import ScannerInterface, ScanResult
 # echo "votre_utilisateur ALL=(ALL) NOPASSWD: /usr/bin/nmap" | sudo tee -a /etc/sudoers.d/nmap
 # sudo chmod 440 /etc/sudoers.d/nmap
 class NmapScanner(ScannerInterface):
+
     def load_strategies(self) -> Dict[str, List[str]]:
         try:
             with open(self.yaml_file, 'r') as file:

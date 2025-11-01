@@ -80,7 +80,6 @@ class AdvancedEvasion:
             return packet / Raw(AdvancedEvasion.PROTOCOL_PAYLOADS[port])
         return packet
 
-
     @staticmethod
     def get_realistic_window_size(os_type: str) -> int:
         """Window size TCP réaliste selon OS"""
@@ -187,4 +186,3 @@ class AdvancedEvasion:
             packet = AdvancedEvasion.add_protocol_mimicry(packet, port)
 
         return packet
-
