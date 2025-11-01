@@ -1,0 +1,63 @@
+verbose-os-port-scan:
+  complexity: 0
+  type: reconnaissance
+verbose-service-os-syn:
+  complexity: 0
+  type: reconnaissance
+verbose-vuln-os-service:
+  complexity: 3
+  type: vulnerability
+stealth-syn-fragmented-polite:
+  complexity: 1
+  type: stealth
+stealth-http-headers-fragmented:
+  complexity: 1
+  type: stealth
+stealth-fragmented-custom-mtu:
+  complexity: 1
+  type: stealth
+stealth-slow-decoy-scan:
+  complexity: 2
+  type: advanced
+ultra-stealth-paranoid-scan:
+  complexity: 2
+  type: advanced
+decoy-random-ipid-spoof:
+  complexity: 1
+  type: stealth
+mac-spoof-variable-timing:
+  complexity: 1
+  type: stealth
+source-ip-spoof:
+  complexity: 1
+  type: stealth
+extreme-fragmentation:
+  complexity: 2
+  type: exotic
+badsum-bypass:
+  complexity: 2
+  type: exotic
+ttl-manipulation:
+  complexity: 0
+  type: basic
+fin-scan-fragmented:
+  complexity: 1
+  type: stealth
+xmas-decoy:
+  complexity: 1
+  type: stealth
+null-paranoid:
+  complexity: 2
+  type: advanced
+ack-firewall-map:
+  complexity: 0
+  type: basic
+window-scan-decoy:
+  complexity: 1
+  type: stealth
+ipv6-stealth:
+  complexity: 2
+  type: exotic
+maimon-scan:
+  complexity: 0
+  type: basic

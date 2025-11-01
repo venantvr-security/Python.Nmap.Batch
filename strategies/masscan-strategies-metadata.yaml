@@ -1,0 +1,3 @@
+stealth-slow-port-scan:
+  complexity: 2
+  type: basic

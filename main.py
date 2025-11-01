@@ -39,7 +39,7 @@ with open(CONFIG_FILE, 'r') as f:
 
 # Construire les chemins absolus à partir de la racine de l'application
 PATHS = {
-    key: os.path.join(APP_ROOT, path) for key, path in config['paths'].items()
+    key: str(os.path.join(APP_ROOT, path)) for key, path in config['paths'].items()
 }
 
 # Charger le fichier .env
@@ -270,12 +270,17 @@ def parse_nmap_ports(port_string):
 # Nouvelle route pour les ports
 @app.route('/api/ports', methods=['GET'])
 def get_ports():
-    """Renvoie les lignes brutes de ports à partir de strategies/ports.yaml."""
+    """Renvoie les ports avec labels à partir de strategies/ports.yaml."""
     try:
         with open(PORTS_FILE, 'r') as file:
             data = yaml.safe_load(file)
             port_entries = data.get('ports', [])
-            return jsonify({"ports": port_entries})
+            # Support ancien format (liste de strings) et nouveau format (liste de dicts)
+            if port_entries and isinstance(port_entries[0], dict):
+                return jsonify({"ports": port_entries})
+            else:
+                # Ancien format: convertir en nouveau format
+                return jsonify({"ports": [{"label": p, "value": p} for p in port_entries]})
     except FileNotFoundError:
         logger.error(f"Fichier {PORTS_FILE} non trouvé")
         return jsonify({"error": f"Fichier {PORTS_FILE} non trouvé"}), 404
@@ -343,36 +348,57 @@ def save_scan_result(scanner_type, strategy, ip, scan_result):
 
 
 # Nouvelle route pour récupérer les stratégies
-@app.route('/strategies/get/<scanner_type>')
-def get_strategies(scanner_type):
-    # Dictionnaire des scanners et leurs fichiers YAML
-    scanner_files = {
-        "nmap": "nmap-strategies.yaml",
-        "netcat": "netcat-strategies.yaml",
-        "scapy": "scapy-strategies.yaml",
-        "masscan": "masscan-strategies.yaml",
-        "hping3": "hping3-strategies.yaml",
-        "curl": "curl-strategies.yaml",
-    }
-
-    if scanner_type not in scanner_files:
-        return jsonify(
-            {"error": f"Type de scanner inconnu : {scanner_type}. Options valides : {list(scanner_files.keys())}"}), 400
-
-    yaml_file = os.path.join(PATHS['strategies_dir'], scanner_files[scanner_type])
-    try:
-        with open(yaml_file, 'r') as file:
-            data = yaml.safe_load(file)
-            if not data or 'strategies' not in data:
-                return jsonify({"error": f"Le fichier {yaml_file} doit contenir une clé 'strategies'"}), 400
-            strategies = list(data['strategies'].keys())
-        return jsonify({"strategies": strategies})
-    except FileNotFoundError:
-        return jsonify({"error": f"Fichier {yaml_file} non trouvé"}), 404
-    except yaml.YAMLError as e:
-        return jsonify({"error": f"Erreur de syntaxe dans {yaml_file} : {str(e)}"}), 500
-    except Exception as e:
-        return jsonify({"error": f"Erreur inattendue : {str(e)}"}), 500
+# @app.route('/strategies/get/<scanner_type>')
+# def get_strategies(scanner_type):
+#     # Dictionnaire des scanners et leurs fichiers YAML
+#     scanner_files = {
+#         "nmap": "nmap-strategies.yaml",
+#         "netcat": "netcat-strategies.yaml",
+#         "scapy": "scapy-strategies.yaml",
+#         "masscan": "masscan-strategies.yaml",
+#         "hping3": "hping3-strategies.yaml",
+#         "curl": "curl-strategies.yaml",
+#     }
+#
+#     if scanner_type not in scanner_files:
+#         return jsonify(
+#             {"error": f"Type de scanner inconnu : {scanner_type}. Options valides : {list(scanner_files.keys())}"}), 400
+#
+#     yaml_file = os.path.join(PATHS['strategies_dir'], scanner_files[scanner_type])
+#     metadata_file = yaml_file.replace('.yaml', '-metadata.yaml')
+#
+#     try:
+#         with open(yaml_file, 'r') as file:
+#             data = yaml.safe_load(file)
+#             if not data or 'strategies' not in data:
+#                 return jsonify({"error": f"Le fichier {yaml_file} doit contenir une clé 'strategies'"}), 400
+#
+#         # Charger metadata si existe
+#         metadata = {}
+#         try:
+#             with open(metadata_file, 'r') as f:
+#                 metadata = yaml.safe_load(f) or {}
+#         except FileNotFoundError:
+#             pass
+#
+#         # Enrichir avec metadata
+#         strategies_with_metadata = [
+#             {
+#                 "name": name,
+#                 "complexity": metadata.get(name, {}).get("complexity", 1),
+#                 "type": metadata.get(name, {}).get("type", "basic")
+#             }
+#             for name in data['strategies'].keys()
+#         ]
+#         strategies_with_metadata.sort(key=lambda x: x['complexity'])
+#
+#         return jsonify({"strategies": strategies_with_metadata})
+#     except FileNotFoundError:
+#         return jsonify({"error": f"Fichier {yaml_file} non trouvé"}), 404
+#     except yaml.YAMLError as e:
+#         return jsonify({"error": f"Erreur de syntaxe dans {yaml_file} : {str(e)}"}), 500
+#     except Exception as e:
+#         return jsonify({"error": f"Erreur inattendue : {str(e)}"}), 500
 
 
 # Fonction de scan en arrière-plan
@@ -569,18 +595,39 @@ def get_scanners():
     scanner_definitions = load_and_validate_scanner_definitions()
     for scanner_key, scanner_instance in scanner_map.items():
         yaml_file = os.path.join(PATHS['strategies_dir'], scanner_definitions[scanner_key]['file'])
+        metadata_file = yaml_file.replace('.yaml', '-metadata.yaml')
+
         try:
             with open(yaml_file, 'r') as file:
                 data = yaml.safe_load(file)
-                strategies = list(data.get('strategies', {}).keys())
+
+            # Charger metadata
+            metadata = {}
+            try:
+                with open(metadata_file, 'r') as f:
+                    metadata = yaml.safe_load(f) or {}
+            except FileNotFoundError:
+                pass
+
+            # Enrichir avec metadata
+            strategies_with_metadata = [
+                {
+                    "name": name,
+                    "complexity": metadata.get(name, {}).get("complexity", 1),
+                    "type": metadata.get(name, {}).get("type", "basic")
+                }
+                for name in data.get('strategies', {}).keys()
+            ]
+            strategies_with_metadata.sort(key=lambda x: x['complexity'])
+
         except Exception as e:
             logger.error(f"Erreur lors de la lecture de {yaml_file} : {e}")
-            strategies = []
+            strategies_with_metadata = []
 
         scanners_data.append({
             "name": scanner_key,
             "class": f"btn-{scanner_key}",
-            "strategies": strategies
+            "strategies": strategies_with_metadata
         })
 
     return jsonify(scanners_data)
@@ -589,12 +636,12 @@ def get_scanners():
 @app.route('/scanner/info/get/<scanner_type>')
 def get_scanner_info(scanner_type):
     scanner_files = {
-        "nmap": "nmap.md",
-        "netcat": "netcat.md",
-        "scapy": "scapy.md",
-        "masscan": "masscan.md",
-        "hping3": "hping3.md",
-        "curl": "curl.md",
+        "nmap": "NMAP.md",
+        "netcat": "NETCAT.md",
+        "scapy": "SCAPY.md",
+        "masscan": "MASSCAN.md",
+        "hping3": "HPING3.md",
+        "curl": "CURL.md",
     }
 
     if scanner_type not in scanner_files:

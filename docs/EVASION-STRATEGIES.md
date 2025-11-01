@@ -6,21 +6,21 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 
 ## 📊 Vue d'Ensemble
 
-| Catégorie | Nombre | Focus Principal |
-|-----------|--------|-----------------|
-| Basic AI Evasion | 4 | OS fingerprinting réaliste |
-| Geo-Targeted | 2 | DPI spécifique par pays |
-| Target-Specific | 3 | Types de cibles (corporate, cloud, IoT) |
-| Anti-Detection | 2 | Éviter honeypots et tarpits |
-| Advanced ML Evasion | 3 | Contourner ML/AI avancés |
-| Mobile/5G | 2 | Profils mobiles réalistes |
-| Real-Time Traffic | 3 | Mimétisme trafic temps-réel |
-| Behavioral | 4 | Comportement humain/légitime |
-| Anti-Forensic | 2 | Confusion forensique |
-| Contextual | 4 | Contextes spécifiques (Docker, IoT, TOR) |
-| Emerging | 4 | Technologies émergentes |
-| Exotic | 2 | Techniques exotiques |
-| **TOTAL** | **51** | **Couverture complète** |
+| Catégorie           | Nombre | Focus Principal                          |
+|---------------------|--------|------------------------------------------|
+| Basic AI Evasion    | 4      | OS fingerprinting réaliste               |
+| Geo-Targeted        | 2      | DPI spécifique par pays                  |
+| Target-Specific     | 3      | Types de cibles (corporate, cloud, IoT)  |
+| Anti-Detection      | 2      | Éviter honeypots et tarpits              |
+| Advanced ML Evasion | 3      | Contourner ML/AI avancés                 |
+| Mobile/5G           | 2      | Profils mobiles réalistes                |
+| Real-Time Traffic   | 3      | Mimétisme trafic temps-réel              |
+| Behavioral          | 4      | Comportement humain/légitime             |
+| Anti-Forensic       | 2      | Confusion forensique                     |
+| Contextual          | 4      | Contextes spécifiques (Docker, IoT, TOR) |
+| Emerging            | 4      | Technologies émergentes                  |
+| Exotic              | 2      | Techniques exotiques                     |
+| **TOTAL**           | **51** | **Couverture complète**                  |
 
 ---
 
@@ -375,23 +375,23 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 
 ## 📋 Guide de Sélection Rapide
 
-| Situation | Stratégie Recommandée |
-|-----------|----------------------|
-| **Scan général furtif** | `ai-evasion-windows10` ou `ai-evasion-linux` |
-| **Chine (GFW)** | `chinese-great-firewall-evasion` |
-| **Russie (DPI)** | `russian-dpi-bypass` |
-| **Entreprise** | `corporate-firewall-bypass` |
-| **Cloud (AWS/GCP/Azure)** | `cloud-provider-scan` |
-| **Honeypot possible** | `honeypot-aware-scan` |
-| **ML/AI avancé** | `ml-classifier-confusion` ou `ultra-stealth-ai-evasion` |
-| **Mobile** | `mobile-5g-profile` ou `ios-device-profile` |
-| **Ressemble à humain** | `human-browsing-pattern` |
-| **CDN mimicry** | `cdn-edge-server` |
-| **Bitcoin tolerated** | `bitcoin-node-sync` |
-| **Docker/K8s** | `container-orchestration` |
-| **SCADA/ICS** | `industrial-iot` |
-| **Ultra-furtif** | `time-oracle-scan` |
-| **Maximum entropy** | `quantum-entropy` |
+| Situation                 | Stratégie Recommandée                                   |
+|---------------------------|---------------------------------------------------------|
+| **Scan général furtif**   | `ai-evasion-windows10` ou `ai-evasion-linux`            |
+| **Chine (GFW)**           | `chinese-great-firewall-evasion`                        |
+| **Russie (DPI)**          | `russian-dpi-bypass`                                    |
+| **Entreprise**            | `corporate-firewall-bypass`                             |
+| **Cloud (AWS/GCP/Azure)** | `cloud-provider-scan`                                   |
+| **Honeypot possible**     | `honeypot-aware-scan`                                   |
+| **ML/AI avancé**          | `ml-classifier-confusion` ou `ultra-stealth-ai-evasion` |
+| **Mobile**                | `mobile-5g-profile` ou `ios-device-profile`             |
+| **Ressemble à humain**    | `human-browsing-pattern`                                |
+| **CDN mimicry**           | `cdn-edge-server`                                       |
+| **Bitcoin tolerated**     | `bitcoin-node-sync`                                     |
+| **Docker/K8s**            | `container-orchestration`                               |
+| **SCADA/ICS**             | `industrial-iot`                                        |
+| **Ultra-furtif**          | `time-oracle-scan`                                      |
+| **Maximum entropy**       | `quantum-entropy`                                       |
 
 ---
 

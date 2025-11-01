@@ -48,7 +48,7 @@ class AdvancedEvasion:
         """Génère timestamp TCP mimant un uptime spécifique"""
         current_ts = int(time.time() * 100)
         fake_ts = current_ts - (fake_uptime_days * 86400 * 100)
-        return (fake_ts % 0xFFFFFFFF, 0)
+        return fake_ts % 0xFFFFFFFF, 0
 
     @staticmethod
     def get_realistic_seq_number(mode: str = "timestamp_based") -> int:

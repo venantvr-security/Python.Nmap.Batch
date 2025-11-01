@@ -206,17 +206,53 @@ async function loadScannerButtons() {
             dropdownMenu.className = 'dropdown-menu';
             dropdownMenu.id = `${scanner.name}-strategies`;
 
-            scanner.strategies.forEach(strategy => {
+            scanner.strategies.forEach(strategyObj => {
                 const item = document.createElement('li');
                 const link = document.createElement('a');
                 link.className = 'dropdown-item';
                 link.href = '#';
-                link.textContent = strategy;
+
+                // Support ancien format (string) et nouveau format (object)
+                const strategyName = strategyObj.name || strategyObj;
+                const complexity = Math.min(strategyObj.complexity || 1, 3); // Max 3
+                const strategyType = strategyObj.type || 'basic';
+
+                // Afficher étoiles de complexité (0-3)
+                const stars = complexity > 0 ? '⭐'.repeat(complexity) : '○';
+
+                // Badge type avec couleur
+                const typeColors = {
+                    'basic': 'secondary',
+                    'advanced': 'primary',
+                    'geo': 'warning',
+                    'realtime': 'info',
+                    'anti-detection': 'danger',
+                    'ml-evasion': 'success',
+                    'behavioral': 'info',
+                    'anti-forensic': 'dark',
+                    'contextual': 'secondary',
+                    'emerging': 'warning',
+                    'exotic': 'danger',
+                    'stealth': 'primary',
+                    'reconnaissance': 'secondary',
+                    'vulnerability': 'danger',
+                    'authenticated': 'warning'
+                };
+                const badgeColor = typeColors[strategyType] || 'secondary';
+
+                link.innerHTML = `
+                    <span style="float: right; display: flex; align-items: center; gap: 5px;">
+                        <span class="badge bg-${badgeColor}" style="font-size: 0.6rem;">${strategyType}</span>
+                        <span style="font-size: 0.75rem; opacity: 0.8;">${stars}</span>
+                    </span>
+                    ${strategyName}
+                `;
+
                 link.onclick = (e) => {
                     e.preventDefault();
-                    selectedStrategies[scanner.name] = strategy;
-                    mainButton.textContent = `Démarrer ${scanner.name.charAt(0).toUpperCase() + scanner.name.slice(1)} (${strategy})`;
-                    console.log(`Stratégie sélectionnée pour ${scanner.name} : ${strategy}`);
+                    selectedStrategies[scanner.name] = strategyName;
+                    mainButton.textContent = `Démarrer ${scanner.name.charAt(0).toUpperCase() + scanner.name.slice(1)} (${strategyName})`;
+                    console.log(`Stratégie sélectionnée pour ${scanner.name} : ${strategyName}`);
                 };
                 item.appendChild(link);
                 dropdownMenu.appendChild(item);
@@ -238,8 +274,10 @@ async function loadScannerButtons() {
             scannerButtonsContainer.appendChild(col);
 
             if (scanner.strategies.length > 0) {
-                selectedStrategies[scanner.name] = scanner.strategies[0];
-                mainButton.textContent = `Démarrer ${scanner.name.charAt(0).toUpperCase() + scanner.name.slice(1)} (${scanner.strategies[0]})`;
+                const firstStrategy = scanner.strategies[0];
+                const firstStrategyName = firstStrategy.name || firstStrategy;
+                selectedStrategies[scanner.name] = firstStrategyName;
+                mainButton.textContent = `Démarrer ${scanner.name.charAt(0).toUpperCase() + scanner.name.slice(1)} (${firstStrategyName})`;
             }
         });
 
@@ -352,26 +390,31 @@ fetch('/api/ports')
         const portsList = document.getElementById('ports-list-nav');
         const portsNavText = document.getElementById('ports-nav-text');
         portsList.innerHTML = '';
-        data.ports.forEach(port => {
+        data.ports.forEach(portEntry => {
             const li = document.createElement('li');
             const a = document.createElement('a');
             a.className = 'dropdown-item';
             a.href = '#';
-            a.textContent = port;
+            const label = portEntry.label || portEntry.value || portEntry;
+            const value = portEntry.value || portEntry;
+            a.textContent = label;
             a.onclick = (e) => {
                 e.preventDefault();
-                selectedPorts = port;
-                originalPortsTemplate = port;
-                portsNavText.textContent = `Ports: ${port.substring(0, 20)}${port.length > 20 ? '...' : ''}`;
-                console.log(`Ports sélectionnés : ${port}`);
+                selectedPorts = value;
+                originalPortsTemplate = value;
+                portsNavText.textContent = `Ports: ${label}`;
+                console.log(`Ports sélectionnés : ${value}`);
             };
             li.appendChild(a);
             portsList.appendChild(li);
         });
         if (data.ports.length > 0) {
-            selectedPorts = data.ports[0];
-            originalPortsTemplate = data.ports[0];
-            portsNavText.textContent = `Ports: ${data.ports[0].substring(0, 20)}${data.ports[0].length > 20 ? '...' : ''}`;
+            const firstEntry = data.ports[0];
+            const firstValue = firstEntry.value || firstEntry;
+            const firstLabel = firstEntry.label || firstEntry;
+            selectedPorts = firstValue;
+            originalPortsTemplate = firstValue;
+            portsNavText.textContent = `Ports: ${firstLabel}`;
         }
     })
     .catch(error => {

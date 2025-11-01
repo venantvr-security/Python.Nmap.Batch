@@ -1,0 +1,9 @@
+http-get-verbose:
+  complexity: 0
+  type: basic
+https-post-auth:
+  complexity: 1
+  type: authenticated
+custom-headers-timing:
+  complexity: 2
+  type: advanced

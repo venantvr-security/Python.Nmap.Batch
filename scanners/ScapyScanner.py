@@ -1,6 +1,9 @@
+import os
 import random
+# Import local
+import sys
 import time
-from typing import Dict, List, Tuple, Union, Any
+from typing import Dict, List, Tuple, Union
 
 import yaml
 from scapy.layers.inet import IP, TCP, fragment
@@ -9,9 +12,6 @@ from scapy.sendrecv import sr1, send
 
 from ScannerInterface import ScannerInterface, ScanResult
 
-# Import local
-import sys
-import os
 sys.path.insert(0, os.path.dirname(__file__))
 from AdvancedEvasion import AdvancedEvasion
 

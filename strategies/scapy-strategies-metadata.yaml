@@ -1,0 +1,132 @@
+stealth-delayed-port-scan:
+  complexity: 0
+  type: basic
+fin-scan-fragmented:
+  complexity: 1
+  type: basic
+xmas-decoy-scan:
+  complexity: 1
+  type: basic
+null-scan-padding:
+  complexity: 1
+  type: basic
+ack-firewall-probe:
+  complexity: 0
+  type: basic
+maimon-scan:
+  complexity: 0
+  type: basic
+syn-decoy-fragmented:
+  complexity: 1
+  type: basic
+ultra-stealth-random:
+  complexity: 1
+  type: basic
+window-scan:
+  complexity: 0
+  type: basic
+ai-evasion-windows10:
+  complexity: 2
+  type: advanced
+ai-evasion-linux:
+  complexity: 2
+  type: advanced
+ai-evasion-macos:
+  complexity: 2
+  type: advanced
+ai-evasion-android:
+  complexity: 2
+  type: realtime
+ultra-stealth-ai-evasion:
+  complexity: 2
+  type: advanced
+legitimate-browser-scan:
+  complexity: 2
+  type: behavioral
+chinese-great-firewall-evasion:
+  complexity: 3
+  type: exotic
+russian-dpi-bypass:
+  complexity: 2
+  type: geo
+corporate-firewall-bypass:
+  complexity: 2
+  type: advanced
+cloud-provider-scan:
+  complexity: 2
+  type: advanced
+iot-device-scan:
+  complexity: 2
+  type: contextual
+honeypot-aware-scan:
+  complexity: 2
+  type: anti-detection
+anti-tarpit-scan:
+  complexity: 2
+  type: anti-detection
+adaptive-learning-evasion:
+  complexity: 2
+  type: ml-evasion
+ml-classifier-confusion:
+  complexity: 3
+  type: ml-evasion
+mobile-5g-profile:
+  complexity: 2
+  type: realtime
+ios-device-profile:
+  complexity: 2
+  type: realtime
+gaming-traffic-mimicry:
+  complexity: 2
+  type: realtime
+voip-sip-mimicry:
+  complexity: 2
+  type: realtime
+human-browsing-pattern:
+  complexity: 2
+  type: behavioral
+timing-steganography:
+  complexity: 2
+  type: behavioral
+cdn-edge-server:
+  complexity: 2
+  type: behavioral
+bitcoin-node-sync:
+  complexity: 2
+  type: behavioral
+forensic-confusion:
+  complexity: 2
+  type: anti-forensic
+protocol-polymorphism:
+  complexity: 2
+  type: anti-forensic
+container-orchestration:
+  complexity: 2
+  type: contextual
+industrial-iot:
+  complexity: 2
+  type: contextual
+smart-home-device:
+  complexity: 2
+  type: contextual
+tor-exit-node:
+  complexity: 3
+  type: contextual
+satellite-internet:
+  complexity: 2
+  type: emerging
+ml-training-cluster:
+  complexity: 2
+  type: emerging
+webrtc-p2p:
+  complexity: 2
+  type: emerging
+video-streaming:
+  complexity: 2
+  type: emerging
+time-oracle-scan:
+  complexity: 3
+  type: exotic
+quantum-entropy:
+  complexity: 2
+  type: exotic
