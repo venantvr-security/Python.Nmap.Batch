@@ -14,6 +14,7 @@ let selectedStrategies = {
 };
 
 let selectedPorts = null; // Variable pour stocker les ports sélectionnés
+let originalPortsTemplate = null; // Template original avant randomisation
 
 const source = new EventSource('/events');
 
@@ -112,6 +113,32 @@ source.addEventListener('ping', (event) => {
     console.log('Ping reçu :', event.data);
 });
 
+// Fonction pour parser et randomiser les ports
+function parseAndRandomizePorts(portString) {
+    let ports = [];
+    const items = portString.split(',');
+
+    for (let item of items) {
+        item = item.trim();
+        if (item.includes('-')) {
+            const [start, end] = item.split('-').map(x => parseInt(x.trim()));
+            for (let p = start; p <= end; p++) {
+                ports.push(p);
+            }
+        } else {
+            ports.push(parseInt(item));
+        }
+    }
+
+    // Randomiser l'ordre
+    for (let i = ports.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [ports[i], ports[j]] = [ports[j], ports[i]];
+    }
+
+    return ports.join(',');
+}
+
 // Fonction pour démarrer un scan
 function startScan(scannerType) {
     const strategy = selectedStrategies[scannerType];
@@ -123,8 +150,17 @@ function startScan(scannerType) {
         progressText.textContent = `Erreur : Aucun port sélectionné`;
         return;
     }
-    console.log(`Envoi de start_scan pour ${scannerType} avec stratégie ${strategy} et ports ${selectedPorts}`);
-    fetch(`/scan/start/${scannerType}/${strategy}?ports=${encodeURIComponent(selectedPorts)}`)
+
+    let portsToScan = selectedPorts;
+    const randomize = document.getElementById('randomize-ports-checkbox').checked;
+
+    if (randomize) {
+        portsToScan = parseAndRandomizePorts(selectedPorts);
+        console.log(`Ports randomisés: ${portsToScan}`);
+    }
+
+    console.log(`Envoi de start_scan pour ${scannerType} avec stratégie ${strategy} et ports ${portsToScan}`);
+    fetch(`/scan/start/${scannerType}/${strategy}?ports=${encodeURIComponent(portsToScan)}`)
         .then(response => {
             if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`);
             return response.text();
@@ -286,17 +322,16 @@ function showScannerInfo(scannerType) {
 const toggleButton = document.getElementById('dark-mode-toggle');
 const body = document.body;
 const icon = toggleButton.querySelector('.dark-mode-icon');
+const modeText = toggleButton.querySelector('.dark-mode-text');
 
 toggleButton.addEventListener('click', () => {
     body.classList.toggle('dark-mode');
     if (body.classList.contains('dark-mode')) {
         icon.textContent = '☀️';
-        toggleButton.textContent = ' Mode Jour';
-        toggleButton.prepend(icon);
+        modeText.textContent = 'Light';
     } else {
         icon.textContent = '🌙';
-        toggleButton.textContent = ' Mode Nuit';
-        toggleButton.prepend(icon);
+        modeText.textContent = 'Dark';
     }
     localStorage.setItem('darkMode', body.classList.contains('dark-mode'));
 });
@@ -304,8 +339,7 @@ toggleButton.addEventListener('click', () => {
 if (localStorage.getItem('darkMode') === 'true') {
     body.classList.add('dark-mode');
     icon.textContent = '☀️';
-    toggleButton.textContent = ' Mode Jour';
-    toggleButton.prepend(icon);
+    modeText.textContent = 'Light';
 }
 
 // Charger les ports dans la dropdown et mettre à jour le bouton
@@ -315,8 +349,8 @@ fetch('/api/ports')
         return response.json();
     })
     .then(data => {
-        const portsList = document.getElementById('ports-list');
-        const portsButton = document.getElementById('portsDropdown');
+        const portsList = document.getElementById('ports-list-nav');
+        const portsNavText = document.getElementById('ports-nav-text');
         portsList.innerHTML = '';
         data.ports.forEach(port => {
             const li = document.createElement('li');
@@ -327,7 +361,8 @@ fetch('/api/ports')
             a.onclick = (e) => {
                 e.preventDefault();
                 selectedPorts = port;
-                portsButton.textContent = `Ports : ${port}`;
+                originalPortsTemplate = port;
+                portsNavText.textContent = `Ports: ${port.substring(0, 20)}${port.length > 20 ? '...' : ''}`;
                 console.log(`Ports sélectionnés : ${port}`);
             };
             li.appendChild(a);
@@ -335,13 +370,93 @@ fetch('/api/ports')
         });
         if (data.ports.length > 0) {
             selectedPorts = data.ports[0];
-            portsButton.textContent = `Ports : ${data.ports[0]}`;
+            originalPortsTemplate = data.ports[0];
+            portsNavText.textContent = `Ports: ${data.ports[0].substring(0, 20)}${data.ports[0].length > 20 ? '...' : ''}`;
         }
     })
     .catch(error => {
         console.error('Erreur :', error);
-        document.getElementById('ports-list').innerHTML = '<li><a class="dropdown-item" href="#">Erreur de chargement</a></li>';
+        document.getElementById('ports-list-nav').innerHTML = '<li><a class="dropdown-item" href="#">Erreur de chargement</a></li>';
     });
 
+// Fonctions TOR
+function checkTorStatus() {
+    fetch('/api/tor/status')
+        .then(response => response.json())
+        .then(data => {
+            const statusDiv = document.getElementById('tor-status');
+            const statusText = document.getElementById('tor-status-text');
+            const indicator = document.getElementById('tor-indicator');
+            if (data.tor_enabled) {
+                statusDiv.className = 'badge bg-success';
+                indicator.textContent = '✓';
+                statusText.textContent = 'TOR Active';
+            } else {
+                statusDiv.className = 'badge bg-danger';
+                indicator.textContent = '✗';
+                statusText.textContent = 'TOR Off';
+            }
+        })
+        .catch(error => {
+            console.error('Erreur vérification TOR:', error);
+            const statusDiv = document.getElementById('tor-status');
+            const statusText = document.getElementById('tor-status-text');
+            const indicator = document.getElementById('tor-indicator');
+            statusDiv.className = 'badge bg-warning';
+            indicator.textContent = '⚠';
+            statusText.textContent = 'Error';
+        });
+}
+
+function changeTorIdentity() {
+    fetch('/api/tor/identity/change', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Identité TOR changée avec succès');
+                checkTorStatus();
+            } else {
+                alert('Erreur: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Erreur changement identité:', error);
+            alert('Erreur lors du changement d\'identité TOR');
+        });
+}
+
+function setTorFrequency() {
+    const frequency = document.getElementById('tor-frequency').value;
+    fetch('/api/tor/identity/frequency', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ frequency: parseInt(frequency) })
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Fréquence définie à ${data.frequency} secondes`);
+            }
+        })
+        .catch(error => {
+            console.error('Erreur définition fréquence:', error);
+            alert('Erreur lors de la définition de la fréquence');
+        });
+}
+
+function showMeekInfo() {
+    const modal = new bootstrap.Modal(document.getElementById('meekModal'));
+    modal.show();
+}
+
+function showSnowflakeInfo() {
+    const modal = new bootstrap.Modal(document.getElementById('snowflakeModal'));
+    modal.show();
+}
+
 // Charger les boutons au démarrage
-document.addEventListener('DOMContentLoaded', loadScannerButtons);
+document.addEventListener('DOMContentLoaded', () => {
+    loadScannerButtons();
+    checkTorStatus();
+    setInterval(checkTorStatus, 30000);
+});

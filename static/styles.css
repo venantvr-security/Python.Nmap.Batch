@@ -1,24 +1,39 @@
 /* static/styles.css */
+body {
+    background-color: #f8f9fa;
+}
+
 .tile {
-    height: 400px;
+    height: 350px;
     overflow-y: auto;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    padding: 1rem;
 }
 
 .tile p {
     margin: 0;
+    padding: 2px 0;
 }
 
-#progress-container {
-    margin: 10px 0;
+.card {
+    border-radius: 0.5rem;
+}
+
+.navbar {
+    border-bottom: 3px solid #0d6efd;
 }
 
 #progress-bar {
     transition: width 0.5s ease-in-out;
+    font-weight: bold;
+    font-size: 0.9rem;
 }
 
 #scanner-buttons .btn-group, #scanner-buttons .btn {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
 }
 
 @media (max-width: 767px) {
@@ -100,53 +115,77 @@
 
 /* Mode nuit */
 body.dark-mode {
-    background-color: #212529; /* Fond gris foncé */
-    color: #f8f9fa; /* Texte blanc cassé */
+    background-color: #1a1d23;
+    color: #e9ecef;
 }
 
-body.dark-mode h1,
+body.dark-mode .navbar {
+    background-color: #0d1117 !important;
+    border-bottom: 3px solid #58a6ff;
+}
+
+body.dark-mode .card {
+    background-color: #161b22;
+    border-color: #30363d;
+    color: #e9ecef;
+}
+
+body.dark-mode .card-title {
+    color: #e9ecef;
+}
+
 body.dark-mode #progress-text {
-    color: #f8f9fa; /* Titres et textes en blanc cassé */
+    color: #e9ecef;
 }
 
 body.dark-mode .progress {
-    background-color: #343a40; /* Fond de la barre de progression plus sombre */
+    background-color: #21262d;
 }
 
 body.dark-mode .progress-bar {
-    background-color: #0d6efd; /* Bleu Bootstrap pour la barre remplie */
+    background-color: #58a6ff;
 }
 
 body.dark-mode .tile {
-    background-color: #343a40; /* Fond des tuiles sombre */
-    color: #f8f9fa; /* Texte clair dans les tuiles */
-    border: 1px solid #495057; /* Bordure subtile */
+    background-color: #0d1117;
+    color: #e9ecef;
+    border: 1px solid #30363d;
 }
 
 body.dark-mode .modal-content {
-    background-color: #343a40; /* Fond sombre pour la modale */
-    color: #f8f9fa; /* Texte clair */
+    background-color: #161b22;
+    color: #e9ecef;
+    border-color: #30363d;
 }
 
 body.dark-mode .modal-header,
 body.dark-mode .modal-footer {
-    border-color: #495057; /* Bordures subtiles dans la modale */
+    border-color: #30363d;
 }
 
 body.dark-mode .btn-close {
-    filter: invert(1); /* Inverse la couleur du bouton fermer pour visibilité */
+    filter: invert(1) grayscale(100%) brightness(200%);
 }
 
 body.dark-mode .dropdown-menu {
-    background-color: #343a40; /* Fond sombre pour les menus déroulants */
-    color: #f8f9fa; /* Texte clair */
-    border: 1px solid #495057;
+    background-color: #161b22;
+    color: #e9ecef;
+    border: 1px solid #30363d;
 }
 
 body.dark-mode .dropdown-item {
-    color: #f8f9fa; /* Texte clair dans les options */
+    color: #e9ecef;
 }
 
 body.dark-mode .dropdown-item:hover {
-    background-color: #495057; /* Survol légèrement plus clair */
+    background-color: #21262d;
+    color: #58a6ff;
+}
+
+body.dark-mode .navbar-toggler {
+    border-color: #30363d;
+}
+
+body.dark-mode .navbar-toggler-icon {
+    filter: invert(1);
 }

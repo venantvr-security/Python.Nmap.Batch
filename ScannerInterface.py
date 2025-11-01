@@ -34,6 +34,7 @@ class ScannerInterface(ABC):
         """
         pass
 
+    # noinspection PyMethodMayBeStatic
     def parse_ports(self, port_string: str) -> List[int]:
         """Parse une chaîne de ports au format Nmap (ex. '80,443' ou '1-1000')."""
         ports = []

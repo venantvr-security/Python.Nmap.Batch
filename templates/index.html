@@ -3,40 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <title>Scan Dashboard</title>
+    <title>Network Scanner Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="/static/styles.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
-<div class="container-fluid p-3">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="text-center flex-grow-1">Scan Dashboard</h1>
-        <button class="btn btn-outline-light" id="dark-mode-toggle" style="position: absolute; right: 15px;">
-            <span class="dark-mode-icon">🌙</span> Mode Nuit
+<!-- Header -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" href="#">
+            <svg class="bi bi-radar me-2" fill="currentColor" height="24" style="vertical-align: -5px;" viewBox="0 0 16 16" width="24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6.634 1.135A7 7 0 0 1 15 8a.5.5 0 0 1-1 0 6 6 0 1 0-6.5 5.98v-1.005A5 5 0 1 1 13 8a.5.5 0 0 1-1 0 4 4 0 1 0-4.5 3.969v-1.011A3 3 0 1 1 11 8a.5.5 0 0 1-1 0 2 2 0 1 0-2.5 1.936v-1.018A1 1 0 1 1 9 8a.5.5 0 0 1-1 0 .5.5 0 0 0-1 0v6.5a.5.5 0 0 1-1 0V8a1.5 1.5 0 1 0-3 0 .5.5 0 0 1-1 0 2.5 2.5 0 0 1 5-1z"/>
+            </svg>
+            Network Scanner
+        </a>
+        <button class="navbar-toggler" data-bs-target="#navbarNav" data-bs-toggle="collapse" type="button">
+            <span class="navbar-toggler-icon"></span>
         </button>
-    </div>
-    <!-- Ajout de la dropdown pour les ports -->
-    <div class="mb-3 text-center">
-        <div class="dropdown">
-            <button aria-expanded="false" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown"
-                    id="portsDropdown"
-                    type="button">
-                Ports à scanner
-            </button>
-            <ul aria-labelledby="portsDropdown" class="dropdown-menu" id="ports-list"></ul>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" id="portsNavDropdown" role="button">
+                        <span id="ports-nav-text">Ports</span>
+                    </a>
+                    <ul class="dropdown-menu" id="ports-list-nav"></ul>
+                </li>
+                <li class="nav-item">
+                    <div class="form-check mt-2 ms-3">
+                        <input class="form-check-input" id="randomize-ports-checkbox" type="checkbox">
+                        <label class="form-check-label text-light" for="randomize-ports-checkbox">Random</label>
+                    </div>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" id="torNavDropdown" role="button">
+                        TOR Controls
+                    </a>
+                    <ul class="dropdown-menu p-3" style="min-width: 300px;">
+                        <li class="mb-2">
+                            <button class="btn btn-sm btn-primary w-100" onclick="changeTorIdentity()">
+                                Changer identité TOR
+                            </button>
+                        </li>
+                        <li class="mb-2">
+                            <label class="form-label">Changement auto (sec)</label>
+                            <input class="form-control form-control-sm" id="tor-frequency" min="0" placeholder="0 = off" type="number" value="0">
+                            <button class="btn btn-sm btn-success w-100 mt-2" onclick="setTorFrequency()">Définir</button>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li class="mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input" id="meek-checkbox" type="checkbox">
+                                <label class="form-check-label">
+                                    Meek <a class="text-info" href="#" onclick="showMeekInfo(); return false;">ℹ️</a>
+                                </label>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="form-check">
+                                <input class="form-check-input" id="snowflake-checkbox" type="checkbox">
+                                <label class="form-check-label">
+                                    Snowflake <a class="text-info" href="#" onclick="showSnowflakeInfo(); return false;">ℹ️</a>
+                                </label>
+                            </div>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+            <div class="d-flex align-items-center gap-3">
+                <div class="badge bg-secondary" id="tor-status" style="font-size: 0.95rem; padding: 8px 16px;">
+                    <span id="tor-indicator">⏳</span> <span id="tor-status-text">Checking...</span>
+                </div>
+                <button class="btn btn-sm btn-outline-light" id="dark-mode-toggle">
+                    <span class="dark-mode-icon">🌙</span> <span class="dark-mode-text">Dark</span>
+                </button>
+            </div>
         </div>
     </div>
-    <div class="mb-4" id="progress-container">
-        <div class="mb-2" id="progress-text">En attente...</div>
-        <div class="progress">
-            <div aria-valuemax="100" aria-valuemin="0" aria-valuenow="0" class="progress-bar" id="progress-bar"
-                 role="progressbar" style="width: 0%;"></div>
+</nav>
+
+<!-- Main Content -->
+<div class="container-fluid p-4">
+    <!-- Progress Section -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title mb-3">Scan Progress</h5>
+            <div class="mb-2" id="progress-text">En attente...</div>
+            <div class="progress" style="height: 25px;">
+                <div aria-valuemax="100" aria-valuemin="0" aria-valuenow="0" class="progress-bar progress-bar-striped progress-bar-animated" id="progress-bar"
+                     role="progressbar" style="width: 0%;"></div>
+            </div>
         </div>
     </div>
-    <!-- Conteneur pour les boutons générés dynamiquement -->
-    <div class="row row-cols-1 row-cols-md-3 g-3 mb-3" id="scanner-buttons"></div>
-    <div class="row row-cols-1 row-cols-md-3 g-4" id="tiles"></div>
+
+    <!-- Scanner Buttons -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title mb-3">Scanners</h5>
+            <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-3" id="scanner-buttons"></div>
+        </div>
+    </div>
+
+    <!-- Live Output Tiles -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title mb-3">Live Output</h5>
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3" id="tiles"></div>
+        </div>
+    </div>
 </div>
 
 <!-- Popup pour les explications -->
@@ -49,6 +125,57 @@
             </div>
             <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
                 <div id="scanner-info-content"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Popup pour Meek -->
+<div aria-hidden="true" aria-labelledby="meekModalLabel" class="modal fade" id="meekModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="meekModalLabel">Installation Meek</h5>
+                <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
+            </div>
+            <div class="modal-body">
+                <h6>Qu'est-ce que Meek ?</h6>
+                <p>Meek est un transport pluggable qui utilise HTTP pour masquer le trafic TOR, le faisant ressembler à du trafic web normal.</p>
+                <h6>Installation</h6>
+                <ol>
+                    <li>Installer TOR Browser ou obfs4proxy</li>
+                    <li>Dans torrc, ajouter :<br><code>UseBridges 1<br>Bridge meek_lite 0.0.2.0:1 url=https://meek.azureedge.net/ front=ajax.aspnetcdn.com</code></li>
+                    <li>Redémarrer TOR</li>
+                </ol>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Popup pour Snowflake -->
+<div aria-hidden="true" aria-labelledby="snowflakeModalLabel" class="modal fade" id="snowflakeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="snowflakeModalLabel">Installation Snowflake</h5>
+                <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
+            </div>
+            <div class="modal-body">
+                <h6>Qu'est-ce que Snowflake ?</h6>
+                <p>Snowflake est un transport pluggable qui utilise des proxies temporaires fournis par des volontaires pour contourner la censure.</p>
+                <h6>Installation</h6>
+                <ol>
+                    <li>Installer TOR Browser ou snowflake-client</li>
+                    <li>Dans torrc, ajouter :<br><code>UseBridges 1<br>ClientTransportPlugin snowflake exec /usr/bin/snowflake-client</code></li>
+                    <li>Ajouter un bridge Snowflake (disponible sur torproject.org)</li>
+                    <li>Redémarrer TOR</li>
+                </ol>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Fermer</button>

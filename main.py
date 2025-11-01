@@ -6,6 +6,7 @@ import signal
 import sys
 import threading
 import time
+import urllib.request
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from queue import Queue, Empty
@@ -59,6 +60,8 @@ success_rate = 0.0
 scan_thread = None
 active_processes = []
 event_queue = Queue()
+tor_enabled = False
+tor_identity_change_freq = 0
 
 # Initialisation des scanners
 import yaml
@@ -626,6 +629,44 @@ def reset_progress_endpoint():
         event_queue.put(
             {'event': 'progress', 'data': {'message': f"[{time.ctime()}] Erreur lors de la réinitialisation : {e}"}})
         return f"Erreur : {str(e)}", 500
+
+
+def check_tor_status():
+    try:
+        req = urllib.request.Request('https://check.torproject.org/api/ip')
+        req.add_header('User-Agent', 'Mozilla/5.0')
+        with urllib.request.urlopen(req, timeout=5) as response:
+            data = json.loads(response.read().decode())
+            return data.get('IsTor', False)
+    except:
+        return False
+
+
+@app.route('/api/tor/status', methods=['GET'])
+def get_tor_status():
+    return jsonify({"tor_enabled": check_tor_status()})
+
+
+@app.route('/api/tor/identity/change', methods=['POST'])
+def change_tor_identity():
+    try:
+        from stem import Signal
+        from stem.control import Controller
+
+        with Controller.from_port(port=9051) as controller:
+            controller.authenticate()
+            controller.signal(Signal.NEWNYM)
+            return jsonify({"success": True, "message": "Identité TOR changée"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route('/api/tor/identity/frequency', methods=['POST'])
+def set_tor_identity_frequency():
+    global tor_identity_change_freq
+    data = request.get_json()
+    tor_identity_change_freq = data.get('frequency', 0)
+    return jsonify({"success": True, "frequency": tor_identity_change_freq})
 
 
 if __name__ == "__main__":
