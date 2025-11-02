@@ -16,8 +16,6 @@ créer des "exemples adverses" (adversarial examples) : des entrées subtilement
 stratégies s'inspirent de ces travaux en appliquant les principes de l'apprentissage machine adverse au scan de réseau. L'objectif est de maximiser l'entropie et la
 confusion pour que le trafic de scan tombe dans une "zone grise" que le classifieur ne peut pas identifier de manière fiable.
 
----
-
 ### 1. `adaptive-learning-evasion`
 
 * **Objectif** : Utiliser une combinaison de techniques pour s'adapter et déjouer les systèmes qui apprennent en continu.
@@ -26,8 +24,6 @@ confusion pour que le trafic de scan tombe dans une "zone grise" que le classifi
     * `timing_pattern: "fibonacci"` : Un modèle complexe mais pas entièrement chaotique, qui peut déjouer les modèles statistiques simples.
     * `fragment: true` et `padding: 48` : Combine la fragmentation avec un rembourrage de taille moyenne pour augmenter la complexité des paquets.
     * `decoys: 35` : Un nombre élevé de leurres pour augmenter le bruit statistique.
-
----
 
 ### 2. `ml-classifier-confusion`
 
@@ -38,8 +34,6 @@ confusion pour que le trafic de scan tombe dans une "zone grise" que le classifi
     * `decoys: 45` : Un nombre très élevé de leurres pour rendre l'attribution et la corrélation extrêmement difficiles.
     * `os_fingerprint: "android"` : Le choix d'une empreinte mobile, combiné à un comportement de scan agressif, crée un profil contradictoire qui peut confondre un
       classifieur.
-
----
 
 ### 3. `ultra-stealth-ai-evasion`
 

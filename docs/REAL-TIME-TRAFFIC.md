@@ -17,8 +17,6 @@ l'infrastructure réseau, un effet secondaire ironique.
 Ces stratégies sont donc une forme d'ingénierie sociale appliquée au niveau du réseau : le scanner "prétend" être un type de trafic important pour obtenir un traitement
 de faveur.
 
----
-
 ### 1. `gaming-traffic-mimicry`
 
 * **Objectif** : Imiter le trafic d'un jeu en ligne, qui est caractérisé par de petits paquets fréquents et une faible latence.
@@ -29,8 +27,6 @@ de faveur.
     * `src_ports: [27015, 3074, 5222]` : Utilise des ports connus pour être associés à des services de jeux comme Steam, Xbox Live et Riot Games.
     * `decoys: 8` : Un nombre faible de leurres, car une session de jeu n'établit généralement pas un grand nombre de connexions parasites.
 
----
-
 ### 2. `voip-sip-mimicry`
 
 * **Objectif** : Se faire passer pour du trafic de voix sur IP (VoIP), comme un appel téléphonique sur Internet.
@@ -39,8 +35,6 @@ de faveur.
     * `src_ports: [5060, 5061]` : Utilise les ports standards pour le protocole SIP (Session Initiation Protocol), qui est la base de la plupart des systèmes VoIP.
     * `window_size: 8192` : Une taille de fenêtre commune pour les applications VoIP.
     * `os_fingerprint: "linux"` : De nombreux systèmes de téléphonie IP d'entreprise sont basés sur des serveurs Linux (comme Asterisk).
-
----
 
 ### 3. `legitimate-browser-scan` (Re-catégorisé ici pour le contexte)
 

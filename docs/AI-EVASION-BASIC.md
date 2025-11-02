@@ -16,8 +16,6 @@ les paquets qui ne correspondent à aucune empreinte connue, les signalant comme
 Ces stratégies de base contrent cette détection en imitant fidèlement les empreintes des OS les plus courants, rendant le trafic de scan indiscernable du trafic d'un
 utilisateur normal.
 
----
-
 ### 1. `ai-evasion-windows10`
 
 * **Objectif** : Se faire passer pour un ordinateur de bureau Windows 10 standard.
@@ -26,8 +24,6 @@ utilisateur normal.
     * `timing_pattern: "fibonacci"` : Un modèle de temporisation non linéaire qui évite les schémas répétitifs simples que l'IA pourrait détecter.
     * `decoys: 20` : Un nombre modéré de leurres pour brouiller les pistes sans paraître trop agressif.
     * `fake_uptime_days: 45` : Simule un poste de travail qui n'a pas été redémarré depuis un mois et demi, un comportement courant en entreprise.
-
----
 
 ### 2. `ai-evasion-linux`
 
@@ -39,8 +35,6 @@ utilisateur normal.
     * `decoys: 25` : Un peu plus de leurres, car les serveurs Linux peuvent être plus "bruyants" sur un réseau.
     * `fake_uptime_days: 120` : Simule un serveur avec une longue disponibilité, typique des infrastructures Linux.
 
----
-
 ### 3. `ai-evasion-macos`
 
 * **Objectif** : Se fondre dans un environnement de travail créatif ou de développement en imitant un appareil macOS.
@@ -49,8 +43,6 @@ utilisateur normal.
     * `timing_pattern: "prime"` : Utilise des nombres premiers pour les délais, créant un schéma très irrégulier et difficile à modéliser pour une IA.
     * `decoys: 15` : Moins de leurres, car les postes de travail individuels sont généralement moins actifs que les serveurs.
     * `fake_uptime_days: 90` : Simule un MacBook qui a été en veille et actif pendant plusieurs mois.
-
----
 
 ### 4. `ai-evasion-android`
 

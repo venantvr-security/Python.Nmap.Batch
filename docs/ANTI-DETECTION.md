@@ -17,8 +17,6 @@ automatisé, le ralentissant au point de le rendre inefficace.
 
 Les stratégies de cette catégorie sont donc une forme de contre-espionnage : le scanner tente de déterminer s'il est lui-même observé ou piégé.
 
----
-
 ### 1. `honeypot-aware-scan`
 
 * **Objectif** : Scanner une cible tout en évitant de déclencher les alertes d'un honeypot.
@@ -30,8 +28,6 @@ Les stratégies de cette catégorie sont donc une forme de contre-espionnage : l
     * `os_fingerprint: "macos"` : Utiliser une empreinte de système d'exploitation de bureau moins courante pour un scan peut parfois déjouer les honeypots qui s'
       attendent à des scans provenant de serveurs Linux (comme Kali Linux).
     * `send_rst: true` : Assure que chaque connexion est immédiatement et proprement fermée, laissant le moins de traces possible.
-
----
 
 ### 2. `anti-tarpit-scan`
 

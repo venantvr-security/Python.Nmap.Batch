@@ -2,8 +2,6 @@
 
 Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Scapy Scanner, organisées par catégorie et cas d'usage.
 
----
-
 ## 📊 Vue d'Ensemble
 
 | Catégorie           | Nombre | Focus Principal                          |
@@ -21,8 +19,6 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 | Emerging            | 4      | Technologies émergentes                  |
 | Exotic              | 2      | Techniques exotiques                     |
 | **TOTAL**           | **51** | **Couverture complète**                  |
-
----
 
 ## 🎯 Catégorie 1: Basic AI Evasion
 
@@ -60,8 +56,6 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **Features:** Fragmentation + padding 16B
 - **Use Case:** Trafic mobile Android
 
----
-
 ## 🌍 Catégorie 2: Geo-Targeted
 
 ### chinese-great-firewall-evasion
@@ -80,8 +74,6 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **Decoys:** 30
 - **Features:** Fragmentation + padding 64B + ports Telegram/VK
 - **Use Case:** DPI russe (SORM, Roskomnadzor)
-
----
 
 ## 🎯 Catégorie 3: Target-Specific
 
@@ -112,8 +104,6 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **TTL:** 32 (local)
 - **Use Case:** Devices IoT, embedded systems
 
----
-
 ## 🕵️ Catégorie 4: Anti-Detection
 
 ### honeypot-aware-scan
@@ -132,8 +122,6 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **Timeout:** 1s (court, éviter tarpit)
 - **Decoys:** 25 (saturer tarpit)
 - **Use Case:** Contourner tarpits comme LaBrea
-
----
 
 ## 🤖 Catégorie 5: Advanced ML Evasion
 
@@ -166,8 +154,6 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **Uptime:** 200 jours
 - **Use Case:** Évasion maximale contre AI/ML avancés
 
----
-
 ## 📱 Catégorie 6: Mobile/5G
 
 ### mobile-5g-profile
@@ -187,8 +173,6 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **Decoys:** 12
 - **Uptime:** 7 jours
 - **Use Case:** iPhone/iPad traffic
-
----
 
 ## ⚡ Catégorie 7: Real-Time Traffic
 
@@ -219,8 +203,6 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **Uptime:** 7 jours
 - **Features:** Protocol mimicry (HTTP/TLS)
 - **Use Case:** Navigation web standard
-
----
 
 ## 🧠 Catégorie 8: Behavioral
 
@@ -265,8 +247,6 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **Window:** 65535 (full)
 - **Use Case:** Blockchain node traffic
 
----
-
 ## 🔬 Catégorie 9: Anti-Forensic
 
 ### forensic-confusion
@@ -286,8 +266,6 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **Decoys:** 35
 - **Features:** Protocol mimicry variable + fragmentation + padding 64B
 - **Use Case:** Polymorphisme anti-signature
-
----
 
 ## 🏭 Catégorie 10: Contextual
 
@@ -336,8 +314,6 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **Ports:** 9001, 9030, 443, 80
 - **Use Case:** TOR exit node mimicry
 
----
-
 ## 🚀 Catégorie 11: Emerging
 
 ### satellite-internet
@@ -383,8 +359,6 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **Window:** 65535 (large buffer)
 - **Use Case:** Netflix/YouTube/streaming
 
----
-
 ## 🔮 Catégorie 12: Exotic
 
 ### time-oracle-scan
@@ -406,8 +380,6 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **IPID Mode:** random (0-65535 full range)
 - **Use Case:** Entropie maximale, éviter corrélation IPID, future QRNG support
 
----
-
 ## 📋 Guide de Sélection Rapide
 
 | Situation                 | Stratégie Recommandée                                   |
@@ -427,8 +399,6 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 | **SCADA/ICS**             | `industrial-iot`                                        |
 | **Ultra-furtif**          | `time-oracle-scan`                                      |
 | **Maximum entropy**       | `quantum-entropy`                                       |
-
----
 
 ## 🛠️ Paramètres Clés
 
@@ -467,8 +437,6 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 - **30-90j:** Workstations
 - **365-1000j:** Serveurs, ICS
 
----
-
 ## 📖 Notes d'Utilisation
 
 1. **Toutes les stratégies** supportent `advanced_evasion: true` pour activer:
@@ -489,8 +457,6 @@ Ce document répertorie les **51 stratégies d'évasion** disponibles dans le Sc
 
 6. **IPID manipulation** (`ipid_mode: random|incremental|zero|odd`) évite corrélation temporelle et fingerprinting
 
----
-
 ## 🎓 Utilisation Éducative
 
 Ce scanner est conçu pour la **recherche académique sur les firewalls IA**. Toutes les stratégies visent à:
@@ -501,7 +467,5 @@ Ce scanner est conçu pour la **recherche académique sur les firewalls IA**. To
 - Analyser corrélation temporelle
 
 **Usage autorisé:** CTF, labs, pentesting avec autorisation, recherche sécurité.
-
----
 
 **Total: 51 stratégies d'évasion couvrant tous les cas d'usage modernes.**

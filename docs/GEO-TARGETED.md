@@ -14,8 +14,6 @@ Des chercheurs d'universités comme l'Université de Toronto (Citizen Lab) et l'
 ces pare-feu. Leurs travaux ont révélé que ces systèmes ciblent des protocoles spécifiques, des ports non standards, et sont particulièrement sensibles aux volumes de
 trafic et aux modèles de communication inhabituels. Ces stratégies s'inspirent directement de ces recherches pour passer sous le radar.
 
----
-
 ### 1. `chinese-great-firewall-evasion`
 
 * **Objectif** : Contourner le Grand Pare-feu de Chine, l'un des systèmes de censure les plus sophistiqués au monde.
@@ -28,8 +26,6 @@ trafic et aux modèles de communication inhabituels. Ces stratégies s'inspirent
     * `decoys: 50` : Un grand nombre de leurres pour noyer le trafic de scan réel dans un flot de connexions apparemment légitimes.
     * `src_ports: [443, 8443, 9443]` : Utilise des ports couramment associés au trafic HTTPS et à des applications populaires comme WeChat, qui sont moins susceptibles
       d'être bloqués.
-
----
 
 ### 2. `russian-dpi-bypass`
 

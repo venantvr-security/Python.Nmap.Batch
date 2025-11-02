@@ -18,8 +18,6 @@ comportement du trafic au sein de l'infrastructure 5G.
 Ces stratégies exploitent ces connaissances pour créer un trafic de scan qui ressemble à celui d'un utilisateur de smartphone légitime, un type de trafic que les pare-feu
 d'entreprise et d'opérateurs sont configurés pour autoriser et prioriser.
 
----
-
 ### 1. `mobile-5g-profile`
 
 * **Objectif** : Imiter un smartphone Android moderne sur un réseau 5G.
@@ -30,8 +28,6 @@ d'entreprise et d'opérateurs sont configurés pour autoriser et prioriser.
     * `timing_pattern: "exponential"` : Simule le comportement d'une application qui se lance et augmente son activité réseau.
     * `src_ports: [443, 8443, 9000]` : Utilise des ports couramment utilisés par les API de backend des applications mobiles.
     * `ttl: 64` : Une valeur de TTL commune dans les réseaux mobiles.
-
----
 
 ### 2. `ios-device-profile`
 

@@ -3,8 +3,6 @@
 Il n'existe pas de "base de données" unique et centralisée de paquets Scapy prêts à l'emploi. Cependant, cette ressource existe sous des formes encore plus utiles pour
 l'analyse réseau et la cybersécurité : les captures de trafic réel et les collections de scripts.
 
----
-
 ## 1. Bases de Données de Captures de Paquets (`.pcap`)
 
 C'est la mine d'or pour l'analyse réseau. Les fichiers `.pcap` sont des enregistrements de trafic réseau que vous pouvez charger directement dans Scapy pour obtenir une
@@ -43,8 +41,6 @@ packets[0].show()
 * **[Datasets de Recherche Publique](https://www.caida.org/data/overview/)** : Des organisations comme CAIDA ou des universités publient d'énormes ensembles de données de
   trafic anonymisé pour la recherche académique. Utile pour l'analyse statistique à grande échelle.
 
----
-
 ## 2. Collections d'Exemples de Code Scapy
 
 Ici, la "base de données" est plus distribuée. Il s'agit de trouver des scripts qui montrent comment construire des paquets pour un objectif précis.
@@ -59,8 +55,6 @@ Ici, la "base de données" est plus distribuée. Il s'agit de trouver des script
 
 * **Blogs de Sécurité et Write-ups de CTF** : Des blogs (comme SANS, ou des blogs de chercheurs individuels) et des solutions de challenges "Capture The Flag" (CTF)
   contiennent souvent des snippets de code Scapy très ingénieux pour résoudre des problèmes spécifiques.
-
----
 
 ## 3. La "Base de Données" Interne de Scapy
 
@@ -146,8 +140,6 @@ Les malwares sont, par nature, conçus pour être furtifs. Analyser leur trafic 
 
 En utilisant ces captures, vous ne travaillez plus à l'aveugle ; vous validez vos techniques d'évasion par rapport à des données du monde réel.
 
----
-
 ## 5. Technique Avancée : Utiliser des PCAP comme Templates de Paquets
 
 C'est une forme supérieure de mimétisme. Au lieu de *construire* un paquet qui ressemble à du trafic légitime, vous allez **utiliser un paquet de trafic légitime capturé
@@ -182,8 +174,6 @@ difficile de recréer manuellement.
 
 Cette approche garantit une fidélité maximale au trafic que vous souhaitez imiter, augmentant considérablement les chances de contourner les pare-feu basés sur l'analyse
 comportementale.
-
----
 
 En conclusion, il n'y a pas un seul site "Scapy Packet DB", mais en combinant les **dépôts de PCAP** (pour le trafic réel) et une **recherche intelligente de code** (pour
 la construction), vous avez accès à une quantité quasi infinie de paquets.

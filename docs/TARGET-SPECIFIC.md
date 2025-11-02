@@ -13,8 +13,6 @@ Par exemple, un pare-feu protégeant un data center s'attendra à voir du trafic
 navigation web, aux e-mails et aux applications métier. Les stratégies de cette catégorie exploitent ces attentes pour rendre le scan encore plus crédible dans un
 contexte donné.
 
----
-
 ### 1. `corporate-firewall-bypass`
 
 * **Objectif** : Se fondre dans le trafic d'un réseau d'entreprise typique.
@@ -25,8 +23,6 @@ contexte donné.
     * `timing_pattern: "exponential"` : Peut simuler un employé qui commence sa journée de travail, avec une activité réseau qui augmente progressivement.
     * `fake_uptime_days: 30` : Simule un poste de travail d'entreprise standard, souvent laissé allumé mais redémarré mensuellement pour les mises à jour.
 
----
-
 ### 2. `cloud-provider-scan`
 
 * **Objectif** : Imiter le trafic légitime à l'intérieur d'un environnement de fournisseur de cloud (AWS, Azure, GCP).
@@ -35,8 +31,6 @@ contexte donné.
     * `fake_uptime_days: 365` : Simule un serveur avec une très longue disponibilité, ce qui est courant pour les services cloud.
     * `src_ports: [443, 8080, 8443, 9090]` : Utilise des ports couramment utilisés pour les applications web, les API et les services de gestion hébergés dans le cloud.
     * `timing_pattern: "fibonacci"` : Un modèle équilibré adapté au trafic de serveur à serveur.
-
----
 
 ### 3. `iot-device-scan`
 
