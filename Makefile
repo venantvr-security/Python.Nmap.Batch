@@ -32,6 +32,31 @@ clean: ## Supprime l'environnement virtuel et les fichiers temporaires.
 	rm -rf __pycache__
 	@echo "Environnement virtuel et fichiers temporaires supprimés."
 
+.PHONY: setup-privileges
+setup-privileges: setup-nmap-noroot setup-scapy-noroot ## (Nécessite sudo) Configure nmap et scapy pour l'utilisation sans sudo.
+
+.PHONY: setup-nmap-noroot
+setup-nmap-noroot: ## (Nécessite sudo) Attribue les capacités à nmap pour les scans sans root.
+	@echo "Configuration de nmap pour une exécution sans sudo..."
+	@echo "Le mot de passe sudo peut être demandé pour la commande 'setcap'."
+	@if command -v nmap >/dev/null; then \
+		sudo setcap cap_net_raw,cap_net_admin,cap_net_bind_service+eip $$(which nmap); \
+		echo "Capacités nmap mises à jour :"; \
+		getcap $$(which nmap); \
+	else \
+		echo "Erreur : nmap n'est pas installé ou non trouvé dans le PATH."; \
+		exit 1; \
+	fi
+
+.PHONY: setup-scapy-noroot
+setup-scapy-noroot: setup ## (Nécessite sudo) Attribue les capacités à l'interpréteur Python du venv.
+	@echo "Configuration de l'interpréteur Python du venv pour l'utilisation de Scapy sans sudo..."
+	@echo "Le mot de passe sudo peut être demandé pour la commande 'setcap'."
+	@sudo setcap cap_net_raw,cap_net_admin+eip $(VENV_PYTHON)
+	@echo "Capacités Scapy (cap_net_raw, cap_net_admin) ajoutées à l'interpréteur $(VENV_PYTHON)."
+	@echo "Vérification :"
+	@getcap $(VENV_PYTHON)
+
 .PHONY: help
 help: ## Affiche ce message d'aide.
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}'
