@@ -113,13 +113,13 @@ body {
     border-color: #563d7c;
 }
 
-.btn-pcap_player {
+.btn-pcap2 {
     background-color: #d32f2f;
     color: white;
     border: 1px solid #d32f2f;
 }
 
-.btn-pcap_player:hover {
+.btn-pcap2:hover {
     background-color: #b71c1c;
     border-color: #b71c1c;
 }

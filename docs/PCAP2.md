@@ -1,8 +1,9 @@
-# PcapPlayer Scanner
+# Pcap2 Scanner
 
 ## Description
 
-PcapPlayer est un scanner spécialisé qui rejoue des paquets capturés depuis des fichiers PCAP. Il permet de reproduire des patterns de trafic réseau réels, issus d'attaques ou de comportements légitimes, pour effectuer des scans furtifs.
+Pcap2 est un scanner spécialisé qui rejoue des paquets capturés depuis des fichiers PCAP. Il permet de reproduire des patterns de trafic réseau réels, issus d'attaques ou
+de comportements légitimes, pour effectuer des scans furtifs.
 
 ## Fonctionnalités
 

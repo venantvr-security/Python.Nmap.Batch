@@ -2,7 +2,7 @@ import os
 import random
 import sys
 import time
-from typing import Dict, List, Tuple, Union
+from typing import Dict, Tuple
 
 import yaml
 from scapy.layers.inet import IP, TCP
@@ -18,7 +18,7 @@ from AdvancedEvasion import AdvancedEvasion
 PCAP_TEMPLATES_DIR = os.getenv('PCAP_TEMPLATES_DIR', 'pcap_templates')
 
 
-class PcapPlayer(ScannerInterface):
+class Pcap2(ScannerInterface):
     SCAN_FLAGS = {
         "syn": "S",
         "fin": "F",
@@ -91,7 +91,7 @@ class PcapPlayer(ScannerInterface):
 
     def _build_packet(self, ip: str, port: int, strategy: Dict, sport: int) -> Packet:
         if "template_pcap" not in strategy:
-            raise ValueError("PcapPlayer nécessite un template_pcap dans la stratégie")
+            raise ValueError("Pcap2 nécessite un template_pcap dans la stratégie")
         return self._build_packet_from_template(strategy, ip, port, sport)
 
     def _send_decoys(self, ip: str, port: int, strategy: Dict, sport: int):
@@ -174,7 +174,7 @@ class PcapPlayer(ScannerInterface):
 
         event_queue.put({'event': 'thread_update',
                          'data': {'thread_id': thread_id,
-                                  'message': f"[{time.ctime()}] PcapPlayer {scan_type} de {ip} avec {len(ports_to_scan)} ports"}})
+                                  'message': f"[{time.ctime()}] Pcap2 {scan_type} de {ip} avec {len(ports_to_scan)} ports"}})
 
         for port in ports_to_scan:
             if stop_flag():

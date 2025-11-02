@@ -26,7 +26,7 @@ from scanners.NetcatScanner import NetcatScanner
 # noinspection PyUnresolvedReferences
 from scanners.NmapScanner import NmapScanner
 # noinspection PyUnresolvedReferences
-from scanners.PcapPlayer import PcapPlayer
+from scanners.Pcap2 import Pcap2
 # noinspection PyUnresolvedReferences
 from scanners.ScapyScanner import ScapyScanner
 
@@ -621,7 +621,7 @@ def get_scanner_info(scanner_type):
         "masscan": "MASSCAN.md",
         "hping3": "HPING3.md",
         "curl": "CURL.md",
-        "pcap_player": "PCAP-PLAYER.md",
+        "pcap2": "PCAP2.md",
     }
 
     if scanner_type not in scanner_files:

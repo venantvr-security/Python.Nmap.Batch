@@ -11,7 +11,7 @@ let selectedStrategies = {
     'masscan': null,
     'hping3': null,
     'curl': null,
-    'pcap_player': null,
+    'pcap2': null,
 };
 
 let selectedPorts = null; // Variable pour stocker les ports sélectionnés
@@ -168,7 +168,7 @@ async function loadScannerButtons() {
 
             const mainButton = document.createElement('button');
             mainButton.className = `btn ${scanner.class}`;
-            const displayName = scanner.name === 'pcap_player' ? 'PcapPlayer' : scanner.name.charAt(0).toUpperCase() + scanner.name.slice(1);
+            const displayName = scanner.name.charAt(0).toUpperCase() + scanner.name.slice(1);
             mainButton.textContent = `Démarrer ${displayName}`;
             mainButton.onclick = () => startScan(scanner.name);
 
