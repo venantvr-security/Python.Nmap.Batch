@@ -60,8 +60,11 @@ class NmapScanner(ScannerInterface):
                 with open(temp_filename, 'w') as outfile:
                     process = subprocess.Popen(cmd, stdout=outfile, stderr=subprocess.STDOUT)
 
-                if self.process_manager:
-                    self.process_manager.register(process, "nmap", self.strategy, ip, thread_id)
+                if self.process_manager is not None:
+                    if isinstance(self.process_manager, list):
+                        self.process_manager.append(process)
+                    else:
+                        self.process_manager.register(process, "nmap", self.strategy, ip, thread_id)
 
                 event_queue.put({'event': 'thread_update',
                                  'data': {'thread_id': thread_id,

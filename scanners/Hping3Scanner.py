@@ -68,8 +68,11 @@ class Hping3Scanner(ScannerInterface):
             try:
                 process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
 
-                if self.process_manager:
-                    self.process_manager.register(process, "hping3", self.strategy, ip, thread_id)
+                if self.process_manager is not None:
+                    if isinstance(self.process_manager, list):
+                        self.process_manager.append(process)
+                    else:
+                        self.process_manager.register(process, "hping3", self.strategy, ip, thread_id)
             except Exception as e:
                 event_queue.put({'event': 'thread_update',
                                  'data': {'thread_id': thread_id,

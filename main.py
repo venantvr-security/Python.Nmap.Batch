@@ -12,6 +12,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from queue import Queue, Empty
 
 import toml
+from datetime import datetime
 from dotenv import load_dotenv
 from flask import Flask, render_template, Response, request, jsonify
 
@@ -507,11 +508,12 @@ def events():
 # noinspection PyUnresolvedReferences
 @app.route('/scan/start/<scanner_type>/<strategy>')
 def start_scan_endpoint(scanner_type, strategy):
-    global stop_flag, scan_thread, current_scanner, active_processes
+    global stop_flag, scan_thread, current_scanner, active_processes, IP_RANGES
     proxy = request.args.get('proxy', None)
-    ports = request.args.get('ports', None)  # Récupérer les ports depuis la requête
+    ports = request.args.get('ports', None)
+    ip_ranges = request.args.get('ip_ranges', None)
     logger.info(
-        f"Requête HTTP pour démarrer le scan avec {scanner_type} et stratégie : {strategy}, ports : {ports}, proxy : {proxy}")
+        f"Requête HTTP pour démarrer le scan avec {scanner_type} et stratégie : {strategy}, ports : {ports}, ip_ranges : {ip_ranges}, proxy : {proxy}")
 
     if scanner_type not in scanner_map:
         return f"Type de scanner inconnu : {scanner_type}", 400
@@ -520,10 +522,15 @@ def start_scan_endpoint(scanner_type, strategy):
         event_queue.put({'event': 'progress', 'data': {'message': f"[{time.ctime()}] Erreur : Aucun port spécifié"}})
         return "Aucun port spécifié", 400
 
+    # Mettre à jour IP_RANGES si fourni dans la requête
+    if ip_ranges:
+        IP_RANGES = ip_ranges.split(",")
+        logger.info(f"IP ranges mises à jour : {IP_RANGES}")
+
     try:
         current_scanner = scanner_map[scanner_type]
-        current_scanner.strategy = strategy  # Met à jour la stratégie
-        current_scanner.ports = ports  # Met à jour les ports dans l’instance du scanner
+        current_scanner.strategy = strategy
+        current_scanner.ports = ports
     except (ValueError, FileNotFoundError) as e:
         event_queue.put({'event': 'progress', 'data': {'message': f"[{time.ctime()}] Erreur : {str(e)}"}})
         return str(e), 400
@@ -537,7 +544,7 @@ def start_scan_endpoint(scanner_type, strategy):
     scan_thread = threading.Thread(target=scan_background)
     scan_thread.start()
     return f"Scan démarré avec {scanner_type} et stratégie {strategy}" + (f" et ports {ports}" if ports else "") + (
-        f" et proxy {proxy}" if proxy else ""), 200
+        f" et ip_ranges {ip_ranges}" if ip_ranges else "") + (f" et proxy {proxy}" if proxy else ""), 200
 
 
 def load_and_validate_scanner_definitions(definition_file=DEFINITION_FILE, strategies_dir=PATHS['strategies_dir']):
@@ -733,6 +740,85 @@ def set_tor_identity_frequency():
     data = request.get_json()
     tor_identity_change_freq = data.get('frequency', 0)
     return jsonify({"success": True, "frequency": tor_identity_change_freq})
+
+
+@app.route('/api/ip-ranges', methods=['GET'])
+def get_ip_ranges():
+    """Retourne les IP ranges depuis .env comme placeholder."""
+    default_ip_ranges = os.getenv("IP_RANGES", "30.31.32.33")
+    return jsonify({"ip_ranges": default_ip_ranges})
+
+
+@app.route('/processes')
+def processes():
+    return render_template('processes.html')
+
+
+@app.route('/api/processes', methods=['GET'])
+def get_processes():
+    """Retourne la liste des processus actifs avec métadonnées."""
+    processes_list = []
+    for proc in active_processes:
+        try:
+            import psutil
+            p = psutil.Process(proc.pid)
+            is_running = proc.poll() is None
+
+            # Extraire metadata si disponible (scanner, strategy, ip)
+            cmdline = p.cmdline()
+            scanner = "unknown"
+            strategy = "unknown"
+            ip = "unknown"
+
+            # Essayer de détecter le scanner depuis la cmdline
+            if cmdline:
+                cmd_str = " ".join(cmdline)
+                if "nmap" in cmd_str.lower():
+                    scanner = "nmap"
+                elif "masscan" in cmd_str.lower():
+                    scanner = "masscan"
+                elif "nc" in cmd_str or "netcat" in cmd_str.lower():
+                    scanner = "netcat"
+                elif "hping" in cmd_str.lower():
+                    scanner = "hping3"
+                elif "curl" in cmd_str.lower():
+                    scanner = "curl"
+                elif "scapy" in cmd_str.lower():
+                    scanner = "scapy"
+
+            start_time = datetime.fromtimestamp(p.create_time())
+            uptime = (datetime.now() - start_time).total_seconds()
+
+            processes_list.append({
+                "id": f"{scanner}_{proc.pid}",
+                "pid": proc.pid,
+                "scanner": scanner,
+                "strategy": strategy,
+                "ip": ip,
+                "thread_id": "unknown",
+                "status": "running" if is_running else "terminated",
+                "start_time": start_time.isoformat(),
+                "cpu_percent": p.cpu_percent(interval=0.1) if is_running else 0,
+                "memory_mb": p.memory_info().rss / 1024 / 1024 if is_running else 0,
+                "uptime_seconds": uptime,
+                "cmdline": " ".join(cmdline[:5]) if cmdline else "N/A"
+            })
+        except (psutil.NoSuchProcess, psutil.AccessDenied, AttributeError):
+            pass
+    return jsonify(processes_list)
+
+
+@app.route('/api/processes/<int:pid>/kill', methods=['POST'])
+def kill_process(pid):
+    """Tue un processus spécifique."""
+    for proc in active_processes:
+        if proc.pid == pid:
+            try:
+                proc.kill()
+                return jsonify({"success": True, "message": f"Process {pid} killed"})
+            except:
+                return jsonify({"success": False, "error": "Failed to kill process"}), 500
+    return jsonify({"success": False, "error": "Process not found"}), 404
 
 
 if __name__ == "__main__":
