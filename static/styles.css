@@ -113,6 +113,17 @@ body {
     border-color: #563d7c;
 }
 
+.btn-pcap_player {
+    background-color: #d32f2f;
+    color: white;
+    border: 1px solid #d32f2f;
+}
+
+.btn-pcap_player:hover {
+    background-color: #b71c1c;
+    border-color: #b71c1c;
+}
+
 /* Mode nuit */
 body.dark-mode {
     background-color: #1a1d23;

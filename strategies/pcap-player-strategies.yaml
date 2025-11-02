@@ -1,0 +1,27 @@
+strategies:
+  squirrelwaffle_1:
+    scan_type: syn
+    ports: "<ports>"
+    delay: 0.5
+    timeout: 2
+    ttl: 64
+    send_rst: true
+    template_pcap: "2021-09-20-squirrelwaffle-1.pcap"
+
+  squirrelwaffle_2:
+    scan_type: syn
+    ports: "<ports>"
+    delay: 0.5
+    timeout: 2
+    ttl: 64
+    send_rst: true
+    template_pcap: "2021-09-20-squirrelwaffle-2.pcap"
+
+  squirrelwaffle_3:
+    scan_type: syn
+    ports: "<ports>"
+    delay: 0.5
+    timeout: 2
+    ttl: 64
+    send_rst: true
+    template_pcap: "2021-09-20-squirrelwaffle-3.pcap"

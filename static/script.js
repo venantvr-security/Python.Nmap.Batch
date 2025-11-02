@@ -11,6 +11,7 @@ let selectedStrategies = {
     'masscan': null,
     'hping3': null,
     'curl': null,
+    'pcap_player': null,
 };
 
 let selectedPorts = null; // Variable pour stocker les ports sélectionnés
@@ -167,7 +168,8 @@ async function loadScannerButtons() {
 
             const mainButton = document.createElement('button');
             mainButton.className = `btn ${scanner.class}`;
-            mainButton.textContent = `Démarrer ${scanner.name.charAt(0).toUpperCase() + scanner.name.slice(1)}`;
+            const displayName = scanner.name === 'pcap_player' ? 'PcapPlayer' : scanner.name.charAt(0).toUpperCase() + scanner.name.slice(1);
+            mainButton.textContent = `Démarrer ${displayName}`;
             mainButton.onclick = () => startScan(scanner.name);
 
             const dropdownToggle = document.createElement('button');
@@ -618,4 +620,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Attacher filtrage
     document.getElementById('search-filter').addEventListener('input', filterStrategies);
+
+    // Recharger la liste de docs quand on ouvre le menu, pour voir les nouveaux fichiers
+    const docDropdown = document.getElementById('docNavDropdown');
+    if(docDropdown) {
+        docDropdown.addEventListener('show.bs.dropdown', loadDocList);
+    }
 });

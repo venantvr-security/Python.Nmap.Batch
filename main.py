@@ -15,7 +15,6 @@ import toml
 from dotenv import load_dotenv
 from flask import Flask, render_template, Response, request, jsonify
 
-from ProcessManager import ProcessManager
 # noinspection PyUnresolvedReferences
 from scanners.CurlScanner import CurlScanner
 # noinspection PyUnresolvedReferences
@@ -26,6 +25,8 @@ from scanners.MasscanScanner import MasscanScanner
 from scanners.NetcatScanner import NetcatScanner
 # noinspection PyUnresolvedReferences
 from scanners.NmapScanner import NmapScanner
+# noinspection PyUnresolvedReferences
+from scanners.PcapPlayer import PcapPlayer
 # noinspection PyUnresolvedReferences
 from scanners.ScapyScanner import ScapyScanner
 
@@ -40,8 +41,11 @@ with open(CONFIG_FILE, 'r') as f:
 
 # Construire les chemins absolus à partir de la racine de l'application
 PATHS = {
-    key: str(os.path.join(APP_ROOT, path)) for key, path in config['paths'].items()
+    key: os.path.join(APP_ROOT, path) for key, path in config['paths'].items()
 }
+
+# Exposer les chemins nécessaires aux autres modules via les variables d'environnement
+os.environ['PCAP_TEMPLATES_DIR'] = PATHS['pcap_templates_dir']
 
 # Charger le fichier .env
 load_dotenv()
@@ -71,14 +75,10 @@ MAX_WORKERS = 10
 stop_flag = False
 success_rate = 0.0
 scan_thread = None
+active_processes = []
 event_queue = Queue()
 tor_enabled = False
 tor_identity_change_freq = 0
-process_manager = ProcessManager()
-
-# Locks pour concurrence
-current_scanner_lock = threading.Lock()
-stop_flag_lock = threading.Lock()
 
 # Initialisation des scanners
 import yaml
@@ -196,8 +196,8 @@ def build_scanners_config_and_map(strategies_dir=PATHS['strategies_dir'], defini
                 # Instancie le scanner
                 scanners[class_name] = globals()[class_name](
                     strategy=strategy,
-                    yaml_file=full_file_path,
-                    process_manager=process_manager
+                    process_manager=active_processes,
+                    yaml_file=full_file_path
                 )
                 # Ajoute au scanner_map avec la clé (ex. "nmap")
                 scanner_map[scanner_key] = scanners[class_name]
@@ -222,8 +222,8 @@ for scanner_class, yaml_file in scanners_config:
         # Suppose que les classes comme NmapScanner, etc., sont déjà importées
         scanners[scanner_class] = globals()[scanner_class](
             strategy=strategy,
-            yaml_file=yaml_file,
-            process_manager=process_manager
+            process_manager=active_processes,
+            yaml_file=yaml_file
         )
     else:
         print(f"Aucune stratégie trouvée pour {scanner_class} dans {yaml_file}")
@@ -235,11 +235,12 @@ current_scanner = list(scanner_map.values())[0]  # nmap_scanner
 # noinspection PyUnresolvedReferences,PyUnusedLocal
 def signal_handler(sig, frame):
     global stop_flag
-    with stop_flag_lock:
-        stop_flag = True
+    stop_flag = True
     logger.info("Signal d'arrêt reçu (Ctrl+C), arrêt en cours...")
-    process_manager.kill_all()
-    logger.info("Tous les processus ont été tués")
+    for proc in active_processes:
+        if proc.poll() is None:
+            proc.kill()  # Force la terminaison
+            logger.info(f"Processus {proc.pid} tué")
     if scan_thread and scan_thread.is_alive():
         scan_thread.join(timeout=5)
     logger.info("Serveur arrêté proprement")
@@ -250,26 +251,36 @@ def signal_handler(sig, frame):
 PORTS_FILE = os.path.join(PATHS['strategies_dir'], "ports.yaml")
 
 
+# Parser pour les ports Nmap
+def parse_nmap_ports(port_string):
+    ports = []
+    items = port_string.split(',')
+    for item in items:
+        item = item.strip()
+        if '-' in item:
+            start, end = map(int, item.split('-'))
+            if not (1 <= start <= 65535 and 1 <= end <= 65535):
+                raise ValueError(f"Ports hors limites (1-65535) dans la plage {item}")
+            if start > end:
+                raise ValueError(f"Plage invalide dans {item}: début > fin")
+            ports.extend(range(start, end + 1))
+        else:
+            port = int(item)
+            if not (1 <= port <= 65535):
+                raise ValueError(f"Port hors limites (1-65535): {port}")
+            ports.append(port)
+    return sorted(list(set(ports)))
+
+
 # Nouvelle route pour les ports
-@app.route('/api/ip-ranges', methods=['GET'])
-def get_ip_ranges():
-    """Renvoie les IP ranges par défaut depuis .env."""
-    return jsonify({"ip_ranges": ','.join(IP_RANGES)})
-
-
 @app.route('/api/ports', methods=['GET'])
 def get_ports():
-    """Renvoie les ports avec labels à partir de strategies/ports.yaml."""
+    """Renvoie les lignes brutes de ports à partir de strategies/ports.yaml."""
     try:
         with open(PORTS_FILE, 'r') as file:
             data = yaml.safe_load(file)
             port_entries = data.get('ports', [])
-            # Support ancien format (liste de strings) et nouveau format (liste de dicts)
-            if port_entries and isinstance(port_entries[0], dict):
-                return jsonify({"ports": port_entries})
-            else:
-                # Ancien format: convertir en nouveau format
-                return jsonify({"ports": [{"label": p, "value": p} for p in port_entries]})
+            return jsonify({"ports": port_entries})
     except FileNotFoundError:
         logger.error(f"Fichier {PORTS_FILE} non trouvé")
         return jsonify({"error": f"Fichier {PORTS_FILE} non trouvé"}), 404
@@ -324,26 +335,9 @@ def save_progress(ip):
 
 # Sauvegarder les résultats dans results/<type_de_script>/<stratégie>/<ip>.json
 def save_scan_result(scanner_type, strategy, ip, scan_result):
-    # Validation anti-path traversal
-    if '..' in scanner_type or '/' in scanner_type or '\\' in scanner_type:
-        logger.error(f"scanner_type invalide (path traversal): {scanner_type}")
-        return
-    if '..' in strategy or '/' in strategy or '\\' in strategy:
-        logger.error(f"strategy invalide (path traversal): {strategy}")
-        return
-
-    # Sanitize IP pour nom fichier
-    safe_ip = ip.replace('/', '_').replace('\\', '_')
-
     base_dir = os.path.join(PATHS['results_dir'], scanner_type, strategy)
-    os.makedirs(base_dir, exist_ok=True)
-    result_file = os.path.join(base_dir, f"{safe_ip}.json")
-
-    # Double vérification que le fichier est bien dans results_dir
-    if not os.path.abspath(result_file).startswith(os.path.abspath(PATHS['results_dir'])):
-        logger.error(f"Tentative path traversal détectée: {result_file}")
-        return
-
+    os.makedirs(base_dir, exist_ok=True)  # Crée les répertoires si nécessaire
+    result_file = os.path.join(base_dir, f"{ip}.json")
     try:
         with open(result_file, "w") as f:
             # noinspection PyTypeChecker
@@ -354,57 +348,36 @@ def save_scan_result(scanner_type, strategy, ip, scan_result):
 
 
 # Nouvelle route pour récupérer les stratégies
-# @app.route('/strategies/get/<scanner_type>')
-# def get_strategies(scanner_type):
-#     # Dictionnaire des scanners et leurs fichiers YAML
-#     scanner_files = {
-#         "nmap": "nmap-strategies.yaml",
-#         "netcat": "netcat-strategies.yaml",
-#         "scapy": "scapy-strategies.yaml",
-#         "masscan": "masscan-strategies.yaml",
-#         "hping3": "hping3-strategies.yaml",
-#         "curl": "curl-strategies.yaml",
-#     }
-#
-#     if scanner_type not in scanner_files:
-#         return jsonify(
-#             {"error": f"Type de scanner inconnu : {scanner_type}. Options valides : {list(scanner_files.keys())}"}), 400
-#
-#     yaml_file = os.path.join(PATHS['strategies_dir'], scanner_files[scanner_type])
-#     metadata_file = yaml_file.replace('.yaml', '-metadata.yaml')
-#
-#     try:
-#         with open(yaml_file, 'r') as file:
-#             data = yaml.safe_load(file)
-#             if not data or 'strategies' not in data:
-#                 return jsonify({"error": f"Le fichier {yaml_file} doit contenir une clé 'strategies'"}), 400
-#
-#         # Charger metadata si existe
-#         metadata = {}
-#         try:
-#             with open(metadata_file, 'r') as f:
-#                 metadata = yaml.safe_load(f) or {}
-#         except FileNotFoundError:
-#             pass
-#
-#         # Enrichir avec metadata
-#         strategies_with_metadata = [
-#             {
-#                 "name": name,
-#                 "complexity": metadata.get(name, {}).get("complexity", 1),
-#                 "type": metadata.get(name, {}).get("type", "basic")
-#             }
-#             for name in data['strategies'].keys()
-#         ]
-#         strategies_with_metadata.sort(key=lambda x: x['complexity'])
-#
-#         return jsonify({"strategies": strategies_with_metadata})
-#     except FileNotFoundError:
-#         return jsonify({"error": f"Fichier {yaml_file} non trouvé"}), 404
-#     except yaml.YAMLError as e:
-#         return jsonify({"error": f"Erreur de syntaxe dans {yaml_file} : {str(e)}"}), 500
-#     except Exception as e:
-#         return jsonify({"error": f"Erreur inattendue : {str(e)}"}), 500
+@app.route('/strategies/get/<scanner_type>')
+def get_strategies(scanner_type):
+    # Dictionnaire des scanners et leurs fichiers YAML
+    scanner_files = {
+        "nmap": "nmap-strategies.yaml",
+        "netcat": "netcat-strategies.yaml",
+        "scapy": "scapy-strategies.yaml",
+        "masscan": "masscan-strategies.yaml",
+        "hping3": "hping3-strategies.yaml",
+        "curl": "curl-strategies.yaml",
+    }
+
+    if scanner_type not in scanner_files:
+        return jsonify(
+            {"error": f"Type de scanner inconnu : {scanner_type}. Options valides : {list(scanner_files.keys())}"}), 400
+
+    yaml_file = os.path.join(PATHS['strategies_dir'], scanner_files[scanner_type])
+    try:
+        with open(yaml_file, 'r') as file:
+            data = yaml.safe_load(file)
+            if not data or 'strategies' not in data:
+                return jsonify({"error": f"Le fichier {yaml_file} doit contenir une clé 'strategies'"}), 400
+            strategies = list(data['strategies'].keys())
+        return jsonify({"strategies": strategies})
+    except FileNotFoundError:
+        return jsonify({"error": f"Fichier {yaml_file} non trouvé"}), 404
+    except yaml.YAMLError as e:
+        return jsonify({"error": f"Erreur de syntaxe dans {yaml_file} : {str(e)}"}), 500
+    except Exception as e:
+        return jsonify({"error": f"Erreur inattendue : {str(e)}"}), 500
 
 
 # Fonction de scan en arrière-plan
@@ -439,10 +412,9 @@ def scan_background():
     all_ports = []
     all_vulns = []
 
-    # Récupérer le type de scanner pour la sauvegarde (avec lock)
-    with current_scanner_lock:
-        scanner_type = [key for key, value in scanner_map.items() if value == current_scanner][0]
-        strategy = current_scanner.strategy
+    # Récupérer le type de scanner pour la sauvegarde
+    scanner_type = [key for key, value in scanner_map.items() if value == current_scanner][0]
+    strategy = current_scanner.strategy
 
     while ips_to_scan and not stop_flag:
         batch_size = min(current_workers, len(ips_to_scan))
@@ -514,11 +486,6 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/processes')
-def processes():
-    return render_template('processes.html')
-
-
 @app.route('/events')
 def events():
     def stream():
@@ -540,18 +507,11 @@ def events():
 # noinspection PyUnresolvedReferences
 @app.route('/scan/start/<scanner_type>/<strategy>')
 def start_scan_endpoint(scanner_type, strategy):
-    global stop_flag, scan_thread, current_scanner, IP_RANGES
+    global stop_flag, scan_thread, current_scanner, active_processes
     proxy = request.args.get('proxy', None)
     ports = request.args.get('ports', None)  # Récupérer les ports depuis la requête
-    ip_ranges_param = request.args.get('ip_ranges', None)  # Récupérer IP ranges depuis la requête
-
-    # Mettre à jour IP_RANGES si fourni
-    if ip_ranges_param:
-        IP_RANGES = [ip.strip() for ip in ip_ranges_param.split(',')]
-        logger.info(f"IP_RANGES mis à jour: {IP_RANGES}")
-
     logger.info(
-        f"Requête HTTP pour démarrer le scan avec {scanner_type} et stratégie : {strategy}, ports : {ports}, IP ranges : {IP_RANGES}, proxy : {proxy}")
+        f"Requête HTTP pour démarrer le scan avec {scanner_type} et stratégie : {strategy}, ports : {ports}, proxy : {proxy}")
 
     if scanner_type not in scanner_map:
         return f"Type de scanner inconnu : {scanner_type}", 400
@@ -561,10 +521,9 @@ def start_scan_endpoint(scanner_type, strategy):
         return "Aucun port spécifié", 400
 
     try:
-        with current_scanner_lock:
-            current_scanner = scanner_map[scanner_type]
-            current_scanner.strategy = strategy  # Met à jour la stratégie
-            current_scanner.ports = ports  # Met à jour les ports dans l'instance du scanner
+        current_scanner = scanner_map[scanner_type]
+        current_scanner.strategy = strategy  # Met à jour la stratégie
+        current_scanner.ports = ports  # Met à jour les ports dans l’instance du scanner
     except (ValueError, FileNotFoundError) as e:
         event_queue.put({'event': 'progress', 'data': {'message': f"[{time.ctime()}] Erreur : {str(e)}"}})
         return str(e), 400
@@ -574,8 +533,7 @@ def start_scan_endpoint(scanner_type, strategy):
         event_queue.put({'event': 'progress', 'data': {'message': f"[{time.ctime()}] Un scan est déjà en cours !"}})
         return "Scan déjà en cours", 200
 
-    with stop_flag_lock:
-        stop_flag = False
+    stop_flag = False
     scan_thread = threading.Thread(target=scan_background)
     scan_thread.start()
     return f"Scan démarré avec {scanner_type} et stratégie {strategy}" + (f" et ports {ports}" if ports else "") + (
@@ -663,6 +621,7 @@ def get_scanner_info(scanner_type):
         "masscan": "MASSCAN.md",
         "hping3": "HPING3.md",
         "curl": "CURL.md",
+        "pcap_player": "PCAP-PLAYER.md",
     }
 
     if scanner_type not in scanner_files:
@@ -679,41 +638,11 @@ def get_scanner_info(scanner_type):
         return jsonify({"error": f"Erreur inattendue : {str(e)}"}), 500
 
 
-@app.route('/api/processes', methods=['GET'])
-def get_processes():
-    """Retourne tous les processus actifs."""
-    return jsonify(process_manager.get_all())
-
-
-@app.route('/api/processes/<process_id>', methods=['GET'])
-def get_process(process_id):
-    """Détails d'un processus spécifique."""
-    proc = process_manager.get_by_id(process_id)
-    if proc:
-        return jsonify(proc)
-    return jsonify({"error": "Process not found"}), 404
-
-
-@app.route('/api/processes/<process_id>/kill', methods=['POST'])
-def kill_process(process_id):
-    """Tue un processus spécifique."""
-    if process_manager.kill(process_id):
-        return jsonify({"success": True, "message": f"Process {process_id} killed"})
-    return jsonify({"success": False, "error": "Process not found or already terminated"}), 404
-
-
-@app.route('/api/processes/stats', methods=['GET'])
-def get_process_stats():
-    """Statistiques globales des processus."""
-    return jsonify(process_manager.get_stats())
-
-
 @app.route('/scan/stop')
 def stop_scan_endpoint():
     global stop_flag
     logger.info("Requête HTTP pour arrêter le scan")
-    with stop_flag_lock:
-        stop_flag = True
+    stop_flag = True
     event_queue.put({'event': 'progress',
                      'data': {'message': f"[{time.ctime()}] Arrêt demandé. Attente de la fin du batch en cours..."}})
     return "Arrêt demandé", 200
@@ -742,10 +671,10 @@ def reset_progress_endpoint():
 
 @app.route('/api/docs/list', methods=['GET'])
 def list_docs():
-    """Liste les fichiers .MD de la documentation."""
+    """Liste les fichiers .md de la documentation."""
     docs_dir = PATHS['docs_dir']
     try:
-        files = [f for f in os.listdir(docs_dir) if f.endswith('.md') and f.lower() != 'readme.md']
+        files = [f for f in os.listdir(docs_dir) if f.endswith('.md') and f != 'README.md']
         return jsonify(sorted(files))
     except FileNotFoundError:
         logger.error(f"Le répertoire de documentation {docs_dir} est introuvable.")
@@ -769,7 +698,6 @@ def get_doc_content(filename):
 
 
 def check_tor_status():
-    # noinspection PyBroadException
     try:
         req = urllib.request.Request('https://check.torproject.org/api/ip')
         req.add_header('User-Agent', 'Mozilla/5.0')

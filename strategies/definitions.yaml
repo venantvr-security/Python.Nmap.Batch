@@ -17,3 +17,6 @@ scanners:
   curl:
     class: CurlScanner
     file: curl-strategies.yaml
+  pcap_player:
+    class: PcapPlayer
+    file: pcap-player-strategies.yaml
