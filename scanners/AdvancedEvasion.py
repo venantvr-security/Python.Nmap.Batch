@@ -12,18 +12,12 @@ class AdvancedEvasion:
 
     # Options TCP réalistes par OS
     OS_FINGERPRINTS = {
-        "windows10": [('MSS', 1460), ('NOP', None), ('WScale', 8), ('NOP', None),
-                      ('NOP', None), ('SAckOK', b'')],
-        "windows11": [('MSS', 1460), ('NOP', None), ('WScale', 8), ('NOP', None),
-                      ('NOP', None), ('SAckOK', b''), ('Timestamp', (0, 0))],
-        "linux": [('MSS', 1460), ('SAckOK', b''), ('Timestamp', (0, 0)),
-                  ('NOP', None), ('WScale', 7)],
-        "macos": [('MSS', 1460), ('NOP', None), ('WScale', 6), ('SAckOK', b''),
-                  ('Timestamp', (0, 0))],
-        "ios": [('MSS', 1460), ('NOP', None), ('WScale', 4), ('NOP', None),
-                ('NOP', None), ('SAckOK', b''), ('Timestamp', (0, 0))],
-        "android": [('MSS', 1460), ('SAckOK', b''), ('Timestamp', (0, 0)),
-                    ('NOP', None), ('WScale', 8)],
+        "windows10": [('MSS', 1460), ('NOP', None), ('WScale', 8), ('NOP', None), ('NOP', None), ('SAckOK', b'')],
+        "windows11": [('MSS', 1460), ('NOP', None), ('WScale', 8), ('NOP', None), ('NOP', None), ('SAckOK', b''), ('Timestamp', (0, 0))],
+        "linux": [('MSS', 1460), ('SAckOK', b''), ('Timestamp', (0, 0)), ('NOP', None), ('WScale', 7)],
+        "macos": [('MSS', 1460), ('NOP', None), ('WScale', 6), ('SAckOK', b''), ('Timestamp', (0, 0))],
+        "ios": [('MSS', 1460), ('NOP', None), ('WScale', 4), ('NOP', None), ('NOP', None), ('SAckOK', b''), ('Timestamp', (0, 0))],
+        "android": [('MSS', 1460), ('SAckOK', b''), ('Timestamp', (0, 0)), ('NOP', None), ('WScale', 8)],
     }
 
     # Payloads protocoles légitimes
