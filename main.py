@@ -15,6 +15,7 @@ from queue import Queue, Empty
 import toml
 from dotenv import load_dotenv
 from flask import Flask, render_template, Response, request, jsonify
+from psutil import NoSuchProcess, AccessDenied
 
 # noinspection PyUnresolvedReferences
 from scanners.CurlScanner import CurlScanner
@@ -85,7 +86,7 @@ tor_identity_change_freq = 0
 import yaml
 
 # Chemin du fichier de définition
-DEFINITION_FILE = os.path.join(PATHS['strategies_dir'], "definitions.yaml")
+DEFINITION_FILE = os.path.join(str(PATHS['strategies_dir']), "definitions.yaml")
 
 
 def parse_nmap_ports(port_string):
@@ -178,7 +179,7 @@ def build_scanners_config_and_map(strategies_dir=PATHS['strategies_dir'], defini
         return scanners_config, scanner_map
 
     # Vérifie les fichiers dans le répertoire strategies/
-    available_files = {f for f in os.listdir(strategies_dir) if f.endswith('.yaml') and f != 'definitions.yaml'}
+    available_files = {f for f in os.listdir(str(strategies_dir)) if f.endswith('.yaml') and f != 'definitions.yaml'}
 
     # Construit scanners_config et initialise les scanners
     for scanner_key, config in scanner_definitions.items():
@@ -189,7 +190,7 @@ def build_scanners_config_and_map(strategies_dir=PATHS['strategies_dir'], defini
             print(f"Configuration invalide pour {scanner_key}: 'class' ou 'file' manquant.")
             continue
 
-        full_file_path = os.path.join(strategies_dir, file_name)
+        full_file_path = os.path.join(str(strategies_dir), str(file_name))
         if file_name in available_files:
             scanners_config.append((class_name, full_file_path))
             strategy = get_first_strategy(full_file_path)
@@ -249,7 +250,7 @@ def signal_handler(sig, frame):
 
 
 # Chemin du fichier ports.yaml
-PORTS_FILE = os.path.join(PATHS['strategies_dir'], "ports.yaml")
+PORTS_FILE = os.path.join(str(PATHS['strategies_dir']), "ports.yaml")
 
 
 # Parser pour les ports Nmap
@@ -313,7 +314,7 @@ def generate_all_ips(ranges):
 
 # Charger les IPs déjà scannées
 def load_progress():
-    progress_file_path = PATHS['progress_file']
+    progress_file_path = str(PATHS['progress_file'])
     if os.path.exists(progress_file_path):
         try:
             with open(progress_file_path, "r") as f:
@@ -326,7 +327,7 @@ def load_progress():
 
 # Sauvegarder une IP terminée
 def save_progress(ip):
-    progress_file_path = PATHS['progress_file']
+    progress_file_path = str(PATHS['progress_file'])
     try:
         with open(progress_file_path, "a") as f:
             f.write(f"{ip}\n")
@@ -336,9 +337,9 @@ def save_progress(ip):
 
 # Sauvegarder les résultats dans results/<type_de_script>/<stratégie>/<ip>.json
 def save_scan_result(scanner_type, strategy, ip, scan_result):
-    base_dir = os.path.join(PATHS['results_dir'], scanner_type, strategy)
+    base_dir = os.path.join(str(PATHS['results_dir']), str(scanner_type), str(strategy))
     os.makedirs(base_dir, exist_ok=True)  # Crée les répertoires si nécessaire
-    result_file = os.path.join(base_dir, f"{ip}.json")
+    result_file = os.path.join(str(base_dir), f"{ip}.json")
     try:
         with open(result_file, "w") as f:
             # noinspection PyTypeChecker
@@ -365,7 +366,7 @@ def get_strategies(scanner_type):
         return jsonify(
             {"error": f"Type de scanner inconnu : {scanner_type}. Options valides : {list(scanner_files.keys())}"}), 400
 
-    yaml_file = os.path.join(PATHS['strategies_dir'], scanner_files[scanner_type])
+    yaml_file = os.path.join(str(PATHS['strategies_dir']), str(scanner_files[scanner_type]))
     try:
         with open(yaml_file, 'r') as file:
             data = yaml.safe_load(file)
@@ -557,7 +558,7 @@ def load_and_validate_scanner_definitions(definition_file=DEFINITION_FILE, strat
         logger.error(f"Erreur lors de la lecture de {definition_file}: {e}")
         return {}
 
-    available_files = {f for f in os.listdir(strategies_dir) if f.endswith('.yaml') and f != 'definitions.yaml'}
+    available_files = {f for f in os.listdir(str(strategies_dir)) if f.endswith('.yaml') and f != 'definitions.yaml'}
     valid_definitions = {}
     for scanner_key, config in scanner_definitions.items():
         class_name = config.get('class')
@@ -580,8 +581,8 @@ def get_scanners():
 
     scanner_definitions = load_and_validate_scanner_definitions()
     for scanner_key, scanner_instance in scanner_map.items():
-        yaml_file = os.path.join(PATHS['strategies_dir'], scanner_definitions[scanner_key]['file'])
-        metadata_file = yaml_file.replace('.yaml', '-metadata.yaml')
+        yaml_file = os.path.join(str(PATHS['strategies_dir']), str(scanner_definitions[scanner_key]['file']))
+        metadata_file = str(yaml_file).replace('.yaml', '-metadata.yaml')
 
         try:
             with open(yaml_file, 'r') as file:
@@ -634,7 +635,7 @@ def get_scanner_info(scanner_type):
     if scanner_type not in scanner_files:
         return jsonify({"error": f"Type de scanner inconnu : {scanner_type}"}), 400
 
-    md_file = os.path.join(PATHS['docs_dir'], scanner_files[scanner_type])
+    md_file = os.path.join(str(PATHS['docs_dir']), str(scanner_files[scanner_type]))
     try:
         with open(md_file, 'r', encoding='utf-8') as file:
             content = file.read()
@@ -657,7 +658,7 @@ def stop_scan_endpoint():
 
 @app.route('/progress/reset', methods=['POST'])
 def reset_progress_endpoint():
-    progress_file_path = PATHS['progress_file']
+    progress_file_path = str(PATHS['progress_file'])
     logger.info("Requête HTTP pour réinitialiser le fichier de progression")
     try:
         if os.path.exists(progress_file_path):
@@ -679,7 +680,7 @@ def reset_progress_endpoint():
 @app.route('/api/docs/list', methods=['GET'])
 def list_docs():
     """Liste les fichiers .md de la documentation."""
-    docs_dir = PATHS['docs_dir']
+    docs_dir = str(PATHS['docs_dir'])
     try:
         files = [f for f in os.listdir(docs_dir) if f.endswith('.md') and f != 'README.md']
         return jsonify(sorted(files))
@@ -691,12 +692,12 @@ def list_docs():
 @app.route('/api/docs/content/<filename>', methods=['GET'])
 def get_doc_content(filename):
     """Renvoie le contenu d'un fichier de documentation."""
-    docs_dir = PATHS['docs_dir']
+    docs_dir = str(PATHS['docs_dir'])
     # Sécurité : Assurez-vous que le nom de fichier ne contient pas de ".." pour éviter le path traversal
     if '..' in filename or not filename.endswith('.md'):
         return jsonify({"error": "Nom de fichier invalide"}), 400
     try:
-        file_path = os.path.join(docs_dir, filename)
+        file_path = os.path.join(str(docs_dir), str(filename))
         with open(file_path, 'r', encoding='utf-8') as file:
             content = file.read()
         return jsonify({"title": filename, "content": content})
@@ -804,7 +805,7 @@ def get_processes():
                 "uptime_seconds": uptime,
                 "cmdline": " ".join(cmdline[:5]) if cmdline else "N/A"
             })
-        except (psutil.NoSuchProcess, psutil.AccessDenied, AttributeError):
+        except (NoSuchProcess, AccessDenied, AttributeError):
             pass
     return jsonify(processes_list)
 
