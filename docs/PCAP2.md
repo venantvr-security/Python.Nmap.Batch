@@ -91,4 +91,5 @@ strategies:
 
 ## Avertissement
 
-L'utilisation de ce scanner pour reproduire du trafic malware doit se faire uniquement dans un cadre légal et autorisé (pentest, CTF, lab isolé). Ne pas utiliser sur des réseaux de production sans autorisation explicite.
+L'utilisation de ce scanner pour reproduire du trafic malware doit se faire uniquement dans un cadre légal et autorisé (pentest, CTF, lab isolé). Ne pas utiliser sur des
+réseaux de production sans autorisation explicite.

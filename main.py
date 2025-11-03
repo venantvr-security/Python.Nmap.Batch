@@ -9,10 +9,10 @@ import time
 import urllib.request
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime
 from queue import Queue, Empty
 
 import toml
-from datetime import datetime
 from dotenv import load_dotenv
 from flask import Flask, render_template, Response, request, jsonify
 
@@ -761,6 +761,7 @@ def get_processes():
     for proc in active_processes:
         try:
             import psutil
+
             p = psutil.Process(proc.pid)
             is_running = proc.poll() is None
 

@@ -1,62 +1,69 @@
 # Exécuter Nmap et Scapy sans Privilèges Root
 
-Ce guide explique comment configurer `nmap` et `scapy` pour utiliser des fonctionnalités nécessitant des privilèges élevés (comme l'envoi de paquets RAW) sans avoir à utiliser `sudo` à chaque exécution. Ces méthodes sont destinées à un usage légal sur des machines ou des réseaux que vous possédez ou pour lesquels vous avez une autorisation écrite.
+Ce guide explique comment configurer `nmap` et `scapy` pour utiliser des fonctionnalités nécessitant des privilèges élevés (comme l'envoi de paquets RAW) sans avoir à
+utiliser `sudo` à chaque exécution. Ces méthodes sont destinées à un usage légal sur des machines ou des réseaux que vous possédez ou pour lesquels vous avez une
+autorisation écrite.
 
 > **Avertissement de Sécurité** : Scanner des réseaux sans autorisation explicite est illégal. N'utilisez ces techniques que dans un cadre autorisé.
 
 ## 1. Nmap : Exécution sans `sudo`
 
-Par défaut, `nmap` nécessite les privilèges root pour effectuer des scans discrets et puissants comme le scan SYN (`-sS`). La solution la plus propre est d'utiliser les **capacités (capabilities) Linux**.
+Par défaut, `nmap` nécessite les privilèges root pour effectuer des scans discrets et puissants comme le scan SYN (`-sS`). La solution la plus propre est d'utiliser les *
+*capacités (capabilities) Linux**.
 
 ### Solution : Utiliser les Capacités Fichiers
 
 Cette méthode accorde à l'exécutable `nmap` uniquement les droits nécessaires pour la manipulation de paquets RAW, sans donner tous les droits root au processus.
 
-1.  **Attribuer les capacités (une seule fois) :**
+1. **Attribuer les capacités (une seule fois) :**
 
-    ```bash
-    # En tant que root ou via sudo
-    sudo setcap cap_net_raw,cap_net_admin,cap_net_bind_service+eip $(which nmap)
-    ```
+   ```bash
+   # En tant que root ou via sudo
+   sudo setcap cap_net_raw,cap_net_admin,cap_net_bind_service+eip $(which nmap)
+   ```
 
-2.  **Vérifier l'attribution :**
+2. **Vérifier l'attribution :**
 
-    ```bash
-    getcap $(which nmap)
-    # La sortie doit être : cap_net_raw,cap_net_admin,cap_net_bind_service+eip
-    ```
+   ```bash
+   getcap $(which nmap)
+   # La sortie doit être : cap_net_raw,cap_net_admin,cap_net_bind_service+eip
+   ```
 
-3.  **Utilisation :**
+3. **Utilisation :**
 
-    Vous pouvez maintenant lancer des scans privilégiés en tant qu'utilisateur normal.
+   Vous pouvez maintenant lancer des scans privilégiés en tant qu'utilisateur normal.
 
-    ```bash
-    # Ce scan SYN fonctionne désormais sans sudo
-    nmap -sS 192.168.1.1
-    ```
+   ```bash
+   # Ce scan SYN fonctionne désormais sans sudo
+   nmap -sS 192.168.1.1
+   ```
 
-*   **Avantages** : Plus sécurisé que d'utiliser `sudo`, car seul `nmap` obtient les privilèges. Pas besoin de taper le mot de passe à chaque fois.
-*   **Note** : Si vous mettez à jour `nmap` via votre gestionnaire de paquets, vous devrez probablement ré-exécuter la commande `setcap`.
+* **Avantages** : Plus sécurisé que d'utiliser `sudo`, car seul `nmap` obtient les privilèges. Pas besoin de taper le mot de passe à chaque fois.
+* **Note** : Si vous mettez à jour `nmap` via votre gestionnaire de paquets, vous devrez probablement ré-exécuter la commande `setcap`.
 
 ## 2. Scapy : Exécution sans `sudo`
 
-Comme Nmap, Scapy a besoin de la capacité `CAP_NET_RAW` pour forger et envoyer des paquets personnalisés. Appliquer cette capacité directement à l'interpréteur Python (`/usr/bin/python3`) est **dangereux**, car cela donnerait ces droits à n'importe quel script Python.
+Comme Nmap, Scapy a besoin de la capacité `CAP_NET_RAW` pour forger et envoyer des paquets personnalisés. Appliquer cette capacité directement à l'interpréteur Python (
+`/usr/bin/python3`) est **dangereux**, car cela donnerait ces droits à n'importe quel script Python.
 
 ### Solution Recommandée : Créer un Wrapper Binaire
 
-1.  **Créer le script wrapper :**
+1. **Créer le script wrapper :**
 
-    ```python
-    # ~/scapy-wrapper.py
-    #!/usr/bin/env python3
-    from scapy.all import *
-    import sys
+   ```python
+   # ~/scapy-wrapper.py
 
-    if len(sys.argv) > 1 and os.path.exists(sys.argv[1]):
-        exec(open(sys.argv[1]).read())
-    else:
-        print("Usage: scapy-wrapper.py <script.py>")
-    ```
+# !/usr/bin/env python3
+
+from scapy.all import *
+import sys
+
+if len(sys.argv) > 1 and os.path.exists(sys.argv[1]):
+exec(open(sys.argv[1]).read())
+else:
+print("Usage: scapy-wrapper.py <script.py>")
+
+   ```
 
 2.  **Rendre le wrapper exécutable :**
 
@@ -155,4 +162,5 @@ for sent, recv in answered:
 | **Alerte dans les logs IDS/IPS**   | Le trafic a été identifié comme suspect.                    | детеcтед **Détectée (même si le paquet est passé)** |
 | **Paquet réassemblé différemment** | Le pare-feu a normalisé le trafic avant de le transmettre.  | 🛡️ **Contournée par le pare-feu**                  |
 
-**Conclusion** : Pour valider un test d'évasion, il ne suffit pas d'envoyer des paquets. Il est impératif de **capturer le trafic en parallèle** et, idéalement, de **consulter les logs** du pare-feu ou de l'IDS pour avoir une image complète de la situation.
+**Conclusion** : Pour valider un test d'évasion, il ne suffit pas d'envoyer des paquets. Il est impératif de **capturer le trafic en parallèle** et, idéalement, de *
+*consulter les logs** du pare-feu ou de l'IDS pour avoir une image complète de la situation.
