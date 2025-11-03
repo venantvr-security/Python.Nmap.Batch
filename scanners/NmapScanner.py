@@ -1,6 +1,5 @@
 import os
 import subprocess
-import tempfile
 import time
 from typing import List, Dict
 
@@ -9,6 +8,7 @@ import yaml
 from ScannerInterface import ScannerInterface, ScanResult
 
 
+# NOPASSWD : obsolete, now setcap...
 # echo "votre_utilisateur ALL=(ALL) NOPASSWD: /usr/bin/nmap" | sudo tee -a /etc/sudoers.d/nmap
 # sudo chmod 440 /etc/sudoers.d/nmap
 class NmapScanner(ScannerInterface):
@@ -50,53 +50,7 @@ class NmapScanner(ScannerInterface):
                          'data': {'thread_id': thread_id,
                                   'message': f"[{time.ctime()}] Début du scan de {ip} avec {cmd_str}"}})
 
-        # Utiliser un fichier temporaire pour capturer la sortie
-        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-            temp_filename = temp_file.name
-            try:
-                event_queue.put({'event': 'thread_update',
-                                 'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Lancement de Popen"}})
-                # FIX: Utiliser liste args au lieu de shell=True pour éviter injection
-                with open(temp_filename, 'w') as outfile:
-                    process = subprocess.Popen(cmd, stdout=outfile, stderr=subprocess.STDOUT)
-
-                if self.process_manager is not None:
-                    if isinstance(self.process_manager, list):
-                        self.process_manager.append(process)
-                    else:
-                        self.process_manager.register(process, "nmap", self.strategy, ip, thread_id)
-
-                event_queue.put({'event': 'thread_update',
-                                 'data': {'thread_id': thread_id,
-                                          'message': f"[{time.ctime()}] Popen lancé avec succès (PID: {process.pid})"}})
-
-                try:
-                    returncode = process.wait(timeout=3600)
-                except subprocess.TimeoutExpired:
-                    process.kill()
-                    event_queue.put({'event': 'thread_update',
-                                     'data': {'thread_id': thread_id,
-                                              'message': f"[{time.ctime()}] Scan timeout après 3600s"}})
-                    with open(temp_filename, 'r') as f:
-                        output_lines = f.read().splitlines()
-                    os.remove(temp_filename)
-                    return ip, False, "Timeout", {}, {"command": cmd_str}
-
-                with open(temp_filename, 'r') as f:
-                    output_lines = f.read().splitlines()
-                event_queue.put({'event': 'thread_update',
-                                 'data': {'thread_id': thread_id,
-                                          'message': f"[{time.ctime()}] Scan terminé, lecture du fichier"}})
-
-            except Exception as e:
-                event_queue.put({'event': 'thread_update',
-                                 'data': {'thread_id': thread_id,
-                                          'message': f"[{time.ctime()}] Erreur lancement Nmap : {str(e)}"}})
-                os.remove(temp_filename)
-                return ip, False, str(e), {}, {"command": cmd_str}
-
-            finally:
-                os.remove(temp_filename)
+        output_lines = []
         ports = []
         os_info = None
         versions = {}
@@ -104,10 +58,75 @@ class NmapScanner(ScannerInterface):
         mac_address = None
         lan_name = None
 
-        # Traitement robuste des lignes
-        for line in output_lines:
+        try:
             event_queue.put({'event': 'thread_update',
-                             'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] {line.strip()}"}})
+                             'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Lancement de Popen"}})
+
+            # MODIFIÉ : Utiliser PIPE au lieu d'un fichier temporaire
+            # bufsize=1 pour forcer le line-buffering
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+
+            if self.process_manager is not None:
+                if isinstance(self.process_manager, list):
+                    self.process_manager.append(process)
+                else:
+                    self.process_manager.register(process, "nmap", self.strategy, ip, thread_id)
+
+            event_queue.put({'event': 'thread_update',
+                             'data': {'thread_id': thread_id,
+                                      'message': f"[{time.ctime()}] Popen lancé (PID: {process.pid}), streaming output..."}})
+
+            buffer = []
+            last_emit = time.time()
+            start_time = time.time()
+            timeout_seconds = 3600  # 1 heure de timeout
+
+            # MODIFIÉ : Boucle de lecture en temps réel (style Masscan)
+            for line in iter(process.stdout.readline, ''):
+                # 1. Gérer le stop_flag
+                if stop_flag():
+                    process.terminate()
+                    event_queue.put({'event': 'thread_update',
+                                     'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Scan interrompu"}})
+                    return ip, False, "Interrupted", {}, {"command": cmd_str}
+
+                # 2. Gérer le timeout manuel (car process.wait() est bloquant)
+                if time.time() - start_time > timeout_seconds:
+                    process.kill()
+                    event_queue.put({'event': 'thread_update',
+                                     'data': {'thread_id': thread_id,
+                                              'message': f"[{time.ctime()}] Scan timeout après {timeout_seconds}s"}})
+                    # On continue pour parser ce qu'on a déjà eu
+                    break  # Sortir de la boucle de lecture
+
+                # 3. Stocker la ligne pour le parsing final
+                line_stripped = line.strip()
+                output_lines.append(line_stripped)
+                buffer.append(f"[{time.ctime()}] {line_stripped}")
+
+                # 4. Envoyer les logs groupés à l'UI
+                if time.time() - last_emit >= 0.5:  # Envoyer par paquets
+                    event_queue.put(
+                        {'event': 'thread_update', 'data': {'thread_id': thread_id, 'message': "\n".join(buffer)}})
+                    buffer = []
+                    last_emit = time.time()
+
+            if buffer:  # Envoyer le reste du buffer
+                event_queue.put({'event': 'thread_update', 'data': {'thread_id': thread_id, 'message': "\n".join(buffer)}})
+
+            process.wait()
+            returncode = process.returncode
+
+        except Exception as e:
+            event_queue.put({'event': 'thread_update',
+                             'data': {'thread_id': thread_id,
+                                      'message': f"[{time.ctime()}] Erreur lancement Nmap : {str(e)}"}})
+            return ip, False, str(e), {}, {"command": cmd_str}
+
+        # Pas besoin d'envoyer les lignes ici, elles ont été streamées
+        for line in output_lines:
+            # event_queue.put({'event': 'thread_update',
+            #                  'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] {line.strip()}"}}) # Redondant
             try:
                 if "open port" in line:
                     parts = line.split()
@@ -125,9 +144,11 @@ class NmapScanner(ScannerInterface):
                 if "Service Info" in line or ("open" in line and "/" in line and "version" not in line.lower()):
                     parts = line.split()
                     if len(parts) > 2 and "/" in parts[0]:
-                        port = int(parts[0].split('/')[0])
-                        version = " ".join(parts[2:]) if len(parts) > 2 else "Unknown"
-                        versions[port] = version
+                        port_str = parts[0].split('/')[0]
+                        if port_str.isdigit():
+                            port = int(port_str)
+                            version = " ".join(parts[2:]) if len(parts) > 2 else "Unknown"
+                            versions[port] = version
                 if "VULNERABLE" in line:
                     vulns.append(line.strip())
             except (IndexError, ValueError) as e:

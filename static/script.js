@@ -64,7 +64,7 @@ source.addEventListener('thread_update', (event) => {
             `;
             tilesContainer.appendChild(tile);
             threadTiles[thread_id] = tile.querySelector('.card-body');
-            setTimeout(() => {
+            /* setTimeout(() => {
                 if (activeThreads.has(thread_id) && threadTiles[thread_id]) {
                     threadTiles[thread_id].innerHTML += '<p>[Timeout] Scan bloqué, forcé à fermer</p>';
                     activeThreads.delete(thread_id);
@@ -74,7 +74,7 @@ source.addEventListener('thread_update', (event) => {
                         delete threadTiles[thread_id];
                     }, 10000);
                 }
-            }, 35000);
+            }, 35000); */
         }
     }
 
