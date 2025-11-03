@@ -114,38 +114,44 @@ class Pcap2(ScannerInterface):
         send(rst_packet, verbose=0)
 
     # noinspection PyMethodMayBeStatic
-    def _interpret_response(self, response, scan_type: str) -> Tuple[str, bool]:
+    def _interpret_response(self, response, scan_type: str) -> Tuple[str, bool, str]:
+        """Interprète la réponse selon le type de scan et retourne (status, is_open, flags_str)"""
+        # Note: Cette fonction assume que 'response' n'est PAS None.
+
         if not response:
-            return "filtered", False
+            # Ce cas ne devrait pas arriver si le scan() gère None
+            return "filtered", False, "none"
 
         if not response.haslayer(TCP):
-            return "no_tcp", False
+            return "no_tcp", False, "none"
 
         tcp_layer = response[TCP]
         flags = tcp_layer.flags
+        flags_str = str(tcp_layer.flags)  # Convertit l'objet Flags en string (ex: "SA", "R")
 
         if scan_type == "syn":
-            if flags & 0x12 == 0x12:
-                return "open", True
-            elif flags & 0x14 == 0x14:
-                return "closed", False
+            if flags & 0x12 == 0x12:  # SYN-ACK
+                return "open", True, flags_str
+            elif flags & 0x14 == 0x14:  # RST-ACK
+                return "closed", False, flags_str
         elif scan_type in ["fin", "xmas", "null"]:
-            if flags & 0x14 == 0x14:
-                return "closed", False
+            if flags & 0x14 == 0x14:  # RST
+                return "closed", False, flags_str
             else:
-                return "open|filtered", True
+                # A reçu un paquet inattendu (non-RST)
+                return "open|filtered", True, flags_str
         elif scan_type == "ack":
-            if flags & 0x04:
-                return "unfiltered", False
+            if flags & 0x04:  # RST
+                return "unfiltered", False, flags_str
             else:
-                return "filtered", False
+                return "filtered", False, flags_str
         elif scan_type == "maimon":
-            if flags & 0x14 == 0x14:
-                return "closed", False
+            if flags & 0x14 == 0x14:  # RST
+                return "closed", False, flags_str
             else:
-                return "open|filtered", True
+                return "open|filtered", True, flags_str
 
-        return "unknown", False
+        return "unknown", False, flags_str
 
     # noinspection PyTypeHints
     def scan(self, ip: str, thread_id: str, event_queue, stop_flag) -> ScanResult:
@@ -170,17 +176,17 @@ class Pcap2(ScannerInterface):
         timeout = float(strategy.get("timeout", 2))
         send_rst = strategy.get("send_rst", False)
 
-        all_ports = []
+        port_results = []
 
         event_queue.put({'event': 'thread_update',
                          'data': {'thread_id': thread_id,
-                                  'message': f"[{time.ctime()}] Pcap2 {scan_type} de {ip} avec {len(ports_to_scan)} ports"}})
+                                  'message': f"[{time.ctime()}] Début du scan Pcap2 ({scan_type}) de {ip} avec {len(ports_to_scan)} ports"}})
 
         for port in ports_to_scan:
             if stop_flag():
                 event_queue.put({'event': 'thread_update',
                                  'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Scan de {ip} annulé"}})
-                return ip, False, "Cancelled", {"ports": all_ports}, None
+                break  # Sortir de la boucle
 
             if strategy.get("timing_pattern"):
                 actual_delay = AdvancedEvasion.get_polymorphic_delay(
@@ -193,35 +199,63 @@ class Pcap2(ScannerInterface):
             sport = self._get_source_port(strategy)
             self._send_decoys(ip, port, strategy, sport)
 
-            packet = self._build_packet(ip, port, strategy, sport)
+            try:
+                packet = self._build_packet(ip, port, strategy, sport)
+            except Exception as e:
+                event_queue.put({'event': 'thread_update',
+                                 'data': {'thread_id': thread_id,
+                                          'message': f"[{time.ctime()}] Erreur build packet: {e}"}})
+                continue  # Passe au port suivant
 
             if strategy.get("advanced_evasion", False):
                 packet = AdvancedEvasion.apply_advanced_evasion(packet, strategy)
 
             response = sr1(packet, timeout=timeout, verbose=0)
 
-            status, is_open = self._interpret_response(response, scan_type)
+            status, is_open, flags_str = "unknown", False, "none"
+
+            if response:
+                # Une réponse a été reçue
+                status, is_open, flags_str = self._interpret_response(response, scan_type)
+            else:
+                # Aucune réponse (Timeout)
+                if scan_type in ["fin", "xmas", "null", "maimon"]:
+                    status, is_open = "open|filtered", True
+                else:  # SYN, ACK
+                    status, is_open = "filtered", False
+                flags_str = "none"
+
+            # Stocker le résultat
+            port_data = {"port": port, "status": status, "response_flags": flags_str}
 
             if is_open:
-                all_ports.append(port)
+                port_results.append(port_data)  # Ajouter le dictionnaire
                 event_queue.put({'event': 'thread_update',
                                  'data': {'thread_id': thread_id,
-                                          'message': f"[{time.ctime()}] Port {port} {status}"}})
+                                          'message': f"[{time.ctime()}] Port {port} {status} (flags: {flags_str})"}})
 
                 if send_rst and scan_type == "syn" and response and response.haslayer(TCP):
                     self._send_rst(ip, port, sport, response[TCP].ack)
             else:
                 event_queue.put({'event': 'thread_update',
                                  'data': {'thread_id': thread_id,
-                                          'message': f"[{time.ctime()}] Port {port} {status}"}})
+                                          'message': f"[{time.ctime()}] Port {port} {status} (flags: {flags_str})"}})
 
-        details = {"ports": sorted(list(set(all_ports)))}
-        if all_ports:
+        sorted_results = sorted(port_results, key=lambda p: p['port'])
+        details = {"ports": sorted_results}
+
+        if port_results:
+            open_ports_list = [p['port'] for p in port_results]
             event_queue.put({'event': 'thread_update',
                              'data': {'thread_id': thread_id,
-                                      'message': f"[{time.ctime()}] {ip} actif (ports: {all_ports})"}})
+                                      'message': f"[{time.ctime()}] {ip} actif (ports: {open_ports_list})"}})
         else:
             event_queue.put({'event': 'thread_update',
                              'data': {'thread_id': thread_id,
                                       'message': f"[{time.ctime()}] {ip} n'a pas de ports ouverts"}})
+
+        # Gérer le cas "Cancelled"
+        if stop_flag():
+            return ip, False, "Cancelled", details, None
+
         return ip, True, None, details, None

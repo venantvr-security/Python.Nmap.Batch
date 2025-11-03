@@ -52,25 +52,42 @@ class CurlScanner(ScannerInterface):
         all_ports = []
         all_outputs = []
 
+        all_banners = {}  # Dictionnaire pour stocker les bannières
+
+        # Définir les erreurs de connexion
+        connection_failed_errors = [
+            "failed to connect",
+            "connection refused",
+            "connection timed out",
+            "no route to host",
+            "network is unreachable",
+            "operation timed out"
+        ]
+
         # Boucler sur chaque port à scanner
         for port in ports_to_scan:
             if stop_flag():
                 event_queue.put({'event': 'thread_update',
                                  'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Scan de {ip} annulé"}})
-                return ip, False, "Cancelled", {"ports": all_ports}, {"commands": all_outputs}
+                return ip, False, "Cancelled", {"ports": all_ports, "banners": all_banners}, {"commands": all_outputs}
 
             # Construire l’URL avec l’IP et le port actuel
             url = url_base.replace("<ip>", ip).replace("<ports>", str(port))
 
             # Construire la commande en remplaçant l’URL de base par l’URL complète
             cmd_template = [arg if arg != url_base else url for arg in strategy]
-            cmd = ["/usr/bin/curl"] + cmd_template
+
+            # Forcer des timeouts courts
+            timeout_flags = ["--connect-timeout", "3", "-m", "5"]
+
+            cmd = ["/usr/bin/curl"] + timeout_flags + cmd_template
             cmd_str = " ".join(cmd)
             event_queue.put({'event': 'thread_update',
                              'data': {'thread_id': thread_id,
                                       'message': f"[{time.ctime()}] Début du scan de {ip}:{port} avec {cmd_str}"}})
 
             try:
+                # Utiliser un timeout Popen légèrement plus long que celui de curl (-m 5)
                 process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
 
                 if self.process_manager is not None:
@@ -82,11 +99,14 @@ class CurlScanner(ScannerInterface):
                 event_queue.put({'event': 'thread_update',
                                  'data': {'thread_id': thread_id,
                                           'message': f"[{time.ctime()}] Erreur lancement curl : {str(e)}"}})
-                return ip, False, str(e), {"ports": all_ports}, {"commands": all_outputs + [cmd_str]}
+                all_outputs.append(cmd_str)
+                continue
 
             try:
-                stdout, _ = process.communicate(timeout=5)
+                # Utiliser un timeout Popen de 6s (légèrement > -m 5s de curl)
+                stdout, _ = process.communicate(timeout=6)
                 output_lines = stdout.splitlines()
+                output_full_string = stdout.lower()  # Sortie complète en minuscules
                 event_queue.put({'event': 'thread_update',
                                  'data': {'thread_id': thread_id,
                                           'message': f"[{time.ctime()}] Scan terminé pour port {port}"}})
@@ -94,22 +114,43 @@ class CurlScanner(ScannerInterface):
                 process.kill()
                 stdout, _ = process.communicate()
                 output_lines = stdout.splitlines()
+                output_full_string = stdout.lower()
                 event_queue.put({'event': 'thread_update',
                                  'data': {'thread_id': thread_id,
-                                          'message': f"[{time.ctime()}] Scan timeout après 5s pour port {port}"}})
-                return ip, False, "Timeout", {"ports": all_ports}, {"commands": all_outputs + [cmd_str]}
+                                          'message': f"[{time.ctime()}] Scan (sub) timeout après 6s pour port {port}"}})
+                all_outputs.append(cmd_str)
+                continue
 
-            # Traitement des lignes pour ce port
+            # 1. Vérifier si une erreur de connexion a été explicitement trouvée
+            is_failed = False
+            for error_msg in connection_failed_errors:
+                if error_msg in output_full_string:
+                    is_failed = True
+                    break
+
+            # 2. Si aucune erreur de connexion n'est trouvée, le port est ouvert
+            if not is_failed:
+                all_ports.append(port)
+
+                banner = "N/A"
+                if output_lines:
+                    # Trouver la première ligne non vide (c'est généralement la bannière)
+                    first_meaningful_line = next((line.strip() for line in output_lines if line.strip()), None)
+                    if first_meaningful_line:
+                        # Troncquer à 120 caractères pour éviter de polluer le JSON
+                        banner = first_meaningful_line[:120]
+                all_banners[port] = banner
+
+            # 3. Envoyer TOUTE la sortie au tile, pour débogage
             for line in output_lines:
                 event_queue.put({'event': 'thread_update',
                                  'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] {line.strip()}"}})
-                if line.startswith("HTTP/") and (" 2" in line or " 3" in line):  # Codes 2xx ou 3xx
-                    all_ports.append(port)
 
+            # 4. (Fin de la boucle)
             all_outputs.append(cmd_str)
 
-        # Résultats finaux
-        details = {"ports": all_ports}
+        details = {"ports": all_ports, "banners": all_banners}
+
         if all_ports:
             event_queue.put({'event': 'thread_update',
                              'data': {'thread_id': thread_id,

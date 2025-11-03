@@ -107,39 +107,40 @@ class ScapyScanner(ScannerInterface):
         send(rst_packet, verbose=0)
 
     # noinspection PyMethodMayBeStatic
-    def _interpret_response(self, response, scan_type: str) -> Tuple[str, bool]:
-        """Interprète la réponse selon le type de scan"""
-        if not response:
-            return "filtered", False
+    def _interpret_response(self, response, scan_type: str) -> Tuple[str, bool, str]:
+        """Interprète la réponse selon le type de scan et retourne (status, is_open, flags_str)"""
+        # Note: Cette fonction assume que 'response' n'est PAS None.
 
         if not response.haslayer(TCP):
-            return "no_tcp", False
+            return "no_tcp", False, "none"
 
         tcp_layer = response[TCP]
         flags = tcp_layer.flags
+        flags_str = str(tcp_layer.flags)  # Convertit l'objet Flags en string (ex: "SA", "R")
 
         if scan_type == "syn":
             if flags & 0x12 == 0x12:  # SYN-ACK
-                return "open", True
+                return "open", True, flags_str
             elif flags & 0x14 == 0x14:  # RST-ACK
-                return "closed", False
+                return "closed", False, flags_str
         elif scan_type in ["fin", "xmas", "null"]:
             if flags & 0x14 == 0x14:  # RST
-                return "closed", False
+                return "closed", False, flags_str
             else:
-                return "open|filtered", True
+                # A reçu un paquet inattendu (non-RST)
+                return "open|filtered", True, flags_str
         elif scan_type == "ack":
             if flags & 0x04:  # RST
-                return "unfiltered", False
+                return "unfiltered", False, flags_str
             else:
-                return "filtered", False
+                return "filtered", False, flags_str
         elif scan_type == "maimon":
             if flags & 0x14 == 0x14:  # RST
-                return "closed", False
+                return "closed", False, flags_str
             else:
-                return "open|filtered", True
+                return "open|filtered", True, flags_str
 
-        return "unknown", False
+        return "unknown", False, flags_str
 
     # noinspection PyTypeHints
     def scan(self, ip: str, thread_id: str, event_queue, stop_flag) -> ScanResult:
@@ -167,20 +168,20 @@ class ScapyScanner(ScannerInterface):
         timeout = float(strategy.get("timeout", 2))
         send_rst = strategy.get("send_rst", False)
 
-        all_ports = []
+        port_results = []
 
         event_queue.put({'event': 'thread_update',
                          'data': {'thread_id': thread_id,
-                                  'message': f"[{time.ctime()}] Scan {scan_type} de {ip} avec {len(ports_to_scan)} ports"}})
+                                  'message': f"[{time.ctime()}] Début du scan Scapy ({scan_type}) de {ip} avec {len(ports_to_scan)} ports"}})
 
         # Boucler sur chaque port
         for port in ports_to_scan:
             if stop_flag():
                 event_queue.put({'event': 'thread_update',
                                  'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Scan de {ip} annulé"}})
-                return ip, False, "Cancelled", {"ports": all_ports}, None
+                break  # Sortir de la boucle
 
-            # Délai polymorphique ou aléatoire
+            # ... (logique de délai, decoys, construction de paquet reste identique) ...
             if strategy.get("timing_pattern"):
                 actual_delay = AdvancedEvasion.get_polymorphic_delay(
                     ports_to_scan.index(port), delay, strategy["timing_pattern"]
@@ -188,55 +189,67 @@ class ScapyScanner(ScannerInterface):
             else:
                 actual_delay = random.uniform(0, delay)
             time.sleep(actual_delay)
-
-            # Envoyer decoys avant le paquet réel
             sport = self._get_source_port(strategy)
             self._send_decoys(ip, port, strategy, sport)
-
-            # Construire et envoyer le paquet principal
             packet = self._build_packet(ip, port, strategy, sport)
-
-            # Appliquer évasion avancée si configuré
             if strategy.get("advanced_evasion", False):
                 if isinstance(packet, list):
                     packet = [AdvancedEvasion.apply_advanced_evasion(p, strategy) for p in packet]
                 else:
                     packet = AdvancedEvasion.apply_advanced_evasion(packet, strategy)
-
-            # Gérer fragmentation (retourne liste de fragments ou paquet unique)
             if isinstance(packet, list):
-                # Envoi fragments puis attente réponse
                 for frag in packet[:-1]:
                     send(frag, verbose=0)
                 response = sr1(packet[-1], timeout=timeout, verbose=0)
             else:
                 response = sr1(packet, timeout=timeout, verbose=0)
 
-            # Interpréter la réponse
-            status, is_open = self._interpret_response(response, scan_type)
+            status, is_open, flags_str = "unknown", False, "none"
+
+            if response:
+                # Une réponse a été reçue
+                status, is_open, flags_str = self._interpret_response(response, scan_type)
+            else:
+                # Aucune réponse (Timeout)
+                if scan_type in ["fin", "xmas", "null", "maimon"]:
+                    status, is_open = "open|filtered", True
+                else:  # SYN, ACK
+                    status, is_open = "filtered", False
+                flags_str = "none"
+
+            # Stocker le résultat
+            port_data = {"port": port, "status": status, "response_flags": flags_str}
 
             if is_open:
-                all_ports.append(port)
+                port_results.append(port_data)  # Ajouter le dictionnaire
                 event_queue.put({'event': 'thread_update',
                                  'data': {'thread_id': thread_id,
-                                          'message': f"[{time.ctime()}] Port {port} {status}"}})
+                                          'message': f"[{time.ctime()}] Port {port} {status} (flags: {flags_str})"}})
 
-                # Envoyer RST si nécessaire (SYN scan avec send_rst activé)
                 if send_rst and scan_type == "syn" and response and response.haslayer(TCP):
                     self._send_rst(ip, port, sport, response[TCP].ack)
             else:
+                # Log mais ne stocke pas les ports fermés/filtrés (sauf si vous le souhaitez)
                 event_queue.put({'event': 'thread_update',
                                  'data': {'thread_id': thread_id,
-                                          'message': f"[{time.ctime()}] Port {port} {status}"}})
+                                          'message': f"[{time.ctime()}] Port {port} {status} (flags: {flags_str})"}})
 
-        # Résultats finaux
-        details = {"ports": sorted(list(set(all_ports)))}
-        if all_ports:
+        # Trier les résultats par numéro de port
+        sorted_results = sorted(port_results, key=lambda p: p['port'])
+        details = {"ports": sorted_results}
+
+        if port_results:
+            open_ports_list = [p['port'] for p in port_results]
             event_queue.put({'event': 'thread_update',
                              'data': {'thread_id': thread_id,
-                                      'message': f"[{time.ctime()}] {ip} actif (ports: {all_ports})"}})
+                                      'message': f"[{time.ctime()}] {ip} actif (ports: {open_ports_list})"}})
         else:
             event_queue.put({'event': 'thread_update',
                              'data': {'thread_id': thread_id,
                                       'message': f"[{time.ctime()}] {ip} n'a pas de ports ouverts"}})
+
+        # Gérer le cas "Cancelled"
+        if stop_flag():
+            return ip, False, "Cancelled", details, None
+
         return ip, True, None, details, None
