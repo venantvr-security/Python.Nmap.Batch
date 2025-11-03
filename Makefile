@@ -52,10 +52,13 @@ setup-nmap-noroot: ## (Nécessite sudo) Attribue les capacités à nmap pour les
 setup-scapy-noroot: setup ## (Nécessite sudo) Attribue les capacités à l'interpréteur Python du venv.
 	@echo "Configuration de l'interpréteur Python du venv pour l'utilisation de Scapy sans sudo..."
 	@echo "Le mot de passe sudo peut être demandé pour la commande 'setcap'."
-	@sudo setcap cap_net_raw,cap_net_admin+eip $(VENV_PYTHON)
-	@echo "Capacités Scapy (cap_net_raw, cap_net_admin) ajoutées à l'interpréteur $(VENV_PYTHON)."
-	@echo "Vérification :"
-	@getcap $(VENV_PYTHON)
+	@echo "Résolution du lien symbolique $(VENV_PYTHON)..."
+	@REAL_PYTHON=$$(readlink -f $(VENV_PYTHON)); \
+	echo "Cible réelle: $$REAL_PYTHON"; \
+	sudo setcap cap_net_raw,cap_net_admin+eip $$REAL_PYTHON; \
+	echo "Capacités Scapy (cap_net_raw, cap_net_admin) ajoutées à $$REAL_PYTHON."; \
+	echo "Vérification :"; \
+	getcap $$REAL_PYTHON
 
 .PHONY: help
 help: ## Affiche ce message d'aide.
