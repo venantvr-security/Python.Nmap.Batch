@@ -16,13 +16,47 @@ VENV_PYTHON := $(VENV_DIR)/bin/python
 # --- Cibles Principales ---
 
 .PHONY: setup
-setup: $(VENV_DIR)/bin/activate ## Crée l'environnement virtuel et installe les dépendances.
-	@echo "Environnement virtuel '.venv' prêt et dépendances installées."
+setup: $(VENV_DIR)/bin/activate capabilities ## Crée l'env virtuel, installe les dépendances et configure les capacités.
+	@echo "Environnement virtuel prêt, dépendances installées et capacités configurées."
 
 .PHONY: run
 run: setup ## Démarre l'application Flask.
 	@echo "Démarrage du serveur Flask sur http://localhost:5001..."
 	@$(VENV_PYTHON) main.py
+
+.PHONY: capabilities
+capabilities: ## Applique les capacités Linux aux outils réseau pour une exécution sans sudo.
+	@echo "Configuration des capacités pour les scanners réseau..."
+	@if [ -x "$$(which nmap)" ]; then \
+		sudo setcap cap_net_raw,cap_net_admin,cap_net_bind_service+eip $$(which nmap); \
+		echo "✓ Nmap capabilities set."; \
+	else \
+		echo "✗ Nmap non trouvé. Veuillez l'installer."; \
+	fi
+	@if [ -x "$$(which nc)" ]; then \
+		sudo setcap cap_net_bind_service+eip $$(which nc); \
+		echo "✓ Netcat capabilities set."; \
+	else \
+		echo "✗ Netcat (nc) non trouvé. Veuillez l'installer."; \
+	fi
+	@if [ -x "$$(which masscan)" ]; then \
+		sudo setcap cap_net_raw,cap_net_admin,cap_net_bind_service+eip $$(which masscan); \
+		echo "✓ Masscan capabilities set."; \
+	else \
+		echo "✗ Masscan non trouvé. Veuillez l'installer."; \
+	fi
+	@if [ -x "$$(which hping3)" ]; then \
+		sudo setcap cap_net_raw,cap_net_admin+eip $$(which hping3); \
+		echo "✓ Hping3 capabilities set."; \
+	else \
+		echo "✗ Hping3 non trouvé. Veuillez l'installer."; \
+	fi
+	@if [ -x "$(VENV_PYTHON)" ]; then \
+		sudo setcap cap_net_raw,cap_net_admin+eip $(VENV_PYTHON); \
+		echo "✓ Python (Scapy) capabilities set."; \
+	else \
+		echo "✗ Environnement virtuel Python non trouvé. Exécutez 'make setup'."; \
+	fi
 
 .PHONY: clean
 clean: ## Supprime l'environnement virtuel et les fichiers temporaires.
@@ -31,34 +65,6 @@ clean: ## Supprime l'environnement virtuel et les fichiers temporaires.
 	rm -f *.pyc
 	rm -rf __pycache__
 	@echo "Environnement virtuel et fichiers temporaires supprimés."
-
-.PHONY: setup-privileges
-setup-privileges: setup-nmap-noroot setup-scapy-noroot ## (Nécessite sudo) Configure nmap et scapy pour l'utilisation sans sudo.
-
-.PHONY: setup-nmap-noroot
-setup-nmap-noroot: ## (Nécessite sudo) Attribue les capacités à nmap pour les scans sans root.
-	@echo "Configuration de nmap pour une exécution sans sudo..."
-	@echo "Le mot de passe sudo peut être demandé pour la commande 'setcap'."
-	@if command -v nmap >/dev/null; then \
-		sudo setcap cap_net_raw,cap_net_admin,cap_net_bind_service+eip $$(which nmap); \
-		echo "Capacités nmap mises à jour :"; \
-		getcap $$(which nmap); \
-	else \
-		echo "Erreur : nmap n'est pas installé ou non trouvé dans le PATH."; \
-		exit 1; \
-	fi
-
-.PHONY: setup-scapy-noroot
-setup-scapy-noroot: setup ## (Nécessite sudo) Attribue les capacités à l'interpréteur Python du venv.
-	@echo "Configuration de l'interpréteur Python du venv pour l'utilisation de Scapy sans sudo..."
-	@echo "Le mot de passe sudo peut être demandé pour la commande 'setcap'."
-	@echo "Résolution du lien symbolique $(VENV_PYTHON)..."
-	@REAL_PYTHON=$$(readlink -f $(VENV_PYTHON)); \
-	echo "Cible réelle: $$REAL_PYTHON"; \
-	sudo setcap cap_net_raw,cap_net_admin+eip $$REAL_PYTHON; \
-	echo "Capacités Scapy (cap_net_raw, cap_net_admin) ajoutées à $$REAL_PYTHON."; \
-	echo "Vérification :"; \
-	getcap $$REAL_PYTHON
 
 .PHONY: help
 help: ## Affiche ce message d'aide.

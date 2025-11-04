@@ -1,4 +1,3 @@
-import os
 import subprocess
 import time
 from typing import List, Dict
@@ -8,8 +7,6 @@ import yaml
 from ScannerInterface import ScannerInterface, ScanResult
 
 
-# echo "rvv ALL=(ALL) NOPASSWD: /bin/nc" | sudo tee -a /etc/sudoers.d/netcat
-# sudo chmod 440 /etc/sudoers.d/netcat
 class NetcatScanner(ScannerInterface):
 
     def load_strategies(self) -> Dict[str, List[str]]:
@@ -71,11 +68,8 @@ class NetcatScanner(ScannerInterface):
                     cmd_template.pop(port_index + 1)  # Retirer la valeur après -p
                 cmd_template.pop(port_index)  # Retirer -p
 
-            # Vérifier si déjà root
-            if os.geteuid() == 0:
-                cmd = ["/bin/nc"] + cmd_template + [ip, str(port)]
-            else:
-                cmd = ["/usr/bin/sudo", "/bin/nc"] + cmd_template + [ip, str(port)]
+            # Construire la commande finale sans sudo
+            cmd = ["/bin/nc"] + cmd_template + [ip, str(port)]
 
             cmd_str = " ".join(cmd)
             event_queue.put({'event': 'thread_update',

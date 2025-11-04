@@ -198,7 +198,7 @@ def build_scanners_config_and_map(strategies_dir=PATHS['strategies_dir'], defini
                 # Instancie le scanner
                 scanners[class_name] = globals()[class_name](
                     strategy=strategy,
-                    process_manager=active_processes,
+                    process_manager=process_manager,
                     yaml_file=full_file_path
                 )
                 # Ajoute au scanner_map avec la clé (ex. "nmap")
@@ -224,7 +224,7 @@ for scanner_class, yaml_file in scanners_config:
         # Suppose que les classes comme NmapScanner, etc., sont déjà importées
         scanners[scanner_class] = globals()[scanner_class](
             strategy=strategy,
-            process_manager=active_processes,
+            process_manager=process_manager,
             yaml_file=yaml_file
         )
     else:

@@ -1,4 +1,3 @@
-import os
 import subprocess
 import time
 from typing import List, Dict
@@ -8,9 +7,6 @@ import yaml
 from ScannerInterface import ScannerInterface, ScanResult
 
 
-# NOPASSWD : obsolete, now setcap...
-# echo "votre_utilisateur ALL=(ALL) NOPASSWD: /usr/bin/nmap" | sudo tee -a /etc/sudoers.d/nmap
-# sudo chmod 440 /etc/sudoers.d/nmap
 class NmapScanner(ScannerInterface):
 
     def load_strategies(self) -> Dict[str, List[str]]:
@@ -39,11 +35,8 @@ class NmapScanner(ScannerInterface):
         else:
             cmd_template = strategy  # Si pas de <ports>, utiliser la stratégie telle quelle
 
-        # Vérifier si déjà root
-        if os.geteuid() == 0:
-            cmd = ["/usr/bin/nmap"] + [ip] + cmd_template
-        else:
-            cmd = ["/usr/bin/sudo", "/usr/bin/nmap"] + [ip] + cmd_template
+        # Construire la commande finale sans sudo
+        cmd = ["/usr/bin/nmap"] + [ip] + cmd_template
 
         cmd_str = " ".join(cmd)
         event_queue.put({'event': 'thread_update',
