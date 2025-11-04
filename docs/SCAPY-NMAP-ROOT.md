@@ -179,14 +179,14 @@ for sent, recv in answered:
 
 ## Tableau d'Interprétation des Résultats
 
-| Réponse Observée | Signification Probable | Conclusion sur l'Évasion |
-| :--- | :--- | :--- |
-| **SYN-ACK** | Le port est ouvert et le pare-feu a laissé passer. | ✅ **Réussie** |
-| **RST / RST-ACK** | Le port est fermé ou le pare-feu a rejeté activement. | ❌ **Échouée** |
-| **ICMP Unreachable** | Une règle de pare-feu ou de routage bloque le trafic. | ❌ **Échouée** |
-| **Aucune réponse** | Le paquet a été droppé silencieusement (firewall) ou perdu. | ⚠️ **Incertaine (mais probable échec)** |
-| **Alerte dans les logs IDS/IPS** | Le trafic a été identifié comme suspect. |  Détectée **Détectée (même si le paquet est passé)** |
-| **Paquet réassemblé différemment** | Le pare-feu a normalisé le trafic avant de le transmettre. | 🛡️ **Contournée par le pare-feu** |
+| Réponse Observée                   | Signification Probable                                       | Conclusion su                  r l'Évasion          |
+|:-----------------------------------|:-------------------------------------------------------------|:----------------------------------------------------|
+| **SYN-ACK**                        | Le --- est ouvert et le pare-feu a laissé passer.            | ✅ **Réussie**                                       |
+| **RST / RST-ACK**                  | Le port est fermé o u le pare-feu a rejeté activement.       | ❌ **Échouée**                                       |
+| **ICMP Unreachable**               | Une règle de par e-feu ou de routage bloque le trafic.       | ❌ **Échouée**                                       |
+| **Aucune réponse**                 | Le paquet a été dr oppé silencieusement (firewall) ou perdu. | ⚠️ **Incertaine (mais probable échec)**             |
+| **Alerte dans les logs IDS/IPS**   | Le t rafic a été identifié comme suspect.                    | Détectée **Détectée (même si le paquet est passé)** |
+| **Paquet réassemblé différemment** | Le pare-feu a normalisé le trafic avant de le transmettre.   | 🛡️ **Contournée par le pare-feu**                  |
 
 **Conclusion** : Pour valider un test d'évasion, il ne suffit pas d'envoyer des paquets. Il est impératif de **capturer le trafic en parallèle** et, idéalement, de *
 *consulter les logs** du pare-feu ou de l'IDS pour avoir une image complète de la situation.

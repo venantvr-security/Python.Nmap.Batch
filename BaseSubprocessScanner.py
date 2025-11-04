@@ -9,15 +9,15 @@ class BaseSubprocessScanner(ScannerInterface):
     """Classe de base factorisant la logique commune de gestion des sous-processus."""
 
     def _run_command(
-        self,
-        cmd: List[str],
-        ip: str,
-        port: int,
-        thread_id: str,
-        event_queue,
-        stop_flag,
-        timeout: int = 5,
-        capture_output: bool = True
+            self,
+            cmd: List[str],
+            ip: str,
+            port: int,
+            thread_id: str,
+            event_queue,
+            stop_flag,
+            timeout: int = 5,
+            capture_output: bool = True
     ) -> Tuple[bool, Optional[str], List[str]]:
         """
         Exécute une commande subprocess avec gestion d'erreurs et timeouts.
