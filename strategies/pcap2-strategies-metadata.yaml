@@ -1,9 +1,54 @@
-squirrelwaffle_1:
-  complexity: 2
-  type: stealth
-squirrelwaffle_2:
-  complexity: 2
-  type: stealth
-squirrelwaffle_3:
-  complexity: 2
-  type: stealth
+metadata:
+  imitate-cryptowall-c2:
+    name: "Imitate CryptoWall C2"
+    type: "ml-evasion"
+    complexity: 3
+    description: "Utilise un paquet de communication du malware CryptoWall pour imiter un poste infecté."
+
+  imitate-exploit-kit-connect:
+    name: "Imitate Exploit Kit Connect"
+    type: "ml-evasion"
+    complexity: 3
+    description: "Simule la connexion initiale d'un navigateur vers un Exploit Kit."
+
+  imitate-rat-connect:
+    name: "Imitate RAT Connect"
+    type: "ml-evasion"
+    complexity: 3
+    description: "Imite la connexion d'un Remote Access Trojan (RAT) vers son serveur de contrôle."
+
+  imitate-dvwa-sqli-probe:
+    name: "Imitate DVWA SQLi Probe"
+    type: "advanced"
+    complexity: 2
+    description: "Simule une tentative d'injection SQL sur une application web vulnérable (DVWA)."
+
+  imitate-google-http-request:
+    name: "Imitate Google HTTP Request"
+    type: "basic"
+    complexity: 1
+    description: "Utilise un paquet de requête HTTP standard vers Google. Très discret."
+
+  imitate-dns-zone-transfer:
+    name: "Imitate DNS Zone Transfer"
+    type: "reconnaissance"
+    complexity: 2
+    description: "Simule une tentative de transfert de zone DNS sur le port 53/TCP."
+
+  imitate-smtp-send:
+    name: "Imitate SMTP Send"
+    type: "basic"
+    complexity: 1
+    description: "Simule l'envoi d'un email via le protocole SMTP."
+
+  imitate-nmap-syn-scan:
+    name: "Imitate Nmap SYN Scan"
+    type: "stealth"
+    complexity: 2
+    description: "Utilise un paquet SYN capturé d'un scan Nmap. Utile pour se cacher parmi d'autres scans."
+
+  imitate-os-fingerprinting-probe:
+    name: "Imitate OS Fingerprinting Probe"
+    type: "reconnaissance"
+    complexity: 2
+    description: "Simule les sondes spécifiques envoyées par Nmap pour la détection d'OS."

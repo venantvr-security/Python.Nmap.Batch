@@ -1,27 +1,67 @@
 strategies:
-  squirrelwaffle_1:
-    scan_type: syn
-    ports: "<ports>"
-    delay: 0.5
-    timeout: 2
-    ttl: 64
-    send_rst: true
-    template_pcap: "2021-09-20-squirrelwaffle-1.pcap"
+  # --- Stratégies basées sur le trafic malveillant ---
+  imitate-cryptowall-c2:
+    template_pcap: "packets/cryptowall4_c2.pcapng"
+    scan_type: "syn"
+    ports: "80,443"
+    delay: 1.5
+    timeout: 3
 
-  squirrelwaffle_2:
-    scan_type: syn
-    ports: "<ports>"
-    delay: 0.5
+  imitate-exploit-kit-connect:
+    template_pcap: "packets/ek_to_cryptowall4.pcapng"
+    scan_type: "syn"
+    ports: "80"
+    delay: 1.0
     timeout: 2
-    ttl: 64
-    send_rst: true
-    template_pcap: "2021-09-20-squirrelwaffle-2.pcap"
 
-  squirrelwaffle_3:
-    scan_type: syn
-    ports: "<ports>"
+  imitate-rat-connect:
+    template_pcap: "packets/ratinfected.pcapng"
+    scan_type: "syn"
+    ports: "4433,8080"
+    delay: 2.0
+    timeout: 4
+
+  # --- Stratégies basées sur des attaques web ---
+  imitate-dvwa-sqli-probe:
+    template_pcap: "packets/http_dvwa_sqlinjection.pcapng"
+    scan_type: "syn"
+    ports: "80"
+    delay: 0.8
+    timeout: 2
+
+  # --- Stratégies de mimétisme de trafic bénin ---
+  imitate-google-http-request:
+    template_pcap: "packets/http_google.pcapng"
+    scan_type: "syn"
+    ports: "80"
     delay: 0.5
     timeout: 2
-    ttl: 64
-    send_rst: true
-    template_pcap: "2021-09-20-squirrelwaffle-3.pcap"
+
+  imitate-dns-zone-transfer:
+    template_pcap: "packets/dns_axfr.pcapng"
+    scan_type: "syn"
+    ports: "53"
+    delay: 1.0
+    timeout: 3
+
+  imitate-smtp-send:
+    template_pcap: "packets/mail_sender_client_1.pcapng"
+    scan_type: "syn"
+    ports: "25"
+    delay: 1.2
+    timeout: 3
+
+  # --- Stratégies de mimétisme d'autres scanners ---
+  imitate-nmap-syn-scan:
+    template_pcap: "packets/synscan.pcapng"
+    scan_type: "syn"
+    ports: "<ports>"
+    delay: 0.2
+    timeout: 2
+
+  imitate-os-fingerprinting-probe:
+    template_pcap: "packets/activeosfingerprinting.pcapng"
+    scan_type: "syn"
+    ports: "135,139,445"
+    delay: 0.7
+    timeout: 2

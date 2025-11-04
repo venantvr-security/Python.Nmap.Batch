@@ -8,6 +8,9 @@ scanners:
   scapy:
     class: ScapyScanner
     file: scapy-strategies.yaml
+  pcap2:
+    class: Pcap2
+    file: pcap2-strategies.yaml
   masscan:
     class: MasscanScanner
     file: masscan-strategies.yaml
@@ -17,6 +20,3 @@ scanners:
   curl:
     class: CurlScanner
     file: curl-strategies.yaml
-  pcap2:
-    class: Pcap2
-    file: pcap2-strategies.yaml
