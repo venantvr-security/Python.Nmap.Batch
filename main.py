@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 from flask import Flask, render_template, Response, request, jsonify
 from psutil import NoSuchProcess, AccessDenied
 
+from ProcessManager import ProcessManager
 # noinspection PyUnresolvedReferences
 from scanners.CurlScanner import CurlScanner
 # noinspection PyUnresolvedReferences
@@ -77,7 +78,9 @@ MAX_WORKERS = 10
 stop_flag = False
 success_rate = 0.0
 scan_thread = None
-active_processes = []
+# active_processes = []
+process_manager = ProcessManager()
+
 event_queue = Queue()
 tor_enabled = False
 tor_identity_change_freq = 0
@@ -239,10 +242,8 @@ def signal_handler(sig, frame):
     global stop_flag
     stop_flag = True
     logger.info("Signal d'arrêt reçu (Ctrl+C), arrêt en cours...")
-    for proc in active_processes:
-        if proc.poll() is None:
-            proc.kill()  # Force la terminaison
-            logger.info(f"Processus {proc.pid} tué")
+    process_manager.kill_all()
+    logger.info("Tous les processus ont été tués")
     if scan_thread and scan_thread.is_alive():
         scan_thread.join(timeout=5)
     logger.info("Serveur arrêté proprement")
@@ -509,7 +510,7 @@ def events():
 # noinspection PyUnresolvedReferences
 @app.route('/scan/start/<scanner_type>/<strategy>')
 def start_scan_endpoint(scanner_type, strategy):
-    global stop_flag, scan_thread, current_scanner, active_processes, IP_RANGES
+    global stop_flag, scan_thread, current_scanner, IP_RANGES
     proxy = request.args.get('proxy', None)
     ports = request.args.get('ports', None)
     ip_ranges = request.args.get('ip_ranges', None)
@@ -758,68 +759,14 @@ def processes():
 @app.route('/api/processes', methods=['GET'])
 def get_processes():
     """Retourne la liste des processus actifs avec métadonnées."""
-    processes_list = []
-    for proc in active_processes:
-        try:
-            import psutil
-
-            p = psutil.Process(proc.pid)
-            is_running = proc.poll() is None
-
-            # Extraire metadata si disponible (scanner, strategy, ip)
-            cmdline = p.cmdline()
-            scanner = "unknown"
-            strategy = "unknown"
-            ip = "unknown"
-
-            # Essayer de détecter le scanner depuis la cmdline
-            if cmdline:
-                cmd_str = " ".join(cmdline)
-                if "nmap" in cmd_str.lower():
-                    scanner = "nmap"
-                elif "masscan" in cmd_str.lower():
-                    scanner = "masscan"
-                elif "nc" in cmd_str or "netcat" in cmd_str.lower():
-                    scanner = "netcat"
-                elif "hping" in cmd_str.lower():
-                    scanner = "hping3"
-                elif "curl" in cmd_str.lower():
-                    scanner = "curl"
-                elif "scapy" in cmd_str.lower():
-                    scanner = "scapy"
-
-            start_time = datetime.fromtimestamp(p.create_time())
-            uptime = (datetime.now() - start_time).total_seconds()
-
-            processes_list.append({
-                "id": f"{scanner}_{proc.pid}",
-                "pid": proc.pid,
-                "scanner": scanner,
-                "strategy": strategy,
-                "ip": ip,
-                "thread_id": "unknown",
-                "status": "running" if is_running else "terminated",
-                "start_time": start_time.isoformat(),
-                "cpu_percent": p.cpu_percent(interval=0.1) if is_running else 0,
-                "memory_mb": p.memory_info().rss / 1024 / 1024 if is_running else 0,
-                "uptime_seconds": uptime,
-                "cmdline": " ".join(cmdline[:5]) if cmdline else "N/A"
-            })
-        except (NoSuchProcess, AccessDenied, AttributeError):
-            pass
-    return jsonify(processes_list)
+    return jsonify(process_manager.get_all())
 
 
-@app.route('/api/processes/<int:pid>/kill', methods=['POST'])
-def kill_process(pid):
+@app.route('/api/processes/<process_id>/kill', methods=['POST'])
+def kill_process(process_id):
     """Tue un processus spécifique."""
-    for proc in active_processes:
-        if proc.pid == pid:
-            try:
-                proc.kill()
-                return jsonify({"success": True, "message": f"Process {pid} killed"})
-            except:
-                return jsonify({"success": False, "error": "Failed to kill process"}), 500
+    if process_manager.kill(process_id):
+        return jsonify({"success": True, "message": f"Process {process_id} killed"})
     return jsonify({"success": False, "error": "Process not found"}), 404
 
 
