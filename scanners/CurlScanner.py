@@ -1,13 +1,16 @@
-import subprocess
+import sys
+import os
 import time
 from typing import List, Dict
 
 import yaml
 
-from ScannerInterface import ScannerInterface, ScanResult
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+from BaseSubprocessScanner import BaseSubprocessScanner
+from ScannerInterface import ScanResult
 
 
-class CurlScanner(ScannerInterface):
+class CurlScanner(BaseSubprocessScanner):
 
     def load_strategies(self) -> Dict[str, List[str]]:
         try:
@@ -81,45 +84,27 @@ class CurlScanner(ScannerInterface):
             timeout_flags = ["--connect-timeout", "3", "-m", "5"]
 
             cmd = ["/usr/bin/curl"] + timeout_flags + cmd_template
-            cmd_str = " ".join(cmd)
-            event_queue.put({'event': 'thread_update',
-                             'data': {'thread_id': thread_id,
-                                      'message': f"[{time.ctime()}] Début du scan de {ip}:{port} avec {cmd_str}"}})
 
-            try:
-                # Utiliser un timeout Popen légèrement plus long que celui de curl (-m 5)
-                process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+            # Utiliser la méthode factorisée _run_command
+            success, error, output_lines = self._run_command(
+                cmd=cmd,
+                ip=ip,
+                port=port,
+                thread_id=thread_id,
+                event_queue=event_queue,
+                stop_flag=stop_flag,
+                timeout=6,  # Légèrement > -m 5s de curl
+                capture_output=True
+            )
 
-                if self.process_manager is not None:
-                    if isinstance(self.process_manager, list):
-                        self.process_manager.append(process)
-                    else:
-                        self.process_manager.register(process, "curl", self.strategy, ip, thread_id)
-            except Exception as e:
-                event_queue.put({'event': 'thread_update',
-                                 'data': {'thread_id': thread_id,
-                                          'message': f"[{time.ctime()}] Erreur lancement curl : {str(e)}"}})
-                all_outputs.append(cmd_str)
+            all_outputs.append(" ".join(cmd))
+
+            if not success and error == "Timeout":
+                continue
+            elif not success:
                 continue
 
-            try:
-                # Utiliser un timeout Popen de 6s (légèrement > -m 5s de curl)
-                stdout, _ = process.communicate(timeout=6)
-                output_lines = stdout.splitlines()
-                output_full_string = stdout.lower()  # Sortie complète en minuscules
-                event_queue.put({'event': 'thread_update',
-                                 'data': {'thread_id': thread_id,
-                                          'message': f"[{time.ctime()}] Scan terminé pour port {port}"}})
-            except subprocess.TimeoutExpired:
-                process.kill()
-                stdout, _ = process.communicate()
-                output_lines = stdout.splitlines()
-                output_full_string = stdout.lower()
-                event_queue.put({'event': 'thread_update',
-                                 'data': {'thread_id': thread_id,
-                                          'message': f"[{time.ctime()}] Scan (sub) timeout après 6s pour port {port}"}})
-                all_outputs.append(cmd_str)
-                continue
+            output_full_string = "\n".join(output_lines).lower()
 
             # 1. Vérifier si une erreur de connexion a été explicitement trouvée
             is_failed = False
@@ -142,12 +127,7 @@ class CurlScanner(ScannerInterface):
                 all_banners[port] = banner
 
             # 3. Envoyer TOUTE la sortie au tile, pour débogage
-            for line in output_lines:
-                event_queue.put({'event': 'thread_update',
-                                 'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] {line.strip()}"}})
-
-            # 4. (Fin de la boucle)
-            all_outputs.append(cmd_str)
+            self._send_output_to_queue(output_lines, thread_id, event_queue)
 
         details = {"ports": all_ports, "banners": all_banners}
 

@@ -1,13 +1,17 @@
+import sys
+import os
 import subprocess
 import time
 from typing import List, Dict
 
 import yaml
 
-from ScannerInterface import ScannerInterface, ScanResult
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+from BaseSubprocessScanner import BaseSubprocessScanner
+from ScannerInterface import ScanResult
 
 
-class MasscanScanner(ScannerInterface):
+class MasscanScanner(BaseSubprocessScanner):
 
     def load_strategies(self) -> Dict[str, List[str]]:
         try:
@@ -44,11 +48,9 @@ class MasscanScanner(ScannerInterface):
         try:
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
 
+            # Enregistrer le processus dans le process_manager
             if self.process_manager is not None:
-                if isinstance(self.process_manager, list):
-                    self.process_manager.append(process)
-                else:
-                    self.process_manager.register(process, "masscan", self.strategy, ip, thread_id)
+                self.process_manager.register(process, "masscan", self.strategy, ip, thread_id)
         except Exception as e:
             event_queue.put({'event': 'thread_update',
                              'data': {'thread_id': thread_id,
