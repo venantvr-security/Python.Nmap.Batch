@@ -62,7 +62,8 @@ source.addEventListener('thread_update', (event) => {
                     <div class="card-body"></div>
                 </div>
             `;
-            tilesContainer.appendChild(tile);
+            // Insérer la nouvelle tuile en premier (sens anti-horaire)
+            tilesContainer.insertBefore(tile, tilesContainer.firstChild);
             threadTiles[thread_id] = tile.querySelector('.card-body');
             /* setTimeout(() => {
                 if (activeThreads.has(thread_id) && threadTiles[thread_id]) {

@@ -36,7 +36,13 @@ class Hping3Scanner(BaseSubprocessScanner):
 
         # Vérifier si <ports> est présent et utiliser self.ports
         if '<ports>' in strategy and self.ports:
-            ports_to_scan = self.parse_ports(self.ports)  # Utiliser parse_ports de la classe mère
+            try:
+                ports_to_scan = self.parse_ports(self.ports)
+            except ValueError as e:
+                event_queue.put({'event': 'thread_update',
+                                 'data': {'thread_id': thread_id,
+                                          'message': f"[{time.ctime()}] Erreur parsing ports: {str(e)}"}})
+                return ip, False, f"Invalid ports: {str(e)}", {}, {}
         else:
             # Sinon, chercher -p dans la stratégie
             try:
@@ -62,7 +68,16 @@ class Hping3Scanner(BaseSubprocessScanner):
 
             # Construire la commande en remplaçant <ports> par le port actuel
             cmd_template = [arg if arg != '<ports>' else str(port) for arg in strategy]
-            cmd = ["/usr/sbin/hping3"] + [ip] + cmd_template + ["-c", "10"]  # Limite à 10 paquets
+
+            try:
+                hping3_path = self._get_command_path("hping3", ["/usr/sbin/hping3", "/usr/bin/hping3"])
+            except FileNotFoundError as e:
+                event_queue.put({'event': 'thread_update',
+                                 'data': {'thread_id': thread_id,
+                                          'message': f"[{time.ctime()}] {str(e)}"}})
+                return ip, False, str(e), {"ports": all_ports}, {"commands": all_commands}
+
+            cmd = [hping3_path] + [ip] + cmd_template + ["-c", "10"]  # Limite à 10 paquets
 
             # Utiliser la méthode factorisée _run_command
             success, error, output_lines = self._run_command(
@@ -90,7 +105,7 @@ class Hping3Scanner(BaseSubprocessScanner):
                     break
 
         # Résultats finaux
-        details = {"ports": list(set(all_ports))}
+        details = {"ports": sorted(set(all_ports))}
         if all_ports:
             event_queue.put({'event': 'thread_update',
                              'data': {'thread_id': thread_id,

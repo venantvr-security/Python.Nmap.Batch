@@ -36,7 +36,16 @@ class NmapScanner(ScannerInterface):
             cmd_template = strategy  # Si pas de <ports>, utiliser la stratégie telle quelle
 
         # Construire la commande finale sans sudo
-        cmd = ["/usr/bin/nmap"] + [ip] + cmd_template
+        import shutil
+        nmap_path = shutil.which("nmap") or "/usr/bin/nmap"
+        if not shutil.which(nmap_path):
+            error = "Commande 'nmap' introuvable. Installez-la ou vérifiez votre PATH."
+            event_queue.put({'event': 'thread_update',
+                             'data': {'thread_id': thread_id,
+                                      'message': f"[{time.ctime()}] {error}"}})
+            return ip, False, error, {}, {}
+
+        cmd = [nmap_path] + [ip] + cmd_template
 
         cmd_str = " ".join(cmd)
         event_queue.put({'event': 'thread_update',
@@ -59,11 +68,9 @@ class NmapScanner(ScannerInterface):
             # bufsize=1 pour forcer le line-buffering
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
 
+            # Enregistrer le processus dans le process_manager
             if self.process_manager is not None:
-                if isinstance(self.process_manager, list):
-                    self.process_manager.append(process)
-                else:
-                    self.process_manager.register(process, "nmap", self.strategy, ip, thread_id)
+                self.process_manager.register(process, "nmap", self.strategy, ip, thread_id)
 
             event_queue.put({'event': 'thread_update',
                              'data': {'thread_id': thread_id,
@@ -107,7 +114,16 @@ class NmapScanner(ScannerInterface):
             if buffer:  # Envoyer le reste du buffer
                 event_queue.put({'event': 'thread_update', 'data': {'thread_id': thread_id, 'message': "\n".join(buffer)}})
 
-            process.wait()
+            try:
+                process.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait()
+                error = "Nmap timeout lors de l'attente de fin"
+                event_queue.put({'event': 'thread_update',
+                                 'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] {error}"}})
+                return ip, False, error, {}, {"command": cmd_str}
+
             returncode = process.returncode
 
         except Exception as e:
@@ -118,37 +134,48 @@ class NmapScanner(ScannerInterface):
 
         # Pas besoin d'envoyer les lignes ici, elles ont été streamées
         for line in output_lines:
-            # event_queue.put({'event': 'thread_update',
-            #                  'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] {line.strip()}"}}) # Redondant
             try:
-                if "open port" in line:
+                # Parsing des ports ouverts
+                if "open port" in line or ("open" in line and "/" in line):
                     parts = line.split()
-                    if len(parts) > 4 and '/' in parts[4]:
-                        port = int(parts[4].split('/')[0])
-                        ports.append(port)
-                if "OS details" in line and "OS details: " in line:
-                    os_info = line.split("OS details: ")[1].strip()
+                    for part in parts:
+                        if '/' in part:
+                            port_str = part.split('/')[0]
+                            if port_str.isdigit():
+                                port = int(port_str)
+                                if 1 <= port <= 65535:  # Validation range
+                                    ports.append(port)
+                                    # Extraire version si disponible
+                                    if len(parts) > 2:
+                                        version = " ".join(parts[2:])
+                                        versions[port] = version
+                                break
+
+                # OS detection
+                if "OS details:" in line:
+                    os_info = line.split("OS details:")[1].strip()
                 elif "Too many fingerprints match this host" in line:
-                    os_info = "Too many fingerprints match this host to give specific OS details"
-                if "MAC Address" in line:
-                    mac_address = line.split("MAC Address: ")[1].split()[0]
-                if "Nmap scan report for" in line and len(line.split()) > 4:
-                    lan_name = line.split()[4].strip("()")
-                if "Service Info" in line or ("open" in line and "/" in line and "version" not in line.lower()):
+                    os_info = "Too many fingerprints match this host"
+
+                # MAC address
+                if "MAC Address:" in line:
+                    mac_parts = line.split("MAC Address:")
+                    if len(mac_parts) > 1:
+                        mac_address = mac_parts[1].split()[0]
+
+                # LAN name
+                if "Nmap scan report for" in line:
                     parts = line.split()
-                    if len(parts) > 2 and "/" in parts[0]:
-                        port_str = parts[0].split('/')[0]
-                        if port_str.isdigit():
-                            port = int(port_str)
-                            version = " ".join(parts[2:]) if len(parts) > 2 else "Unknown"
-                            versions[port] = version
+                    if len(parts) > 4:
+                        lan_name = parts[4].strip("()")
+
+                # Vulns
                 if "VULNERABLE" in line:
                     vulns.append(line.strip())
-            except (IndexError, ValueError) as e:
-                event_queue.put({'event': 'thread_update',
-                                 'data': {'thread_id': thread_id,
-                                          'message': f"[{time.ctime()}] Erreur parsing ligne '{line}': {str(e)}"}})
-                continue  # Passe à la ligne suivante en cas d’erreur
+
+            except (IndexError, ValueError, AttributeError) as e:
+                # Ignorer les lignes mal formées silencieusement
+                continue
 
         extra = {"command": cmd_str}
         if mac_address:

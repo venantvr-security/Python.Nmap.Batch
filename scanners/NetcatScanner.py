@@ -36,7 +36,13 @@ class NetcatScanner(BaseSubprocessScanner):
 
         # Vérifier si <ports> est présent et utiliser self.ports
         if '<ports>' in strategy and self.ports:
-            ports_to_scan = self.parse_ports(self.ports)  # Utiliser parse_ports de la classe mère
+            try:
+                ports_to_scan = self.parse_ports(self.ports)
+            except ValueError as e:
+                event_queue.put({'event': 'thread_update',
+                                 'data': {'thread_id': thread_id,
+                                          'message': f"[{time.ctime()}] Erreur parsing ports: {str(e)}"}})
+                return ip, False, f"Invalid ports: {str(e)}", {}, {}
         else:
             # Sinon, chercher -p dans la stratégie
             try:
@@ -72,7 +78,15 @@ class NetcatScanner(BaseSubprocessScanner):
                 cmd_template.pop(port_index)  # Retirer -p
 
             # Construire la commande finale sans sudo
-            cmd = ["/bin/nc"] + cmd_template + [ip, str(port)]
+            try:
+                nc_path = self._get_command_path("nc", ["/bin/nc", "/usr/bin/nc"])
+            except FileNotFoundError as e:
+                event_queue.put({'event': 'thread_update',
+                                 'data': {'thread_id': thread_id,
+                                          'message': f"[{time.ctime()}] {str(e)}"}})
+                return ip, False, str(e), {"ports": all_ports}, {"commands": all_commands}
+
+            cmd = [nc_path] + cmd_template + [ip, str(port)]
 
             # Utiliser la méthode factorisée _run_command
             success, error, output_lines = self._run_command(
@@ -100,7 +114,7 @@ class NetcatScanner(BaseSubprocessScanner):
                     break
 
         # Résultats finaux
-        details = {"ports": sorted(list(set(all_ports)))}
+        details = {"ports": sorted(set(all_ports))}
         if all_ports:
             event_queue.put({'event': 'thread_update',
                              'data': {'thread_id': thread_id,

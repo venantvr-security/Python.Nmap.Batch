@@ -39,7 +39,15 @@ class MasscanScanner(BaseSubprocessScanner):
         else:
             cmd_template = strategy  # Si pas de <ports>, utiliser la stratégie telle quelle
 
-        cmd = ["/usr/bin/masscan"] + [ip] + cmd_template
+        try:
+            masscan_path = self._get_command_path("masscan", ["/usr/bin/masscan"])
+        except FileNotFoundError as e:
+            event_queue.put({'event': 'thread_update',
+                             'data': {'thread_id': thread_id,
+                                      'message': f"[{time.ctime()}] {str(e)}"}})
+            return ip, False, str(e), {}, {}
+
+        cmd = [masscan_path] + [ip] + cmd_template
         cmd_str = " ".join(cmd)  # Commande sous forme de chaîne pour persistance
         event_queue.put({'event': 'thread_update',
                          'data': {'thread_id': thread_id,
@@ -71,9 +79,12 @@ class MasscanScanner(BaseSubprocessScanner):
 
             if "open" in line:
                 try:
-                    port = int(line.split()[3].split('/')[0])
-                    ports.append(port)
+                    parts = line.split()
+                    if len(parts) >= 4 and '/' in parts[3]:
+                        port = int(parts[3].split('/')[0])
+                        ports.append(port)
                 except (IndexError, ValueError):
+                    # Format masscan non reconnu, ignorer la ligne
                     pass
 
             if time.time() - last_emit >= 0.5:
@@ -85,9 +96,18 @@ class MasscanScanner(BaseSubprocessScanner):
         if buffer:
             event_queue.put({'event': 'thread_update', 'data': {'thread_id': thread_id, 'message': "\n".join(buffer)}})
 
-        process.wait()
+        try:
+            process.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait()
+            error = "Masscan timeout lors de l'attente de fin"
+            event_queue.put({'event': 'thread_update',
+                             'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] {error}"}})
+            return ip, False, error, {"ports": sorted(set(ports))}, {"command": cmd_str}
+
         if process.returncode == 0:
-            details = {"ports": sorted(list(set(ports)))}
+            details = {"ports": sorted(set(ports))}
             if ports:
                 event_queue.put({'event': 'thread_update',
                                  'data': {'thread_id': thread_id,

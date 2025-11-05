@@ -1,6 +1,8 @@
+import shutil
 import subprocess
 import time
-from typing import List, Tuple, Optional
+from queue import Queue
+from typing import List, Tuple, Optional, Callable
 
 from ScannerInterface import ScannerInterface
 
@@ -8,14 +10,41 @@ from ScannerInterface import ScannerInterface
 class BaseSubprocessScanner(ScannerInterface):
     """Classe de base factorisant la logique commune de gestion des sous-processus."""
 
+    def _get_command_path(self, command: str, fallback_paths: List[str] = None) -> str:
+        """
+        Trouve le chemin de la commande avec shutil.which() ou fallback.
+
+        Args:
+            command: Nom de la commande (ex: 'curl')
+            fallback_paths: Liste de chemins de secours (ex: ['/usr/bin/curl', '/bin/curl'])
+
+        Returns:
+            Chemin complet de la commande
+
+        Raises:
+            FileNotFoundError: Si la commande n'est pas trouvée
+        """
+        # Essayer shutil.which()
+        cmd_path = shutil.which(command)
+        if cmd_path:
+            return cmd_path
+
+        # Essayer les fallbacks
+        if fallback_paths:
+            for path in fallback_paths:
+                if shutil.which(path):
+                    return path
+
+        raise FileNotFoundError(f"Commande '{command}' introuvable. Installez-la ou vérifiez votre PATH.")
+
     def _run_command(
             self,
             cmd: List[str],
             ip: str,
             port: int,
             thread_id: str,
-            event_queue,
-            stop_flag,
+            event_queue: Queue,
+            stop_flag: Callable[[], bool],
             timeout: int = 5,
             capture_output: bool = True
     ) -> Tuple[bool, Optional[str], List[str]]:
@@ -115,7 +144,7 @@ class BaseSubprocessScanner(ScannerInterface):
             })
             return False, "Timeout", output_lines
 
-    def _send_output_to_queue(self, output_lines: List[str], thread_id: str, event_queue):
+    def _send_output_to_queue(self, output_lines: List[str], thread_id: str, event_queue: Queue):
         """Envoie les lignes de sortie à la queue d'événements."""
         for line in output_lines:
             if line.strip():

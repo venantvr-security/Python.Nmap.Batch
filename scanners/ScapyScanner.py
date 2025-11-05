@@ -155,7 +155,13 @@ class ScapyScanner(ScannerInterface):
 
         # Parser les ports
         if strategy.get("ports") == "<ports>" and self.ports:
-            ports_to_scan = self.parse_ports(self.ports)
+            try:
+                ports_to_scan = self.parse_ports(self.ports)
+            except ValueError as e:
+                event_queue.put({'event': 'thread_update',
+                                 'data': {'thread_id': thread_id,
+                                          'message': f"[{time.ctime()}] Erreur parsing ports: {str(e)}"}})
+                return ip, False, f"Invalid ports: {str(e)}", {}, {}
         else:
             try:
                 port = int(strategy.get("ports", 443))
@@ -174,8 +180,8 @@ class ScapyScanner(ScannerInterface):
                          'data': {'thread_id': thread_id,
                                   'message': f"[{time.ctime()}] Début du scan Scapy ({scan_type}) de {ip} avec {len(ports_to_scan)} ports"}})
 
-        # Boucler sur chaque port
-        for port in ports_to_scan:
+        # Boucler sur chaque port avec enumerate pour éviter O(n²)
+        for port_index, port in enumerate(ports_to_scan):
             if stop_flag():
                 event_queue.put({'event': 'thread_update',
                                  'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Scan de {ip} annulé"}})
@@ -184,7 +190,7 @@ class ScapyScanner(ScannerInterface):
             # ... (logique de délai, decoys, construction de paquet reste identique) ...
             if strategy.get("timing_pattern"):
                 actual_delay = AdvancedEvasion.get_polymorphic_delay(
-                    ports_to_scan.index(port), delay, strategy["timing_pattern"]
+                    port_index, delay, strategy["timing_pattern"]
                 )
             else:
                 actual_delay = random.uniform(0, delay)
@@ -200,9 +206,9 @@ class ScapyScanner(ScannerInterface):
             if isinstance(packet, list):
                 for frag in packet[:-1]:
                     send(frag, verbose=0)
-                response = sr1(packet[-1], timeout=timeout, verbose=0)
+                response = sr1(packet[-1], timeout=timeout, retry=0, verbose=0)
             else:
-                response = sr1(packet, timeout=timeout, verbose=0)
+                response = sr1(packet, timeout=timeout, retry=0, verbose=0)
 
             status, is_open, flags_str = "unknown", False, "none"
 
@@ -217,22 +223,16 @@ class ScapyScanner(ScannerInterface):
                     status, is_open = "filtered", False
                 flags_str = "none"
 
-            # Stocker le résultat
+            # Stocker TOUS les résultats (open, closed, filtered)
             port_data = {"port": port, "status": status, "response_flags": flags_str}
+            port_results.append(port_data)
 
-            if is_open:
-                port_results.append(port_data)  # Ajouter le dictionnaire
-                event_queue.put({'event': 'thread_update',
-                                 'data': {'thread_id': thread_id,
-                                          'message': f"[{time.ctime()}] Port {port} {status} (flags: {flags_str})"}})
+            event_queue.put({'event': 'thread_update',
+                             'data': {'thread_id': thread_id,
+                                      'message': f"[{time.ctime()}] Port {port} {status} (flags: {flags_str})"}})
 
-                if send_rst and scan_type == "syn" and response and response.haslayer(TCP):
-                    self._send_rst(ip, port, sport, response[TCP].ack)
-            else:
-                # Log mais ne stocke pas les ports fermés/filtrés (sauf si vous le souhaitez)
-                event_queue.put({'event': 'thread_update',
-                                 'data': {'thread_id': thread_id,
-                                          'message': f"[{time.ctime()}] Port {port} {status} (flags: {flags_str})"}})
+            if is_open and send_rst and scan_type == "syn" and response and response.haslayer(TCP):
+                self._send_rst(ip, port, sport, response[TCP].ack)
 
         # Trier les résultats par numéro de port
         sorted_results = sorted(port_results, key=lambda p: p['port'])

@@ -2,14 +2,15 @@ import os
 import random
 import sys
 import time
-from typing import Dict, Tuple
+from typing import Dict, List
 
 import yaml
 from scapy.layers.inet import IP, TCP
 from scapy.packet import Packet
-from scapy.sendrecv import sr1, send
+from scapy.sendrecv import send
 from scapy.utils import rdpcap
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from ScannerInterface import ScannerInterface, ScanResult
 
 sys.path.insert(0, os.path.dirname(__file__))
@@ -59,7 +60,8 @@ class Pcap2(ScannerInterface):
         return base_ttl
 
     # noinspection PyMethodMayBeStatic
-    def _build_packet_from_template(self, strategy: Dict, ip: str, port: int, sport: int) -> Packet:
+    def _load_and_modify_packets(self, strategy: Dict, ip: str, port: int, sport: int):
+        """Charge tous les paquets d'un fichier PCAP et les modifie pour la cible."""
         template_name = strategy.get("template_pcap")
         template_path = os.path.join(PCAP_TEMPLATES_DIR, template_name)
 
@@ -68,31 +70,30 @@ class Pcap2(ScannerInterface):
             if not template_packets:
                 raise ValueError(f"Le fichier template {template_name} est vide.")
 
-            pkt = template_packets[0].copy()
+            modified_packets = []
+            for pkt in template_packets:
+                pkt_copy = pkt.copy()
 
-            if pkt.haslayer(IP):
-                pkt[IP].dst = ip
-                if pkt[IP].src:
-                    del pkt[IP].src
+                # Modifier l'IP de destination
+                if pkt_copy.haslayer(IP):
+                    pkt_copy[IP].dst = ip
+                    # Supprimer l'IP source pour utiliser celle de la machine
+                    if pkt_copy[IP].src:
+                        del pkt_copy[IP].src
+                    del pkt_copy[IP].chksum
 
-            if pkt.haslayer(TCP):
-                pkt[TCP].dport = port
-                pkt[TCP].sport = sport
+                # Modifier le port de destination si TCP
+                if pkt_copy.haslayer(TCP):
+                    pkt_copy[TCP].dport = port
+                    pkt_copy[TCP].sport = sport
+                    del pkt_copy[TCP].chksum
 
-            if pkt.haslayer(IP):
-                del pkt[IP].chksum
-            if pkt.haslayer(TCP):
-                del pkt[TCP].chksum
+                modified_packets.append(pkt_copy)
 
-            return pkt
+            return modified_packets
 
         except FileNotFoundError:
             raise FileNotFoundError(f"Fichier template PCAP introuvable : {template_path}")
-
-    def _build_packet(self, ip: str, port: int, strategy: Dict, sport: int) -> Packet:
-        if "template_pcap" not in strategy:
-            raise ValueError("Pcap2 nécessite un template_pcap dans la stratégie")
-        return self._build_packet_from_template(strategy, ip, port, sport)
 
     def _send_decoys(self, ip: str, port: int, strategy: Dict, sport: int):
         decoys_count = strategy.get("decoys", 0)
@@ -108,50 +109,6 @@ class Pcap2(ScannerInterface):
             decoy_packet = IP(src=decoy_ip, dst=ip, ttl=ttl) / TCP(sport=sport, dport=port, flags=tcp_flags)
             send(decoy_packet, verbose=0)
 
-    # noinspection PyMethodMayBeStatic
-    def _send_rst(self, ip: str, port: int, sport: int, ack_seq: int):
-        rst_packet = IP(dst=ip) / TCP(sport=sport, dport=port, flags="R", seq=ack_seq)
-        send(rst_packet, verbose=0)
-
-    # noinspection PyMethodMayBeStatic
-    def _interpret_response(self, response, scan_type: str) -> Tuple[str, bool, str]:
-        """Interprète la réponse selon le type de scan et retourne (status, is_open, flags_str)"""
-        # Note: Cette fonction assume que 'response' n'est PAS None.
-
-        if not response:
-            # Ce cas ne devrait pas arriver si le scan() gère None
-            return "filtered", False, "none"
-
-        if not response.haslayer(TCP):
-            return "no_tcp", False, "none"
-
-        tcp_layer = response[TCP]
-        flags = tcp_layer.flags
-        flags_str = str(tcp_layer.flags)  # Convertit l'objet Flags en string (ex: "SA", "R")
-
-        if scan_type == "syn":
-            if flags & 0x12 == 0x12:  # SYN-ACK
-                return "open", True, flags_str
-            elif flags & 0x14 == 0x14:  # RST-ACK
-                return "closed", False, flags_str
-        elif scan_type in ["fin", "xmas", "null"]:
-            if flags & 0x14 == 0x14:  # RST
-                return "closed", False, flags_str
-            else:
-                # A reçu un paquet inattendu (non-RST)
-                return "open|filtered", True, flags_str
-        elif scan_type == "ack":
-            if flags & 0x04:  # RST
-                return "unfiltered", False, flags_str
-            else:
-                return "filtered", False, flags_str
-        elif scan_type == "maimon":
-            if flags & 0x14 == 0x14:  # RST
-                return "closed", False, flags_str
-            else:
-                return "open|filtered", True, flags_str
-
-        return "unknown", False, flags_str
 
     # noinspection PyTypeHints
     def scan(self, ip: str, thread_id: str, event_queue, stop_flag) -> ScanResult:
@@ -164,7 +121,13 @@ class Pcap2(ScannerInterface):
         scan_type = strategy.get("scan_type", "syn")
 
         if strategy.get("ports") == "<ports>" and self.ports:
-            ports_to_scan = self.parse_ports(self.ports)
+            try:
+                ports_to_scan = self.parse_ports(self.ports)
+            except ValueError as e:
+                event_queue.put({'event': 'thread_update',
+                                 'data': {'thread_id': thread_id,
+                                          'message': f"[{time.ctime()}] Erreur parsing ports: {str(e)}"}})
+                return ip, False, f"Invalid ports: {str(e)}", {}, None
         else:
             try:
                 port = int(strategy.get("ports", 443))
@@ -173,8 +136,7 @@ class Pcap2(ScannerInterface):
                 ports_to_scan = [443]
 
         delay = float(strategy.get("delay", 0.5))
-        timeout = float(strategy.get("timeout", 2))
-        send_rst = strategy.get("send_rst", False)
+        inter_packet_delay = float(strategy.get("inter_packet_delay", 0.001))  # Délai entre paquets
 
         port_results = []
 
@@ -182,7 +144,7 @@ class Pcap2(ScannerInterface):
                          'data': {'thread_id': thread_id,
                                   'message': f"[{time.ctime()}] Début du scan Pcap2 ({scan_type}) de {ip} avec {len(ports_to_scan)} ports"}})
 
-        for port in ports_to_scan:
+        for port_index, port in enumerate(ports_to_scan):
             if stop_flag():
                 event_queue.put({'event': 'thread_update',
                                  'data': {'thread_id': thread_id, 'message': f"[{time.ctime()}] Scan de {ip} annulé"}})
@@ -190,7 +152,7 @@ class Pcap2(ScannerInterface):
 
             if strategy.get("timing_pattern"):
                 actual_delay = AdvancedEvasion.get_polymorphic_delay(
-                    ports_to_scan.index(port), delay, strategy["timing_pattern"]
+                    port_index, delay, strategy["timing_pattern"]
                 )
             else:
                 actual_delay = random.uniform(0, delay)
@@ -200,47 +162,44 @@ class Pcap2(ScannerInterface):
             self._send_decoys(ip, port, strategy, sport)
 
             try:
-                packet = self._build_packet(ip, port, strategy, sport)
+                # Charger et modifier TOUS les paquets du fichier PCAP
+                packets = self._load_and_modify_packets(strategy, ip, port, sport)
+
+                # Validation : vérifier que des paquets ont été chargés
+                if not packets:
+                    event_queue.put({'event': 'thread_update',
+                                     'data': {'thread_id': thread_id,
+                                              'message': f"[{time.ctime()}] Aucun paquet dans le template PCAP pour {ip}:{port}"}})
+                    continue
+
+                event_queue.put({'event': 'thread_update',
+                                 'data': {'thread_id': thread_id,
+                                          'message': f"[{time.ctime()}] Envoi de {len(packets)} paquets vers {ip}:{port}"}})
+
+                # Envoyer tous les paquets sans attendre de réponse (mode replay)
+                for pkt in packets:
+                    if stop_flag():
+                        break
+
+                    if strategy.get("advanced_evasion", False):
+                        pkt = AdvancedEvasion.apply_advanced_evasion(pkt, strategy)
+
+                    send(pkt, verbose=0)
+                    time.sleep(inter_packet_delay)
+
+                # Marquer le port comme "sent" (pas de détection d'ouverture)
+                port_data = {"port": port, "status": "sent", "response_flags": "none", "packets_sent": len(packets)}
+                port_results.append(port_data)
+
+                event_queue.put({'event': 'thread_update',
+                                 'data': {'thread_id': thread_id,
+                                          'message': f"[{time.ctime()}] Port {port} - {len(packets)} paquets envoyés"}})
+
             except Exception as e:
                 event_queue.put({'event': 'thread_update',
                                  'data': {'thread_id': thread_id,
-                                          'message': f"[{time.ctime()}] Erreur build packet: {e}"}})
-                continue  # Passe au port suivant
-
-            if strategy.get("advanced_evasion", False):
-                packet = AdvancedEvasion.apply_advanced_evasion(packet, strategy)
-
-            response = sr1(packet, timeout=timeout, verbose=0)
-
-            status, is_open, flags_str = "unknown", False, "none"
-
-            if response:
-                # Une réponse a été reçue
-                status, is_open, flags_str = self._interpret_response(response, scan_type)
-            else:
-                # Aucune réponse (Timeout)
-                if scan_type in ["fin", "xmas", "null", "maimon"]:
-                    status, is_open = "open|filtered", True
-                else:  # SYN, ACK
-                    status, is_open = "filtered", False
-                flags_str = "none"
-
-            # Stocker le résultat
-            port_data = {"port": port, "status": status, "response_flags": flags_str}
-
-            if is_open:
-                port_results.append(port_data)  # Ajouter le dictionnaire
-                event_queue.put({'event': 'thread_update',
-                                 'data': {'thread_id': thread_id,
-                                          'message': f"[{time.ctime()}] Port {port} {status} (flags: {flags_str})"}})
-
-                if send_rst and scan_type == "syn" and response and response.haslayer(TCP):
-                    self._send_rst(ip, port, sport, response[TCP].ack)
-            else:
-                event_queue.put({'event': 'thread_update',
-                                 'data': {'thread_id': thread_id,
-                                          'message': f"[{time.ctime()}] Port {port} {status} (flags: {flags_str})"}})
-
+                                          'message': f"[{time.ctime()}] Erreur envoi packets: {e}"}})
+                continue
         sorted_results = sorted(port_results, key=lambda p: p['port'])
         details = {"ports": sorted_results}
 

@@ -49,7 +49,13 @@ class CurlScanner(BaseSubprocessScanner):
                                       'message': f"[{time.ctime()}] Erreur : <ports> ou <ip> manquant dans l’URL de la stratégie"}})
             return ip, False, "Invalid strategy: missing <ports> or <ip> in URL", {}, {}
 
-        ports_to_scan = self.parse_ports(self.ports)  # Utiliser parse_ports de la classe mère
+        try:
+            ports_to_scan = self.parse_ports(self.ports)
+        except ValueError as e:
+            event_queue.put({'event': 'thread_update',
+                             'data': {'thread_id': thread_id,
+                                      'message': f"[{time.ctime()}] Erreur parsing ports: {str(e)}"}})
+            return ip, False, f"Invalid ports: {str(e)}", {}, {}
 
         # Initialiser les résultats globaux
         all_ports = []
@@ -83,7 +89,15 @@ class CurlScanner(BaseSubprocessScanner):
             # Forcer des timeouts courts
             timeout_flags = ["--connect-timeout", "3", "-m", "5"]
 
-            cmd = ["/usr/bin/curl"] + timeout_flags + cmd_template
+            try:
+                curl_path = self._get_command_path("curl", ["/usr/bin/curl"])
+            except FileNotFoundError as e:
+                event_queue.put({'event': 'thread_update',
+                                 'data': {'thread_id': thread_id,
+                                          'message': f"[{time.ctime()}] {str(e)}"}})
+                return ip, False, str(e), {}, {}
+
+            cmd = [curl_path] + timeout_flags + cmd_template
 
             # Utiliser la méthode factorisée _run_command
             success, error, output_lines = self._run_command(
@@ -99,9 +113,7 @@ class CurlScanner(BaseSubprocessScanner):
 
             all_outputs.append(" ".join(cmd))
 
-            if not success and error == "Timeout":
-                continue
-            elif not success:
+            if not success:
                 continue
 
             output_full_string = "\n".join(output_lines).lower()
