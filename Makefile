@@ -24,6 +24,25 @@ run: setup ## Démarre l'application Flask.
 	@echo "Démarrage du serveur Flask sur http://localhost:5001..."
 	@$(VENV_PYTHON) main.py
 
+.PHONY: test
+test: setup ## Exécute tous les tests avec pytest.
+	@echo "Exécution des tests..."
+	@$(VENV_PYTHON) -m pytest tests/ -v
+
+.PHONY: test-coverage
+test-coverage: setup ## Exécute les tests avec couverture de code.
+	@echo "Exécution des tests avec couverture..."
+	@$(VENV_PYTHON) -m pytest tests/ --cov=scanners --cov-report=term-missing --cov-report=html
+	@echo "Rapport de couverture généré dans htmlcov/index.html"
+
+.PHONY: test-quick
+test-quick: setup ## Exécute les tests sans verbosité.
+	@$(VENV_PYTHON) -m pytest tests/ -q
+
+.PHONY: test-failed
+test-failed: setup ## Relance uniquement les tests échoués.
+	@$(VENV_PYTHON) -m pytest tests/ --lf -v
+
 .PHONY: capabilities
 capabilities: ## Applique les capacités Linux aux outils réseau pour une exécution sans sudo.
 	@echo "Configuration des capacités pour les scanners réseau..."
