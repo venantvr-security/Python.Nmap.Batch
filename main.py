@@ -749,11 +749,6 @@ def get_ip_ranges():
     return jsonify({"ip_ranges": default_ip_ranges})
 
 
-@app.route('/processes')
-def processes():
-    return render_template('processes.html')
-
-
 @app.route('/api/processes', methods=['GET'])
 def get_processes():
     """Retourne la liste des processus actifs avec métadonnées."""

@@ -478,10 +478,66 @@ function showSnowflakeInfo() {
 }
 
 function showProcesses() {
-    const iframe = document.getElementById('processes-iframe');
-    iframe.src = '/processes';
-    const modal = new bootstrap.Modal(document.getElementById('processesModal'));
-    modal.show();
+    fetch('/api/processes')
+        .then(response => response.json())
+        .then(processes => {
+            const modalBody = document.getElementById('processes-modal-body');
+            if (processes.length === 0) {
+                modalBody.innerHTML = '<p>Aucun processus actif.</p>';
+            } else {
+                const table = `
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>PID</th>
+                                <th>Scanner</th>
+                                <th>Stratégie</th>
+                                <th>Cible</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${processes.map(p => `
+                                <tr>
+                                    <td>${p.pid}</td>
+                                    <td>${p.scanner_type}</td>
+                                    <td>${p.strategy}</td>
+                                    <td>${p.target_ip}</td>
+                                    <td><button class="btn btn-danger btn-sm" onclick="killProcess('${p.process_id}')">Kill</button></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+                modalBody.innerHTML = table;
+            }
+            const modal = new bootstrap.Modal(document.getElementById('processesModal'));
+            modal.show();
+        })
+        .catch(error => {
+            console.error('Erreur chargement processus:', error);
+            const modalBody = document.getElementById('processes-modal-body');
+            modalBody.innerHTML = '<p class="text-danger">Erreur lors du chargement des processus.</p>';
+            const modal = new bootstrap.Modal(document.getElementById('processesModal'));
+            modal.show();
+        });
+}
+
+function killProcess(processId) {
+    fetch(`/api/processes/${processId}/kill`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                showProcesses(); // Recharger la liste
+            } else {
+                alert('Erreur: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Erreur kill process:', error);
+            alert('Erreur lors de la terminaison du processus.');
+        });
 }
 
 function showAIEvasionInfo() {

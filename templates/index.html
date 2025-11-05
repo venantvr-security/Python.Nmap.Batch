@@ -24,10 +24,6 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
-                    <input class="form-control form-control-sm" id="ip-ranges-input" placeholder="192.168.1.0/24" style="width: 180px; margin-top: 8px;"
-                           type="text">
-                </li>
-                <li class="nav-item">
                     <input class="form-control form-control-sm" id="search-filter" placeholder="🔍 Filter strategies..." style="width: 200px; margin-top: 8px;"
                            type="text">
                 </li>
@@ -36,6 +32,12 @@
                         <span id="ports-nav-text">Ports</span>
                     </a>
                     <ul class="dropdown-menu" id="ports-list-nav"></ul>
+                </li>
+                <li class="nav-item">
+                    <div class="form-check mt-2 ms-3">
+                        <input class="form-check-input" id="randomize-ports-checkbox" type="checkbox">
+                        <label class="form-check-label text-light" for="randomize-ports-checkbox">Random</label>
+                    </div>
                 </li>
                 <li class="nav-item dropdown d-flex align-items-center">
                     <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" id="evasionDropdown" role="button">
@@ -195,7 +197,6 @@
                 </li>
             </ul>
             <div class="d-flex align-items-center gap-3">
-                <button class="btn btn-sm btn-outline-info" onclick="showProcesses()">📊 Processes</button>
                 <div class="badge bg-secondary" id="tor-status" style="font-size: 0.95rem; padding: 8px 16px;">
                     <span id="tor-indicator">⏳</span> <span id="tor-status-text">Checking...</span>
                 </div>
@@ -248,6 +249,24 @@
             </div>
             <div class="modal-body" id="doc-modal-body" style="max-height: 80vh; overflow-y: auto;">
                 <!-- Contenu du MD chargé ici -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Processes Modal -->
+<div aria-hidden="true" aria-labelledby="processesModalLabel" class="modal fade" id="processesModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="processesModalLabel">Processus Actifs</h5>
+                <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
+            </div>
+            <div class="modal-body" id="processes-modal-body">
+                <!-- Contenu chargé par JS -->
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Fermer</button>
@@ -320,21 +339,6 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Fermer</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Popup pour Processes -->
-<div aria-hidden="true" aria-labelledby="processesModalLabel" class="modal fade" id="processesModal" tabindex="-1">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="processesModalLabel">Processes</h5>
-                <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
-            </div>
-            <div class="modal-body" style="height: 80vh; overflow: hidden; padding: 0;">
-                <iframe id="processes-iframe" src="" style="width: 100%; height: 100%; border: none;"></iframe>
             </div>
         </div>
     </div>
