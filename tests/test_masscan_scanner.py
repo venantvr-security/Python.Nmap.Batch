@@ -6,10 +6,10 @@ Ces tests vérifient que le parsing de sortie masscan fonctionne correctement :
 - Parsing du format "Discovered open port X/tcp on Y"
 - Gestion des scans massifs
 """
-import sys
 import os
-from unittest.mock import Mock, patch
+import sys
 from subprocess import TimeoutExpired
+from unittest.mock import Mock, patch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
@@ -20,13 +20,13 @@ class TestMasscanScannerParsing:
     """Tests de parsing des sorties masscan."""
 
     def test_parse_ports_ouverts(
-        self,
-        ip_target,
-        thread_id,
-        event_queue,
-        stop_flag_never,
-        process_manager_mock,
-        tmp_path
+            self,
+            ip_target,
+            thread_id,
+            event_queue,
+            stop_flag_never,
+            process_manager_mock,
+            tmp_path
     ):
         """
         Scénario : Masscan détecte 3 ports ouverts (22, 80, 443).
@@ -87,13 +87,13 @@ Discovered open port 443/tcp on 192.168.1.100
         assert len(details["ports"]) == 3
 
     def test_parse_aucun_port_ouvert(
-        self,
-        ip_target,
-        thread_id,
-        event_queue,
-        stop_flag_never,
-        process_manager_mock,
-        tmp_path
+            self,
+            ip_target,
+            thread_id,
+            event_queue,
+            stop_flag_never,
+            process_manager_mock,
+            tmp_path
     ):
         """
         Scénario : Masscan ne détecte aucun port ouvert (firewall bloque tout).
@@ -148,13 +148,13 @@ Scanning 1 hosts [3 ports/host]
         assert len(details["ports"]) == 0, "Aucun port ne devrait être détecté"
 
     def test_parse_format_alternatif(
-        self,
-        ip_target,
-        thread_id,
-        event_queue,
-        stop_flag_never,
-        process_manager_mock,
-        tmp_path
+            self,
+            ip_target,
+            thread_id,
+            event_queue,
+            stop_flag_never,
+            process_manager_mock,
+            tmp_path
     ):
         """
         Scénario : Masscan avec format de sortie légèrement différent.
@@ -209,13 +209,13 @@ Discovered open port 8080/tcp on 192.168.1.100
         assert 8080 in details["ports"]
 
     def test_scan_avec_stop_flag(
-        self,
-        ip_target,
-        thread_id,
-        event_queue,
-        stop_flag_immediate,
-        process_manager_mock,
-        tmp_path
+            self,
+            ip_target,
+            thread_id,
+            event_queue,
+            stop_flag_immediate,
+            process_manager_mock,
+            tmp_path
     ):
         """
         Scénario : Scan interrompu par stop_flag.
@@ -263,13 +263,13 @@ Discovered open port 8080/tcp on 192.168.1.100
         assert "interrompu" in error.lower() or "cancelled" in error.lower()
 
     def test_timeout_handling(
-        self,
-        ip_target,
-        thread_id,
-        event_queue,
-        stop_flag_never,
-        process_manager_mock,
-        tmp_path
+            self,
+            ip_target,
+            thread_id,
+            event_queue,
+            stop_flag_never,
+            process_manager_mock,
+            tmp_path
     ):
         """
         Scénario : Process.wait() timeout.

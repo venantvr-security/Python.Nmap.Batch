@@ -2,23 +2,27 @@
 
 ## 📋 Vue d'ensemble
 
-Ce répertoire contient les tests unitaires pour tous les scanners réseau. Les tests utilisent des **fixtures intelligibles** qui simulent des comportements réseau réalistes (firewalls, ports ouverts/fermés/filtrés, timeouts).
+Ce répertoire contient les tests unitaires pour tous les scanners réseau. Les tests utilisent des **fixtures intelligibles** qui simulent des comportements réseau
+réalistes (firewalls, ports ouverts/fermés/filtrés, timeouts).
 
 ## 🎯 Objectifs des tests
 
 ### 1. **Vérifier l'interprétation correcte des états de ports**
-   - Port **ouvert** : Service répond correctement
-   - Port **fermé** : Service refuse la connexion (RST)
-   - Port **filtré** : Firewall bloque (aucune réponse, timeout)
+
+- Port **ouvert** : Service répond correctement
+- Port **fermé** : Service refuse la connexion (RST)
+- Port **filtré** : Firewall bloque (aucune réponse, timeout)
 
 ### 2. **Valider le parsing des sorties**
-   - Bannières de services (HTTP, SSH, etc.)
-   - Flags TCP (SYN-ACK, RST, etc.)
-   - Métadonnées (versions, OS, MAC)
+
+- Bannières de services (HTTP, SSH, etc.)
+- Flags TCP (SYN-ACK, RST, etc.)
+- Métadonnées (versions, OS, MAC)
 
 ### 3. **Tester les comportements mixtes**
-   - Scan multi-ports avec états différents
-   - Scénarios réalistes (firewall stealth, serveur web, etc.)
+
+- Scan multi-ports avec états différents
+- Scénarios réalistes (firewall stealth, serveur web, etc.)
 
 ## 🔬 Fixtures Intelligibles
 
@@ -28,36 +32,42 @@ Ce répertoire contient les tests unitaires pour tous les scanners réseau. Les 
 # noinspection PyUnresolvedReferences,PyStatementEffect
 firewall_blocks_everything
 ```
+
 → Firewall strict : tout est bloqué (scénario haute sécurité)
 
 ```python
 # noinspection PyUnresolvedReferences,PyStatementEffect
 firewall_allows_web_server
 ```
+
 → Firewall classique : HTTP/HTTPS ouverts, SSH bloqué
 
 ```python
 # noinspection PyUnresolvedReferences,PyStatementEffect
 firewall_allows_ssh_only
 ```
+
 → Serveur de gestion : seul SSH accessible
 
 ```python
 # noinspection PyUnresolvedReferences,PyStatementEffect
 firewall_stealth_mode
 ```
+
 → IDS/IPS actif : aucune réponse (mode furtif)
 
 ```python
 # noinspection PyUnresolvedReferences,PyStatementEffect
 firewall_open_relay
 ```
+
 → Serveur mal configuré : tous les ports ouverts (compromis)
 
 ```python
 # noinspection PyUnresolvedReferences,PyStatementEffect
 network_unreachable
 ```
+
 → Réseau inaccessible : timeout sur tout (câble débranché)
 
 ### Réponses Mockées
@@ -66,30 +76,35 @@ network_unreachable
 # noinspection PyUnresolvedReferences,PyStatementEffect
 curl_response_open_port
 ```
+
 → Serveur HTTP répond avec bannière (200 OK)
 
 ```python
 # noinspection PyUnresolvedReferences,PyStatementEffect
 curl_response_connection_refused
 ```
+
 → Port fermé (errno 7 - connection refused)
 
 ```python
 # noinspection PyUnresolvedReferences,PyStatementEffect
 scapy_syn_ack_response
 ```
+
 → Paquet TCP avec flags SYN-ACK (port ouvert)
 
 ```python
 # noinspection PyUnresolvedReferences,PyStatementEffect
 scapy_rst_response
 ```
+
 → Paquet TCP avec flags RST (port fermé)
 
 ```python
 # noinspection PyUnresolvedReferences,PyStatementEffect
 scapy_no_response
 ```
+
 → Timeout (port filtré par firewall)
 
 ## 🚀 Lancer les tests

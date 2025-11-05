@@ -7,9 +7,9 @@ Ces tests vérifient que ScapyScanner interprète correctement les flags TCP :
 - Aucune réponse = Port filtré
 - Scans FIN/XMAS/NULL avec logique inversée
 """
-import sys
 import os
-from unittest.mock import Mock, patch, MagicMock
+import sys
+from unittest.mock import Mock, patch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
@@ -20,13 +20,13 @@ class TestScapyScannerTCPFlags:
     """Tests d'interprétation des flags TCP par ScapyScanner."""
 
     def test_syn_scan_port_ouvert_syn_ack(
-        self,
-        ip_target,
-        thread_id,
-        event_queue,
-        stop_flag_never,
-        process_manager_mock,
-        strategy_file_scapy
+            self,
+            ip_target,
+            thread_id,
+            event_queue,
+            stop_flag_never,
+            process_manager_mock,
+            strategy_file_scapy
     ):
         """
         Scénario : SYN scan sur port 80 ouvert.
@@ -77,13 +77,13 @@ class TestScapyScannerTCPFlags:
         assert "SA" in str(port_data["response_flags"]) or port_data["response_flags"] == "SA"
 
     def test_syn_scan_port_ferme_rst_ack(
-        self,
-        ip_target,
-        thread_id,
-        event_queue,
-        stop_flag_never,
-        process_manager_mock,
-        strategy_file_scapy
+            self,
+            ip_target,
+            thread_id,
+            event_queue,
+            stop_flag_never,
+            process_manager_mock,
+            strategy_file_scapy
     ):
         """
         Scénario : SYN scan sur port 80 fermé.
@@ -128,13 +128,13 @@ class TestScapyScannerTCPFlags:
         assert port_data["status"] == "closed", "Port devrait être fermé (RST-ACK reçu)"
 
     def test_syn_scan_port_filtre_no_response(
-        self,
-        ip_target,
-        thread_id,
-        event_queue,
-        stop_flag_never,
-        process_manager_mock,
-        strategy_file_scapy
+            self,
+            ip_target,
+            thread_id,
+            event_queue,
+            stop_flag_never,
+            process_manager_mock,
+            strategy_file_scapy
     ):
         """
         Scénario : SYN scan sur port 443 filtré.
@@ -171,13 +171,13 @@ class TestScapyScannerTCPFlags:
         assert port_data["response_flags"] == "none"
 
     def test_multi_ports_comportements_mixtes(
-        self,
-        ip_target,
-        thread_id,
-        event_queue,
-        stop_flag_never,
-        process_manager_mock,
-        strategy_file_scapy
+            self,
+            ip_target,
+            thread_id,
+            event_queue,
+            stop_flag_never,
+            process_manager_mock,
+            strategy_file_scapy
     ):
         """
         Scénario : Scan de 3 ports avec états différents.
@@ -242,13 +242,13 @@ class TestScapyScannerFINScan:
     """Tests pour FIN scan (logique inversée)."""
 
     def test_fin_scan_port_ouvert_no_response(
-        self,
-        ip_target,
-        thread_id,
-        event_queue,
-        stop_flag_never,
-        process_manager_mock,
-        tmp_path
+            self,
+            ip_target,
+            thread_id,
+            event_queue,
+            stop_flag_never,
+            process_manager_mock,
+            tmp_path
     ):
         """
         Scénario : FIN scan sur port ouvert.
@@ -291,13 +291,13 @@ class TestScapyScannerFINScan:
         assert port_data["status"] == "open|filtered", "FIN scan sans réponse = open|filtered"
 
     def test_fin_scan_port_ferme_rst(
-        self,
-        ip_target,
-        thread_id,
-        event_queue,
-        stop_flag_never,
-        process_manager_mock,
-        tmp_path
+            self,
+            ip_target,
+            thread_id,
+            event_queue,
+            stop_flag_never,
+            process_manager_mock,
+            tmp_path
     ):
         """
         Scénario : FIN scan sur port fermé.

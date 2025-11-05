@@ -4,7 +4,8 @@
 
 Un scanner réseau **révolutionnaire** qui s'adapte en temps réel aux défenses détectées, inspiré de l'architecture des **Generative Adversarial Networks (GANs)**.
 
-Contrairement aux scanners traditionnels (Nmap, Masscan) qui utilisent des stratégies statiques, notre scanner **apprend et s'adapte** continuellement comme un adversaire intelligent.
+Contrairement aux scanners traditionnels (Nmap, Masscan) qui utilisent des stratégies statiques, notre scanner **apprend et s'adapte** continuellement comme un adversaire
+intelligent.
 
 ## 🏗️ Architecture Innovante
 
@@ -13,26 +14,31 @@ Contrairement aux scanners traditionnels (Nmap, Masscan) qui utilisent des strat
 L'architecture s'inspire des **Generative Adversarial Networks** avec un cycle d'apprentissage continu :
 
 **1. 🧠 StrategySelector (Generator)**
+
 - Génère des patterns de scan optimaux
 - Sélectionne la meilleure combinaison de techniques
 - S'adapte au contexte détecté
 
 **2. 🎯 Scan Execution (Probes)**
+
 - Exécute les techniques sélectionnées : SYN, Fragmentation, Decoys
 - Applique le timing adaptatif (slow, normal, fast)
 - Utilise des source IPs multiples si nécessaire
 
 **3. 🔍 ResponseAnalyzer (Discriminator)**
+
 - Analyse les réponses réseau en temps réel
 - Détecte les patterns de défense (Firewall, IDS, Rate-limiting)
 - Calcule les métriques de succès
 
 **4. 📊 Intelligence Update**
+
 - Fingerprinting : OS, Firewall type, IDS vendor
 - Accumulation des signatures observées
 - Mise à jour du profil de la cible
 
 **5. 🔄 Feedback Loop (Adaptive Learning)**
+
 - Optimisation de la stratégie en temps réel
 - Calcul du taux de succès par technique
 - Retour au StrategySelector pour amélioration continue
@@ -42,24 +48,28 @@ L'architecture s'inspire des **Generative Adversarial Networks** avec un cycle d
 ### 1. **Scan Adaptatif en 4 Phases**
 
 #### Phase 1 : Reconnaissance Passive 🔍
+
 - Banner grabbing non-intrusif
 - DNS enumeration
 - Preliminary OS fingerprinting
 - **Objectif** : Collecter sans alerter
 
 #### Phase 2 : Adversarial Probing ⚔️
+
 - Detection de firewall (stateful/stateless)
 - Detection d'IDS/IPS (Snort, Suricata, Zeek)
 - Rate limiting detection
 - **Objectif** : Identifier les défenses
 
 #### Phase 3 : Adaptive Scanning 🎯
+
 - Sélection dynamique de stratégie
 - Evasion techniques (fragmentation, decoys, timing)
 - Scanner combination optimization
 - **Objectif** : Scanner efficacement malgré les défenses
 
 #### Phase 4 : Intelligence Consolidation 🧠
+
 - Service enumeration
 - Vulnerability mapping (CVE matching)
 - Attack surface analysis
@@ -68,11 +78,13 @@ L'architecture s'inspire des **Generative Adversarial Networks** avec un cycle d
 ### 2. **Fingerprinting Avancé**
 
 Base de signatures pour :
+
 - **OS** : Linux, Windows, BSD, Cisco IOS, Juniper JunOS, etc.
 - **Firewalls** : iptables, pf, Cisco ASA, FortiGate, Palo Alto, etc.
 - **IDS/IPS** : Snort, Suricata, Zeek
 
 Identification basée sur :
+
 - TTL values
 - TCP window size
 - TCP options
@@ -84,14 +96,15 @@ Identification basée sur :
 ```python
 # Le scanner apprend automatiquement
 scanner.intelligence.defense_level  # NONE, LOW, MEDIUM, HIGH, PARANOID
-scanner.intelligence.likely_os       # "Linux 5.x", "Windows 10", etc.
-scanner.intelligence.is_rate_limited # True/False
-scanner.intelligence.firewall_type   # "iptables", "Cisco ASA", etc.
+scanner.intelligence.likely_os  # "Linux 5.x", "Windows 10", etc.
+scanner.intelligence.is_rate_limited  # True/False
+scanner.intelligence.firewall_type  # "iptables", "Cisco ASA", etc.
 ```
 
 ### 4. **Evasion Automatique**
 
 Techniques appliquées automatiquement selon le contexte :
+
 - **Fragmentation** : IP-level fragmentation pour contourner firewalls
 - **Decoy scanning** : 10+ IPs sources aléatoires
 - **Timing evasion** : Délais adaptatifs (Poisson distribution)
@@ -114,6 +127,7 @@ Techniques appliquées automatiquement selon le contexte :
 ## 🎓 Innovation Points pour Experts
 
 ### 1. Architecture GAN-Inspired
+
 - **Generator** (StrategySelector) : Génère des stratégies de scan
 - **Discriminator** (ResponseAnalyzer) : Analyse les réponses
 - **Feedback Loop** : Amélioration continue basée sur les résultats
@@ -121,16 +135,19 @@ Techniques appliquées automatiquement selon le contexte :
 ### 2. Multi-Layer Defense Detection
 
 **Layer 1: Firewall Detection**
+
 - Stateful vs Stateless (SYN probing)
 - Vendor identification (timing patterns)
 - Rules inference (port response matrix)
 
 **Layer 2: IDS/IPS Detection**
+
 - Signature-based (anomaly patterns)
 - Anomaly-based (statistical deviation)
 - ML-based (behavioral analysis)
 
 **Layer 3: Rate Limiting Detection**
+
 - Variance analysis (response time > 3x)
 
 ### 3. Context-Aware Strategy Selection
@@ -285,18 +302,21 @@ examples/
 ## 🎯 Cas d'Usage
 
 ### 1. Pentest sur Infrastructure Cloud
+
 ```bash
 # AWS/Azure avec WAF + IDS
 python3 adaptive_scan.py --target cloud-instance.aws.com --cloud-mode
 ```
 
 ### 2. Red Team Assessment
+
 ```bash
 # Réseau d'entreprise avec défenses multi-couches
 python3 adaptive_scan.py --target 10.0.0.0/24 --red-team --evasion-max
 ```
 
 ### 3. Bug Bounty Automation
+
 ```bash
 # Scan intelligent avec respect des rate limits
 python3 adaptive_scan.py --target bugbounty-target.com --respectful
@@ -305,24 +325,28 @@ python3 adaptive_scan.py --target bugbounty-target.com --respectful
 ## 🚧 Roadmap
 
 ### Phase 1 (Actuelle) : ✅ Architecture & Design
+
 - [x] Architecture GAN-inspired
 - [x] 4-phase scanning workflow
 - [x] Fingerprint database
 - [x] Demo visuelle
 
 ### Phase 2 : 🔄 Implémentation Complète
+
 - [ ] Intégration avec scanners existants (Nmap, Masscan, Scapy)
 - [ ] Evasion techniques implementation
 - [ ] Real-time strategy adaptation
 - [ ] Knowledge base persistence
 
 ### Phase 3 : 🤖 Machine Learning
+
 - [ ] Neural Strategy Selector (PyTorch)
 - [ ] Reinforcement Learning Evasion Agent
 - [ ] Transfer learning entre scans
 - [ ] Training sur datasets réels (10,000+ scans)
 
 ### Phase 4 : 📊 Benchmarking & Publication
+
 - [ ] Benchmarking vs Nmap/Masscan
 - [ ] Performance metrics (detection rate, evasion success)
 - [ ] Publication académique (BlackHat, DEF CON)
@@ -345,6 +369,7 @@ python3 adaptive_scan.py --target bugbounty-target.com --respectful
 ## 🤝 Contribution
 
 Cette architecture est open-source et accueille les contributions pour :
+
 - Nouvelles signatures (OS, Firewall, IDS)
 - Techniques d'evasion avancées
 - ML models pour strategy selection
@@ -353,6 +378,7 @@ Cette architecture est open-source et accueille les contributions pour :
 ## 📧 Contact
 
 Pour discussions académiques, collaborations, ou questions :
+
 - Créer une issue GitHub
 - Présentation à venir : BlackHat USA 2025
 

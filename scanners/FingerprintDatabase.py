@@ -11,7 +11,6 @@ Cette base s'enrichit automatiquement via machine learning.
 """
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
-import re
 
 
 @dataclass

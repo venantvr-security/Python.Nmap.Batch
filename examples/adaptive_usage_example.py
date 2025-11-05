@@ -5,16 +5,15 @@ Exemple d'utilisation programmatique du scanner adaptatif.
 Ce script montre comment intégrer l'Adaptive Composite Scanner
 dans vos propres outils de pentest/red team.
 """
-import sys
 import os
+import sys
 from queue import Queue
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from scanners.AdaptiveCompositeScanner import (
     AdaptiveCompositeScanner,
-    DefenseLevel,
-    HostProfile
+    DefenseLevel
 )
 from scanners.FingerprintDatabase import FingerprintDatabase
 
@@ -223,9 +222,9 @@ def main():
         if i < len(examples):
             input("\nPress Enter to continue to next example...")
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("All examples completed!")
-    print("="*70)
+    print("=" * 70)
 
 
 if __name__ == "__main__":

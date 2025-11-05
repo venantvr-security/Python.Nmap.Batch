@@ -7,9 +7,9 @@ Ces tests vérifient que le parsing de sortie nmap fonctionne correctement :
 - Détection OS
 - MAC address
 """
-import sys
 import os
-from unittest.mock import Mock, patch, MagicMock
+import sys
+from unittest.mock import Mock, patch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
@@ -20,13 +20,13 @@ class TestNmapScannerParsing:
     """Tests de parsing des sorties nmap."""
 
     def test_parse_ports_ouverts(
-        self,
-        ip_target,
-        thread_id,
-        event_queue,
-        stop_flag_never,
-        process_manager_mock,
-        tmp_path
+            self,
+            ip_target,
+            thread_id,
+            event_queue,
+            stop_flag_never,
+            process_manager_mock,
+            tmp_path
     ):
         """
         Scénario : Nmap détecte 2 ports ouverts (22, 80).
@@ -86,13 +86,13 @@ Nmap done: 1 IP address (1 host up) scanned in 0.12 seconds
         assert 443 not in details["ports"], "Port 443 est fermé, pas ouvert"
 
     def test_parse_versions_services(
-        self,
-        ip_target,
-        thread_id,
-        event_queue,
-        stop_flag_never,
-        process_manager_mock,
-        tmp_path
+            self,
+            ip_target,
+            thread_id,
+            event_queue,
+            stop_flag_never,
+            process_manager_mock,
+            tmp_path
     ):
         """
         Scénario : Nmap avec détection de version (-sV).
@@ -151,13 +151,13 @@ Nmap done: 1 IP address scanned in 6.28 seconds
         assert 22 in details["versions"] or 80 in details["versions"]
 
     def test_parse_os_detection(
-        self,
-        ip_target,
-        thread_id,
-        event_queue,
-        stop_flag_never,
-        process_manager_mock,
-        tmp_path
+            self,
+            ip_target,
+            thread_id,
+            event_queue,
+            stop_flag_never,
+            process_manager_mock,
+            tmp_path
     ):
         """
         Scénario : Nmap avec détection OS (-O).
@@ -211,15 +211,14 @@ Nmap done: 1 IP address scanned in 2.45 seconds
         assert details["os"] is not None, "OS devrait être détecté"
         assert "Linux" in details["os"]
 
-
     def test_parse_mac_address(
-        self,
-        ip_target,
-        thread_id,
-        event_queue,
-        stop_flag_never,
-        process_manager_mock,
-        tmp_path
+            self,
+            ip_target,
+            thread_id,
+            event_queue,
+            stop_flag_never,
+            process_manager_mock,
+            tmp_path
     ):
         """
         Scénario : Nmap détecte une adresse MAC (scan local).

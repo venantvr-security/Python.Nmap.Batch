@@ -10,12 +10,12 @@ Architecture en 4 phases :
 Inspiré des GANs : le scanner "génère" des patterns de scan, l'analyzer
 "discrimine" les réponses, créant une boucle d'apprentissage adaptative.
 """
-import time
 import json
-from typing import Dict, List, Tuple, Optional, Any
+import statistics
+import time
 from dataclasses import dataclass, field
 from enum import Enum
-import statistics
+from typing import Dict, List, Tuple, Optional, Any
 
 
 class HostProfile(Enum):
@@ -32,10 +32,10 @@ class HostProfile(Enum):
 class DefenseLevel(Enum):
     """Niveau de défense détecté."""
     NONE = 0
-    LOW = 1           # Firewall basique
-    MEDIUM = 2        # Firewall + filtering
-    HIGH = 3          # IDS/IPS actif
-    PARANOID = 4      # WAF + IDS + rate limiting
+    LOW = 1  # Firewall basique
+    MEDIUM = 2  # Firewall + filtering
+    HIGH = 3  # IDS/IPS actif
+    PARANOID = 4  # WAF + IDS + rate limiting
 
 
 @dataclass

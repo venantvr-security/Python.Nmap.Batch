@@ -8,19 +8,15 @@ détectées, inspiré de l'architecture GAN.
 Usage:
     python3 examples/adaptive_scan_demo.py --target 192.168.1.100 --ports 1-1000
 """
-import sys
 import os
+import sys
 import time
-from queue import Queue
-from typing import Dict, List
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from scanners.AdaptiveCompositeScanner import (
-    AdaptiveCompositeScanner,
     ScanIntelligence,
-    DefenseLevel,
-    HostProfile
+    DefenseLevel
 )
 from scanners.FingerprintDatabase import FingerprintDatabase
 
@@ -39,14 +35,14 @@ class ColoredOutput:
 
     @staticmethod
     def print_header(text: str):
-        print(f"\n{ColoredOutput.HEADER}{ColoredOutput.BOLD}{'='*70}{ColoredOutput.ENDC}")
+        print(f"\n{ColoredOutput.HEADER}{ColoredOutput.BOLD}{'=' * 70}{ColoredOutput.ENDC}")
         print(f"{ColoredOutput.HEADER}{ColoredOutput.BOLD}{text:^70}{ColoredOutput.ENDC}")
-        print(f"{ColoredOutput.HEADER}{ColoredOutput.BOLD}{'='*70}{ColoredOutput.ENDC}\n")
+        print(f"{ColoredOutput.HEADER}{ColoredOutput.BOLD}{'=' * 70}{ColoredOutput.ENDC}\n")
 
     @staticmethod
     def print_phase(phase_num: int, title: str):
         print(f"\n{ColoredOutput.OKCYAN}{ColoredOutput.BOLD}[Phase {phase_num}] {title}{ColoredOutput.ENDC}")
-        print(f"{ColoredOutput.OKCYAN}{'─'*70}{ColoredOutput.ENDC}")
+        print(f"{ColoredOutput.OKCYAN}{'─' * 70}{ColoredOutput.ENDC}")
 
     @staticmethod
     def print_success(text: str):

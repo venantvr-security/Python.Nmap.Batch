@@ -37,6 +37,7 @@ class NmapScanner(ScannerInterface):
 
         # Construire la commande finale sans sudo
         import shutil
+
         nmap_path = shutil.which("nmap") or "/usr/bin/nmap"
         if not shutil.which(nmap_path):
             error = "Commande 'nmap' introuvable. Installez-la ou vérifiez votre PATH."

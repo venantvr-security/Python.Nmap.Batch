@@ -2,17 +2,20 @@
 
 ## 📋 Présentation Exécutive
 
-Nous avons créé un **scanner réseau révolutionnaire** qui s'inspire de l'architecture des **Generative Adversarial Networks (GANs)** pour adapter dynamiquement sa stratégie de scan en fonction des défenses détectées.
+Nous avons créé un **scanner réseau révolutionnaire** qui s'inspire de l'architecture des **Generative Adversarial Networks (GANs)** pour adapter dynamiquement sa
+stratégie de scan en fonction des défenses détectées.
 
 ### 🎯 Problème Résolu
 
 **Scanners traditionnels** (Nmap, Masscan) :
+
 - ❌ Stratégies statiques
 - ❌ Détection aveugle des défenses
 - ❌ Evasion manuelle
 - ❌ Pas d'apprentissage
 
 **Notre Solution** :
+
 - ✅ Adaptation dynamique en temps réel
 - ✅ Détection automatique IDS/Firewall/Rate-limiting
 - ✅ Evasion automatique ML-powered
@@ -46,9 +49,10 @@ Nous avons créé un **scanner réseau révolutionnaire** qui s'inspire de l'arc
 ## 📂 Fichiers Créés
 
 ### 1. **AdaptiveCompositeScanner.py** (600 lignes)
+
 Scanner principal avec architecture 4-phases :
 
-```python
+```text
 Phase 1: Reconnaissance Passive      # Non-intrusive info gathering
 Phase 2: Adversarial Probing        # Defense detection (IDS/Firewall)
 Phase 3: Adaptive Scanning          # Strategy optimization
@@ -56,28 +60,34 @@ Phase 4: Intelligence Consolidation # Enrichment multi-source
 ```
 
 **Classes principales** :
+
 - `AdaptiveCompositeScanner` : Orchestrateur principal
 - `ScanIntelligence` : Intelligence accumulée
 - `ResponseAnalyzer` : Discriminator (analyse réponses)
 - `StrategySelector` : Generator (sélection stratégique)
 
 ### 2. **FingerprintDatabase.py** (400 lignes)
+
 Base de signatures pour identification :
 
 **Signatures OS** :
+
 - Linux 5.x, Windows 10/11, FreeBSD 13, Cisco IOS, Juniper JunOS, etc.
 - Basé sur : TTL, TCP window size, TCP options, DF bit
 
 **Signatures Firewall** :
+
 - iptables, pf, Cisco ASA, FortiGate, Palo Alto, Windows Defender
 - Basé sur : Response patterns, timing, flag handling
 
 **Signatures IDS/IPS** :
+
 - Snort, Suricata, Zeek (Bro)
 - Detection methods, trigger patterns, false positive rates
 
 **Méthodes clés** :
-```python
+
+```text
 identify_os(ttl, window, tcp_options) returns (os_name, confidence)
 identify_firewall(pattern, timing) returns (fw_name, confidence)
 identify_ids(anomalies, delays) returns (ids_name, confidence)
@@ -86,6 +96,7 @@ learn_new_pattern(type, features, label) returns Knowledge base update
 ```
 
 ### 3. **ADAPTIVE_SCANNING_ARCHITECTURE.md** (Documentation)
+
 Documentation technique complète avec :
 
 - Architecture GAN-inspired détaillée
@@ -94,11 +105,12 @@ Documentation technique complète avec :
 - Métriques de performance (KPIs)
 - Benchmarking vs scanners traditionnels
 - Implémentation future ML/AI :
-  - Neural Network pour strategy selection
-  - Reinforcement Learning pour evasion
+    - Neural Network pour strategy selection
+    - Reinforcement Learning pour evasion
 - Références académiques
 
 ### 4. **adaptive_scan_demo.py** (350 lignes)
+
 Démonstration visuelle avec sortie colorée :
 
 ```bash
@@ -106,12 +118,14 @@ python3 examples/adaptive_scan_demo.py --target 192.168.1.100 --ports 1-1000
 ```
 
 **Output visuel** :
+
 - ✅ Phases colorées (cyan, green, yellow, red)
 - ✅ Progression en temps réel
 - ✅ Intelligence détaillée
 - ✅ Recommandations de sécurité
 
 ### 5. **ADAPTIVE_SCANNER_README.md**
+
 Guide utilisateur complet avec :
 
 - Vision et concepts
@@ -140,39 +154,42 @@ Détection automatique sur 3 couches distinctes :
 #### Layer 1 : 🔥 Firewall Detection
 
 **Caractéristiques détectées :**
+
 - **Type** : Stateful vs Stateless
-  - Test via SYN probing avec variations de flags
-  - Analyse de la cohérence des réponses RST
+    - Test via SYN probing avec variations de flags
+    - Analyse de la cohérence des réponses RST
 - **Vendor** : Identification du fabricant
-  - iptables/nftables (Linux)
-  - pf (OpenBSD)
-  - Cisco ASA
-  - FortiGate
-  - Palo Alto NGFW
-  - Windows Defender Firewall
+    - iptables/nftables (Linux)
+    - pf (OpenBSD)
+    - Cisco ASA
+    - FortiGate
+    - Palo Alto NGFW
+    - Windows Defender Firewall
 - **Rules** : Inférence des règles
-  - Matrice de réponse par port
-  - Analyse du timing de réponse
+    - Matrice de réponse par port
+    - Analyse du timing de réponse
 
 #### Layer 2 : 🛡️ IDS/IPS Detection
 
 **Caractéristiques détectées :**
+
 - **Type** : Méthode de détection
-  - Signature-based (Snort)
-  - Anomaly-based (Zeek)
-  - Hybrid (Suricata)
+    - Signature-based (Snort)
+    - Anomaly-based (Zeek)
+    - Hybrid (Suricata)
 - **Vendor** : Identification du système
-  - Snort IDS
-  - Suricata IDS/IPS
-  - Zeek (Bro) IDS
+    - Snort IDS
+    - Suricata IDS/IPS
+    - Zeek (Bro) IDS
 - **Triggers** : Patterns déclencheurs
-  - Anomalies de protocole TCP
-  - Patterns de scan suspects
-  - Taux de paquets anormal
+    - Anomalies de protocole TCP
+    - Patterns de scan suspects
+    - Taux de paquets anormal
 
 #### Layer 3 : ⏱️ Rate Limiting Detection
 
 **Analyse statistique :**
+
 - Variance des temps de réponse
 - Détection si variance > 3x baseline
 - Pattern de throttling progressif
@@ -231,7 +248,7 @@ Techniques appliquées dynamiquement :
 
 Apprentissage continu :
 
-```python
+```text
 Initial State:
   Signatures: 7 OS, 6 Firewalls, 3 IDS
   Strategies: Generic (4 levels)
@@ -258,6 +275,7 @@ Convergence:
 ### Exemple de Scan : Linux + iptables + Snort IDS
 
 **Scanner Traditionnel (Nmap)** :
+
 ```
 Detection Rate: 60% (40% bloqué par IDS)
 Time: 120s
@@ -266,6 +284,7 @@ Stealth: ❌ Détecté immédiatement
 ```
 
 **Adaptive Scanner** :
+
 ```
 Detection Rate: 92% (⬆️ +32%)
 Time: 180s (slower but stealthier)
@@ -309,13 +328,15 @@ SUMMARY
 ## 🔬 Prochaines Étapes (Roadmap)
 
 ### Phase 2 : Implémentation Complète ⏳
+
 - [ ] Intégration avec scanners existants (Nmap, Masscan, Scapy)
 - [ ] Implémentation réelle des techniques d'evasion
 - [ ] Real-time strategy adaptation avec feedback loop
 - [ ] Persistance de la knowledge base (SQLite/JSON)
 
 ### Phase 3 : Machine Learning 🤖
-```python
+
+```text
 # Neural Network pour Strategy Selection
 Input: [defense_level, ttl, window, response_times, ...]
 Architecture: Dense(64) > ReLU > Dropout(0.3) > Dense(32) > Softmax(N_strategies)
@@ -331,6 +352,7 @@ Training: Adversarial environment simulation
 ```
 
 ### Phase 4 : Benchmarking & Publication 📚
+
 - [ ] Benchmarking systématique vs Nmap/Masscan/Unicornscan
 - [ ] Datasets publics pour reproducibilité
 - [ ] Publication académique : BlackHat USA 2025 / DEF CON 33
@@ -339,29 +361,38 @@ Training: Adversarial environment simulation
 ## 🏆 Points Forts pour Impressionner les Experts
 
 ### 1. **Concept Unique**
+
 Premier scanner à appliquer l'architecture GAN au domain de l'offensive security.
 
 ### 2. **Intelligence Multi-Layer**
+
 Détection automatique de 3 couches de défense (Firewall + IDS + Rate Limiting) avec fingerprinting avancé.
 
 ### 3. **Adaptation Temps Réel**
+
 Feedback loop continu : Generator > Probing > Discriminator > Intelligence > Strategy Update
 
 ### 4. **Evasion ML-Powered**
+
 Sélection automatique des techniques d'evasion basée sur le contexte détecté (future: Neural Network).
 
 ### 5. **Apprentissage Continu**
+
 Knowledge base qui s'enrichit automatiquement avec chaque scan (transfer learning entre scans similaires).
 
 ### 6. **Mimicry Comportemental**
+
 Imitation de trafic légitime pour contourner les détections ML-based (future feature).
 
 ### 7. **Consolidation Multi-Source**
+
 Enrichissement automatique avec CVE matching, attack surface analysis, et recommandations de sécurité.
 
 ## 🎤 Pitch pour Experts
 
-> "Nous avons créé un scanner réseau qui pense comme un adversaire intelligent. En s'inspirant des GANs, notre scanner **génère** des stratégies de scan, **discrimine** les défenses en temps réel, et **s'adapte** continuellement via un feedback loop. Résultat : 92% de taux de détection même avec IDS actif, contre 60% pour un scan traditionnel. C'est l'équivalent d'AlphaGo pour le network scanning."
+> "Nous avons créé un scanner réseau qui pense comme un adversaire intelligent. En s'inspirant des GANs, notre scanner **génère** des stratégies de scan, **discrimine**
+> les défenses en temps réel, et **s'adapte** continuellement via un feedback loop. Résultat : 92% de taux de détection même avec IDS actif, contre 60% pour un scan
+> traditionnel. C'est l'équivalent d'AlphaGo pour le network scanning."
 
 ## 📧 Next Steps
 
@@ -372,4 +403,5 @@ Enrichissement automatique avec CVE matching, attack surface analysis, et recomm
 
 ---
 
-**Conclusion** : Cette innovation combine cybersécurité offensive et intelligence artificielle de manière unique, créant un système qui non seulement scanne, mais **apprend et s'adapte** comme un attaquant expert.
+**Conclusion** : Cette innovation combine cybersécurité offensive et intelligence artificielle de manière unique, créant un système qui non seulement scanne, mais *
+*apprend et s'adapte** comme un attaquant expert.

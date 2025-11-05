@@ -81,16 +81,18 @@ Python.Nmap.Batch/
 #### Module 1 : AdaptiveCompositeScanner.py
 
 **Dépendances :**
+
 - **FingerprintDatabase** : Pour signatures OS/Firewall/IDS
 - **Scanners existants** :
-  - NmapScanner : Scan standard et version detection
-  - MasscanScanner : Scan rapide massif
-  - ScapyScanner : Custom TCP packet crafting
-  - Pcap2 : PCAP replay attacks
-  - CurlScanner : HTTP banner grabbing
+    - NmapScanner : Scan standard et version detection
+    - MasscanScanner : Scan rapide massif
+    - ScapyScanner : Custom TCP packet crafting
+    - Pcap2 : PCAP replay attacks
+    - CurlScanner : HTTP banner grabbing
 - **ProcessManager** : Gestion des processus subprocess
 
 **Fonctionnalités fournies :**
+
 - Orchestration des 4 phases de scan
 - Sélection adaptative de stratégie
 - Analyse des réponses (Discriminator)
@@ -99,12 +101,14 @@ Python.Nmap.Batch/
 #### Module 2 : FingerprintDatabase.py
 
 **Données incluses :**
+
 - 7 OS signatures (Linux, Windows, BSD, Cisco IOS, etc.)
 - 6 Firewall signatures (iptables, Cisco ASA, FortiGate, etc.)
 - 3 IDS/IPS signatures (Snort, Suricata, Zeek)
 - Learned patterns (évolue avec les scans)
 
 **Méthodes disponibles :**
+
 - `identify_os(ttl, window, tcp_options)` returns OS name + confidence
 - `identify_firewall(pattern, timing)` returns Firewall type + confidence
 - `identify_ids(anomalies, delays)` returns IDS vendor + confidence
@@ -114,16 +118,19 @@ Python.Nmap.Batch/
 #### Module 3 : Examples & Documentation
 
 **Démonstration :**
+
 - **adaptive_scan_demo.py** : Visualisation colorée des 4 phases
-  - Output terminal avec emojis et couleurs
-  - Simulation complète du workflow
+    - Output terminal avec emojis et couleurs
+    - Simulation complète du workflow
 
 **Usage programmatique :**
+
 - **adaptive_usage_example.py** : 7 exemples d'intégration
-  - Basic scan, Manual intelligence, Strategy selection
-  - Export/Import, Custom fingerprints, Event monitoring
+    - Basic scan, Manual intelligence, Strategy selection
+    - Export/Import, Custom fingerprints, Event monitoring
 
 **Documentation :**
+
 - **ADAPTIVE_SCANNER_README.md** : Guide utilisateur complet
 - **ADAPTIVE_SCANNING_ARCHITECTURE.md** : Architecture technique détaillée
 - **INNOVATION_SUMMARY.md** : Résumé exécutif des innovations
@@ -133,12 +140,14 @@ Python.Nmap.Batch/
 ### Taille des Fichiers
 
 **Code Source** (52 KB total) :
+
 - `scanners/AdaptiveCompositeScanner.py` : 17 KB
 - `scanners/FingerprintDatabase.py` : 14 KB
 - `examples/adaptive_scan_demo.py` : 13 KB
 - `examples/adaptive_usage_example.py` : 8 KB
 
 **Documentation** (46 KB total) :
+
 - `ADAPTIVE_SCANNER_README.md` : 15 KB
 - `ADAPTIVE_SCANNING_ARCHITECTURE.md` : 13 KB
 - `INNOVATION_SUMMARY.md` : 13 KB
@@ -149,6 +158,7 @@ Python.Nmap.Batch/
 ### Métriques de Code
 
 **Lignes de code** :
+
 - Python : ~1,800 lignes
 - Documentation (Markdown) : ~2,500 lignes
 - **Total** : ~4,300 lignes
@@ -156,6 +166,7 @@ Python.Nmap.Batch/
 ### Signatures Intégrées
 
 **Knowledge Base initiale** :
+
 - OS signatures : 7 (Linux, Windows, BSD, Cisco IOS, Juniper, Embedded, Cloud)
 - Firewall signatures : 6 (iptables, pf, Cisco ASA, FortiGate, Palo Alto, Windows)
 - IDS/IPS signatures : 3 (Snort, Suricata, Zeek)
@@ -164,12 +175,14 @@ Python.Nmap.Batch/
 ### Couverture Fonctionnelle
 
 **Phases implémentées** : 4/4 (100%)
+
 - ✅ Reconnaissance Passive
 - ✅ Adversarial Probing
 - ✅ Adaptive Scanning
 - ✅ Intelligence Consolidation
 
 **Techniques d'evasion** : 6 techniques
+
 - Fragmentation, Decoy scanning, Session splicing
 - Timing evasion, Protocol manipulation, Traffic mimicry
 
@@ -223,12 +236,14 @@ Lire:
 #### Phase 2 : Implémentation Complète (Current to +3 mois)
 
 **Objectifs :**
+
 - Intégration réelle avec scanners existants (Nmap, Masscan, Scapy)
 - Implémentation complète des techniques d'evasion
 - Real-time adaptation avec feedback loop fonctionnel
 - Persistance de la knowledge base (SQLite/JSON)
 
 **Livrables :**
+
 - Scanner fonctionnel en production
 - Tests sur environnements réels
 - Documentation technique mise à jour
@@ -236,17 +251,20 @@ Lire:
 #### Phase 3 : Machine Learning (Mois 3 to 6)
 
 **Objectifs :**
+
 - Neural Network pour Strategy Selector
 - Reinforcement Learning pour Evasion Agent
 - Training sur 10,000+ scans historiques
 - Transfer learning entre contextes similaires
 
 **Livrables :**
+
 - Modèles ML entraînés et validés
 - Amélioration du taux de succès (92% to 95%+)
 - Réduction du temps de convergence
 
 **Technologies :**
+
 - PyTorch pour Neural Networks
 - OpenAI Gym pour RL environment
 - Dataset de scans annotés
@@ -254,18 +272,21 @@ Lire:
 #### Phase 4 : Publication & Open-Source (Mois 6 to 12)
 
 **Objectifs :**
+
 - Benchmarking systématique vs scanners traditionnels
 - Création de datasets publics pour reproducibilité
 - Publication académique (BlackHat USA, DEF CON)
 - Open-source release avec communauté
 
 **Livrables :**
+
 - Paper académique peer-reviewed
 - Dataset public (10,000+ scans anonymisés)
 - Repository GitHub open-source
 - Conférence talk accepté
 
 **Impact :**
+
 - Scanner adaptatif devient référence de l'industrie
 - Standard pour scanning intelligent
 - Communauté de contributeurs active
