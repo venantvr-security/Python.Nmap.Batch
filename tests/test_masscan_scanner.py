@@ -61,7 +61,7 @@ Discovered open port 80/tcp on 192.168.1.100
 Discovered open port 443/tcp on 192.168.1.100
 """
 
-        with patch('scanners.MasscanScanner.subprocess.Popen') as mock_popen:
+        with patch('subprocess.Popen') as mock_popen:
             mock_process = Mock()
             mock_process.stdout = Mock()
             mock_process.stdout.readline = Mock(
@@ -125,7 +125,7 @@ Initiating SYN Stealth Scan
 Scanning 1 hosts [3 ports/host]
 """
 
-        with patch('scanners.MasscanScanner.subprocess.Popen') as mock_popen:
+        with patch('subprocess.Popen') as mock_popen:
             mock_process = Mock()
             mock_process.stdout = Mock()
             mock_process.stdout.readline = Mock(
@@ -185,7 +185,7 @@ Discovered open port 80/tcp on 192.168.1.100
 Discovered open port 8080/tcp on 192.168.1.100
 """
 
-        with patch('scanners.MasscanScanner.subprocess.Popen') as mock_popen:
+        with patch('subprocess.Popen') as mock_popen:
             mock_process = Mock()
             mock_process.stdout = Mock()
             mock_process.stdout.readline = Mock(
@@ -242,7 +242,7 @@ Discovered open port 8080/tcp on 192.168.1.100
         )
         scanner.ports = "1-1000"
 
-        with patch('scanners.MasscanScanner.subprocess.Popen') as mock_popen:
+        with patch('subprocess.Popen') as mock_popen:
             mock_process = Mock()
             mock_process.stdout = Mock()
             mock_process.stdout.readline = Mock(return_value="Starting masscan\n")
@@ -296,12 +296,13 @@ Discovered open port 8080/tcp on 192.168.1.100
         )
         scanner.ports = "1-1000"
 
-        with patch('scanners.MasscanScanner.subprocess.Popen') as mock_popen:
+        with patch('subprocess.Popen') as mock_popen:
             mock_process = Mock()
             mock_process.stdout = Mock()
             mock_process.stdout.readline = Mock(return_value='')
             mock_process.poll.return_value = None
-            mock_process.wait.side_effect = TimeoutExpired("masscan", 10)
+            # Premier wait() timeout, deuxième wait() réussit
+            mock_process.wait.side_effect = [TimeoutExpired("masscan", 10), None]
             mock_process.kill = Mock()
             mock_process.pid = 88887
             mock_popen.return_value = mock_process

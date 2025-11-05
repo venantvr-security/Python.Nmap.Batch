@@ -48,6 +48,7 @@ class TestPcap2PacketReplay:
         yaml_content = """strategies:
   replay_attack:
     template_pcap: "test_attack.pcap"
+    ports: "<ports>"
     inter_packet_delay: 0.1
     repeat: 1
 """
@@ -184,6 +185,7 @@ class TestPcap2PacketReplay:
         yaml_content = """strategies:
   replay_attack:
     template_pcap: "test_attack.pcap"
+    ports: "<ports>"
     inter_packet_delay: 0.1
     repeat: 1
 """

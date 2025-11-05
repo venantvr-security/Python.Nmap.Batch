@@ -106,10 +106,12 @@ class TestScapyScannerTCPFlags:
             mock_response.haslayer.return_value = True
 
             mock_tcp = Mock()
-            mock_tcp.flags = 0x14  # RST-ACK
-            mock_tcp.__str__ = Mock(return_value="RA")
+            mock_flags = Mock()
+            mock_flags.__str__ = Mock(return_value="RA")
+            mock_flags.__and__ = Mock(return_value=0x14)  # For flags & 0x14
+            mock_tcp.flags = mock_flags
 
-            mock_response.__getitem__ = lambda key: mock_tcp
+            mock_response.__getitem__ = Mock(return_value=mock_tcp)
             mock_sr1.return_value = mock_response
 
             with patch('scanners.ScapyScanner.send'):
@@ -326,9 +328,11 @@ class TestScapyScannerFINScan:
             mock_response.haslayer.return_value = True
 
             mock_tcp = Mock()
-            mock_tcp.flags = 0x14  # RST-ACK
+            mock_flags = Mock()
+            mock_flags.__and__ = Mock(return_value=0x14)  # For flags & 0x14
+            mock_tcp.flags = mock_flags
 
-            mock_response.__getitem__ = lambda key: mock_tcp
+            mock_response.__getitem__ = Mock(return_value=mock_tcp)
             mock_sr1.return_value = mock_response
 
             with patch('scanners.ScapyScanner.send'):
