@@ -795,11 +795,35 @@ def pcap_upload():
         # Convertir en JSON
         packets_data = []
         for i, pkt in enumerate(packets):
+            # Extraire layers et détails
+            layers = []
+            if pkt.haslayer('Ether'):
+                layers.append('Ether')
+            if pkt.haslayer('IP'):
+                from scapy.layers.inet import IP as IPLayer
+                ip_layer = pkt[IPLayer]
+                layers.append(f'IP {ip_layer.src} > {ip_layer.dst}')
+            if pkt.haslayer('TCP'):
+                from scapy.layers.inet import TCP as TCPLayer
+                tcp_layer = pkt[TCPLayer]
+                layers.append(f'TCP {tcp_layer.sport} > {tcp_layer.dport} [{tcp_layer.flags}]')
+            if pkt.haslayer('UDP'):
+                from scapy.layers.inet import UDP
+                udp_layer = pkt[UDP]
+                layers.append(f'UDP {udp_layer.sport} > {udp_layer.dport}')
+            if pkt.haslayer('Raw'):
+                from scapy.packet import Raw
+                raw_layer = pkt[Raw]
+                raw_preview = bytes(raw_layer.load[:50]).hex() if len(raw_layer.load) > 50 else bytes(raw_layer.load).hex()
+                layers.append(f'Raw ({len(raw_layer.load)} bytes): {raw_preview}...')
+
             packets_data.append({
                 "index": i,
                 "summary": pkt.summary(),
+                "layers": ' / '.join(layers) if layers else 'Unknown',
                 "time": float(pkt.time) if hasattr(pkt, 'time') else 0,
-                "length": len(pkt)
+                "length": len(pkt),
+                "hex": bytes(pkt)[:100].hex()  # Premier 100 octets en hex
             })
 
         return jsonify({
@@ -908,11 +932,35 @@ def pcap_load(filename):
         # Convertir en JSON
         packets_data = []
         for i, pkt in enumerate(packets):
+            # Extraire layers et détails
+            layers = []
+            if pkt.haslayer('Ether'):
+                layers.append('Ether')
+            if pkt.haslayer('IP'):
+                from scapy.layers.inet import IP as IPLayer
+                ip_layer = pkt[IPLayer]
+                layers.append(f'IP {ip_layer.src} > {ip_layer.dst}')
+            if pkt.haslayer('TCP'):
+                from scapy.layers.inet import TCP as TCPLayer
+                tcp_layer = pkt[TCPLayer]
+                layers.append(f'TCP {tcp_layer.sport} > {tcp_layer.dport} [{tcp_layer.flags}]')
+            if pkt.haslayer('UDP'):
+                from scapy.layers.inet import UDP
+                udp_layer = pkt[UDP]
+                layers.append(f'UDP {udp_layer.sport} > {udp_layer.dport}')
+            if pkt.haslayer('Raw'):
+                from scapy.packet import Raw
+                raw_layer = pkt[Raw]
+                raw_preview = bytes(raw_layer.load[:50]).hex() if len(raw_layer.load) > 50 else bytes(raw_layer.load).hex()
+                layers.append(f'Raw ({len(raw_layer.load)} bytes): {raw_preview}...')
+
             packets_data.append({
                 "index": i,
                 "summary": pkt.summary(),
+                "layers": ' / '.join(layers) if layers else 'Unknown',
                 "time": float(pkt.time) if hasattr(pkt, 'time') else 0,
-                "length": len(pkt)
+                "length": len(pkt),
+                "hex": bytes(pkt)[:100].hex()  # Premier 100 octets en hex
             })
 
         return jsonify({

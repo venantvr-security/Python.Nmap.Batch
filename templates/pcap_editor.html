@@ -68,18 +68,33 @@
                     <div id="status" class="alert alert-info" role="alert">
                         No file loaded. Upload a PCAP file to start editing.
                     </div>
-                    <div id="packets-table-container" style="display: none;">
+                    <div id="packets-table-container" style="display: none; max-height: 600px; overflow-y: auto;">
                         <table class="table table-sm table-hover">
-                            <thead>
+                            <thead class="sticky-top bg-white">
                                 <tr>
-                                    <th style="width: 60px;">#</th>
+                                    <th style="width: 50px;">#</th>
+                                    <th style="width: 200px;">Layers</th>
                                     <th>Summary</th>
-                                    <th style="width: 100px;">Length</th>
-                                    <th style="width: 150px;">Time</th>
+                                    <th style="width: 80px;">Length</th>
+                                    <th style="width: 120px;">Time</th>
+                                    <th style="width: 60px;">Hex</th>
                                 </tr>
                             </thead>
                             <tbody id="packets-table"></tbody>
                         </table>
+                    </div>
+                    <div class="modal fade" id="hexModal" tabindex="-1">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Packet Hex Dump</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <pre id="hex-content" style="font-family: monospace; font-size: 0.85rem;"></pre>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -215,20 +230,50 @@ function uploadFile() {
 
 function renderPackets() {
     const tbody = document.getElementById('packets-table');
+    if (!packets || packets.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No packets</td></tr>';
+        return;
+    }
+
     tbody.innerHTML = packets.map((pkt, i) => {
         const classes = [];
         if (selectedIndices.has(i)) classes.push('selected');
         if (deletedIndices.has(i)) classes.push('deleted');
 
+        // Format hex pour affichage court
+        const hexPreview = pkt.hex ? pkt.hex.substring(0, 20) + '...' : 'N/A';
+
         return `
-            <tr class="packet-row ${classes.join(' ')}" onclick="togglePacket(${i})">
-                <td>${i}</td>
-                <td>${pkt.summary}</td>
-                <td>${pkt.length} bytes</td>
-                <td>${new Date(pkt.time * 1000).toLocaleTimeString()}</td>
+            <tr class="packet-row ${classes.join(' ')}" data-index="${i}">
+                <td onclick="togglePacket(${i})">${i}</td>
+                <td onclick="togglePacket(${i})" style="font-family: monospace; font-size: 0.85rem;">${pkt.layers || 'Unknown'}</td>
+                <td onclick="togglePacket(${i})" style="font-size: 0.9rem;">${pkt.summary}</td>
+                <td onclick="togglePacket(${i})">${pkt.length}</td>
+                <td onclick="togglePacket(${i})">${new Date(pkt.time * 1000).toLocaleTimeString()}</td>
+                <td><button class="btn btn-sm btn-outline-secondary" onclick="showHex(${i}); event.stopPropagation();">📄</button></td>
             </tr>
         `;
     }).join('');
+}
+
+function showHex(index) {
+    const pkt = packets[index];
+    if (!pkt || !pkt.hex) {
+        alert('No hex data available');
+        return;
+    }
+
+    // Format hex en lignes de 32 caractères (16 bytes)
+    let formatted = '';
+    for (let i = 0; i < pkt.hex.length; i += 32) {
+        const offset = (i / 2).toString(16).padStart(4, '0');
+        const hexLine = pkt.hex.substring(i, i + 32).match(/.{1,2}/g).join(' ');
+        formatted += `${offset}: ${hexLine}\n`;
+    }
+
+    document.getElementById('hex-content').textContent = formatted;
+    const modal = new bootstrap.Modal(document.getElementById('hexModal'));
+    modal.show();
 }
 
 function togglePacket(index) {
