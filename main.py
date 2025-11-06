@@ -883,6 +883,49 @@ def pcap_list():
     return jsonify({"files": sorted(files, key=lambda x: x['modified'], reverse=True)})
 
 
+@app.route('/api/pcap/load/<filename>', methods=['GET'])
+def pcap_load(filename):
+    """Charge un fichier PCAP existant depuis pcap_templates/packets/."""
+    import re
+    # Sécurité: nettoyer le nom de fichier
+    filename = re.sub(r'[^\w\-_\.]', '_', filename)
+
+    pcap_dir = os.path.join(PATHS['pcap_templates_dir'], 'packets')
+    filepath = os.path.join(pcap_dir, filename)
+
+    if not os.path.exists(filepath):
+        return jsonify({"error": "File not found"}), 404
+
+    if not filename.endswith(('.pcap', '.pcapng')):
+        return jsonify({"error": "Invalid file type"}), 400
+
+    try:
+        from scapy.utils import rdpcap
+
+        # Lire les paquets
+        packets = rdpcap(filepath)
+
+        # Convertir en JSON
+        packets_data = []
+        for i, pkt in enumerate(packets):
+            packets_data.append({
+                "index": i,
+                "summary": pkt.summary(),
+                "time": float(pkt.time) if hasattr(pkt, 'time') else 0,
+                "length": len(pkt)
+            })
+
+        return jsonify({
+            "filename": filename,
+            "temp_path": filepath,  # Utiliser le chemin réel pour la sauvegarde
+            "packet_count": len(packets),
+            "packets": packets_data
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 if __name__ == "__main__":
     logger.info("Démarrage du serveur Flask sur 0.0.0.0:5000")
     try:

@@ -119,13 +119,51 @@ function loadExistingFiles() {
                 return;
             }
             container.innerHTML = data.files.map(f => `
-                <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded"
+                     style="cursor: pointer;"
+                     onclick="loadExistingFile('${f.filename}')">
                     <div>
                         <div class="fw-bold">${f.filename}</div>
                         <small class="text-muted">${(f.size / 1024).toFixed(1)} KB</small>
                     </div>
+                    <span class="text-primary">👁️</span>
                 </div>
             `).join('');
+        });
+}
+
+function loadExistingFile(filename) {
+    document.getElementById('status').textContent = 'Loading ' + filename + '...';
+    document.getElementById('status').className = 'alert alert-info';
+
+    fetch('/api/pcap/load/' + encodeURIComponent(filename))
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) {
+                document.getElementById('status').className = 'alert alert-danger';
+                document.getElementById('status').textContent = 'Error: ' + data.error;
+                return;
+            }
+
+            currentFile = data;
+            packets = data.packets;
+            selectedIndices.clear();
+            deletedIndices.clear();
+
+            renderPackets();
+            document.getElementById('status').className = 'alert alert-success';
+            document.getElementById('status').textContent = `Loaded ${data.packet_count} packets from ${data.filename}`;
+            document.getElementById('packets-table-container').style.display = 'block';
+            document.getElementById('save-section').style.display = 'block';
+            document.getElementById('save-filename').value = data.filename.replace(/\.(pcap|pcapng)$/, '_edited.pcap');
+            document.getElementById('select-all-btn').disabled = false;
+            document.getElementById('invert-btn').disabled = false;
+            document.getElementById('delete-btn').disabled = false;
+            updateCounts();
+        })
+        .catch(err => {
+            document.getElementById('status').className = 'alert alert-danger';
+            document.getElementById('status').textContent = 'Load failed: ' + err;
         });
 }
 
