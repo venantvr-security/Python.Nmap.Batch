@@ -763,6 +763,126 @@ def kill_process(process_id):
     return jsonify({"success": False, "error": "Process not found"}), 404
 
 
+@app.route('/pcap-editor')
+def pcap_editor():
+    """Page d'édition de fichiers PCAP."""
+    return render_template('pcap_editor.html')
+
+
+@app.route('/api/pcap/upload', methods=['POST'])
+def pcap_upload():
+    """Upload et analyse d'un fichier PCAP."""
+    if 'file' not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"error": "Empty filename"}), 400
+
+    if not file.filename.endswith(('.pcap', '.pcapng')):
+        return jsonify({"error": "Only .pcap and .pcapng files allowed"}), 400
+
+    try:
+        from scapy.utils import rdpcap
+
+        # Sauvegarder temporairement
+        temp_path = os.path.join('/tmp', file.filename)
+        file.save(temp_path)
+
+        # Lire les paquets
+        packets = rdpcap(temp_path)
+
+        # Convertir en JSON
+        packets_data = []
+        for i, pkt in enumerate(packets):
+            packets_data.append({
+                "index": i,
+                "summary": pkt.summary(),
+                "time": float(pkt.time) if hasattr(pkt, 'time') else 0,
+                "length": len(pkt)
+            })
+
+        return jsonify({
+            "filename": file.filename,
+            "temp_path": temp_path,
+            "packet_count": len(packets),
+            "packets": packets_data
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/pcap/save', methods=['POST'])
+def pcap_save():
+    """Sauvegarde un fichier PCAP édité."""
+    data = request.get_json()
+    temp_path = data.get('temp_path')
+    new_filename = data.get('filename')
+    selected_indices = data.get('selected_indices', [])
+
+    if not temp_path or not os.path.exists(temp_path):
+        return jsonify({"error": "Source file not found"}), 400
+
+    if not new_filename:
+        return jsonify({"error": "Filename required"}), 400
+
+    # Nettoyer le nom de fichier
+    import re
+    new_filename = re.sub(r'[^\w\-_\.]', '_', new_filename)
+    if not new_filename.endswith(('.pcap', '.pcapng')):
+        new_filename += '.pcap'
+
+    try:
+        from scapy.utils import rdpcap, wrpcap
+
+        # Lire tous les paquets
+        packets = rdpcap(temp_path)
+
+        # Filtrer selon les indices sélectionnés
+        if selected_indices:
+            filtered_packets = [packets[i] for i in selected_indices if i < len(packets)]
+        else:
+            filtered_packets = packets
+
+        # Sauvegarder dans pcap_templates/packets/
+        output_dir = os.path.join(PATHS['pcap_templates_dir'], 'packets')
+        os.makedirs(output_dir, exist_ok=True)
+        output_path = os.path.join(output_dir, new_filename)
+
+        wrpcap(output_path, filtered_packets)
+
+        return jsonify({
+            "success": True,
+            "filename": new_filename,
+            "path": output_path,
+            "packet_count": len(filtered_packets)
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/pcap/list', methods=['GET'])
+def pcap_list():
+    """Liste les fichiers PCAP disponibles."""
+    pcap_dir = os.path.join(PATHS['pcap_templates_dir'], 'packets')
+    if not os.path.exists(pcap_dir):
+        return jsonify({"files": []})
+
+    files = []
+    for filename in os.listdir(pcap_dir):
+        if filename.endswith(('.pcap', '.pcapng')):
+            filepath = os.path.join(pcap_dir, filename)
+            files.append({
+                "filename": filename,
+                "size": os.path.getsize(filepath),
+                "modified": os.path.getmtime(filepath)
+            })
+
+    return jsonify({"files": sorted(files, key=lambda x: x['modified'], reverse=True)})
+
+
 if __name__ == "__main__":
     logger.info("Démarrage du serveur Flask sur 0.0.0.0:5000")
     try:
