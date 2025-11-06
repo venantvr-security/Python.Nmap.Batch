@@ -6,7 +6,7 @@ from typing import Dict
 
 import yaml
 from scapy.layers.inet import IP, TCP
-from scapy.sendrecv import send
+from scapy.sendrecv import send, AsyncSniffer
 from scapy.utils import rdpcap
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -108,6 +108,65 @@ class Pcap2(ScannerInterface):
             decoy_packet = IP(src=decoy_ip, dst=ip, ttl=ttl) / TCP(sport=sport, dport=port, flags=tcp_flags)
             send(decoy_packet, verbose=0)
 
+    # noinspection PyMethodMayBeStatic
+    def _analyze_responses(self, responses, scan_type: str, sport: int):
+        """Analyse les réponses capturées pour déterminer le statut du port."""
+        if not responses:
+            # Aucune réponse
+            if scan_type in ["fin", "xmas", "null"]:
+                return "open|filtered", "none"
+            else:
+                return "filtered", "none"
+
+        # Analyser la première réponse pertinente
+        for resp in responses:
+            if not resp.haslayer(TCP):
+                continue
+
+            tcp_layer = resp[TCP]
+
+            # Vérifier que c'est une réponse à notre probe (source port match)
+            if tcp_layer.dport != sport:
+                continue
+
+            flags = tcp_layer.flags
+
+            # Conversion des flags en string
+            flags_str = ""
+            if flags & 0x02:  # SYN
+                flags_str += "S"
+            if flags & 0x10:  # ACK
+                flags_str += "A"
+            if flags & 0x04:  # RST
+                flags_str += "R"
+            if flags & 0x01:  # FIN
+                flags_str += "F"
+            if flags & 0x08:  # PSH
+                flags_str += "P"
+            if flags & 0x20:  # URG
+                flags_str += "U"
+
+            # Déterminer le statut basé sur le scan type et les flags
+            if scan_type == "syn":
+                if flags & 0x12 == 0x12:  # SYN-ACK
+                    return "open", flags_str
+                elif flags & 0x04:  # RST
+                    return "closed", flags_str
+            elif scan_type in ["fin", "xmas", "null"]:
+                if flags & 0x04:  # RST
+                    return "closed", flags_str
+                # Pas de réponse = open|filtered (déjà géré ci-dessus)
+            elif scan_type == "ack":
+                if flags & 0x04:  # RST
+                    return "unfiltered", flags_str
+
+            return "unknown", flags_str
+
+        # Si on arrive ici, aucune réponse pertinente
+        if scan_type in ["fin", "xmas", "null"]:
+            return "open|filtered", "none"
+        return "filtered", "none"
+
     # noinspection PyTypeHints
     def scan(self, ip: str, thread_id: str, event_queue, stop_flag) -> ScanResult:
         if stop_flag():
@@ -134,7 +193,8 @@ class Pcap2(ScannerInterface):
                 ports_to_scan = [443]
 
         delay = float(strategy.get("delay", 0.5))
-        inter_packet_delay = float(strategy.get("inter_packet_delay", 0.001))  # Délai entre paquets
+        inter_packet_delay = float(strategy.get("inter_packet_delay", 0.001))
+        timeout = float(strategy.get("timeout", 2))
 
         port_results = []
 
@@ -174,7 +234,15 @@ class Pcap2(ScannerInterface):
                                  'data': {'thread_id': thread_id,
                                           'message': f"[{time.ctime()}] Envoi de {len(packets)} paquets vers {ip}:{port}"}})
 
-                # Envoyer tous les paquets sans attendre de réponse (mode replay)
+                # Démarrer le sniffer AVANT d'envoyer
+                sniffer = AsyncSniffer(
+                    filter=f"tcp and host {ip} and port {port}",
+                    timeout=timeout,
+                    store=True
+                )
+                sniffer.start()
+
+                # Envoyer tous les paquets
                 for pkt in packets:
                     if stop_flag():
                         break
@@ -185,13 +253,26 @@ class Pcap2(ScannerInterface):
                     send(pkt, verbose=0)
                     time.sleep(inter_packet_delay)
 
-                # Marquer le port comme "sent" (pas de détection d'ouverture)
-                port_data = {"port": port, "status": "sent", "response_flags": "none", "packets_sent": len(packets)}
-                port_results.append(port_data)
+                # Attendre les réponses
+                time.sleep(timeout)
+                sniffer.stop()
 
-                event_queue.put({'event': 'thread_update',
-                                 'data': {'thread_id': thread_id,
-                                          'message': f"[{time.ctime()}] Port {port} - {len(packets)} paquets envoyés"}})
+                # Analyser les réponses capturées
+                responses = sniffer.results
+                status, flags_str = self._analyze_responses(responses, scan_type, sport)
+
+                port_data = {"port": port, "status": status, "response_flags": flags_str}
+
+                # N'ajouter que les ports ouverts
+                if status == "open":
+                    port_results.append(port_data)
+                    event_queue.put({'event': 'thread_update',
+                                     'data': {'thread_id': thread_id,
+                                              'message': f"[{time.ctime()}] Port {port} - {status} ({flags_str})"}})
+                else:
+                    event_queue.put({'event': 'thread_update',
+                                     'data': {'thread_id': thread_id,
+                                              'message': f"[{time.ctime()}] Port {port} - {status}"}})
 
             except Exception as e:
                 event_queue.put({'event': 'thread_update',
