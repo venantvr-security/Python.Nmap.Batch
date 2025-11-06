@@ -901,6 +901,97 @@ def pcap_list():
     return jsonify({"files": sorted(files, key=lambda x: x['modified'], reverse=True)})
 
 
+@app.route('/api/pcap/enrich-ips', methods=['POST'])
+def pcap_enrich_ips():
+    """Enrichit les adresses IP avec géolocalisation, reverse DNS, etc."""
+    data = request.get_json()
+    ips = data.get('ips', [])
+    pcap_filename = data.get('filename', '')
+
+    if not ips:
+        return jsonify({"enriched": {}})
+
+    import socket
+    import requests
+
+    enriched = {}
+    for ip in ips:
+        try:
+            info = {}
+
+            # Reverse DNS
+            try:
+                hostname = socket.gethostbyaddr(ip)[0]
+                info['hostname'] = hostname
+            except:
+                info['hostname'] = None
+
+            # Géolocalisation via ip-api.com (gratuit, pas de clé requise)
+            try:
+                response = requests.get(f'http://ip-api.com/json/{ip}', timeout=2)
+                if response.status_code == 200:
+                    geo_data = response.json()
+                    if geo_data.get('status') == 'success':
+                        info['country'] = geo_data.get('country')
+                        info['countryCode'] = geo_data.get('countryCode')
+                        info['region'] = geo_data.get('regionName')
+                        info['city'] = geo_data.get('city')
+                        info['isp'] = geo_data.get('isp')
+                        info['org'] = geo_data.get('org')
+                        info['as'] = geo_data.get('as')
+                        info['lat'] = geo_data.get('lat')
+                        info['lon'] = geo_data.get('lon')
+            except:
+                pass
+
+            # Détection type IP
+            import ipaddress as ip_module
+            try:
+                ip_obj = ip_module.ip_address(ip)
+                info['is_private'] = ip_obj.is_private
+                info['is_loopback'] = ip_obj.is_loopback
+                info['is_multicast'] = ip_obj.is_multicast
+            except:
+                pass
+
+            enriched[ip] = info
+
+        except Exception as e:
+            logger.error(f"Error enriching IP {ip}: {e}")
+            enriched[ip] = {"error": str(e)}
+
+    # Sauvegarder dans cache JSON
+    if pcap_filename:
+        cache_file = os.path.join(PATHS['pcap_templates_dir'], 'packets', f'{pcap_filename}.ips.json')
+        try:
+            with open(cache_file, 'w') as f:
+                json.dump(enriched, f, indent=2)
+        except Exception as e:
+            logger.error(f"Error saving IP cache: {e}")
+
+    return jsonify({"enriched": enriched})
+
+
+@app.route('/api/pcap/ip-cache/<filename>', methods=['GET'])
+def pcap_get_ip_cache(filename):
+    """Récupère le cache JSON des IPs enrichies pour un fichier PCAP."""
+    import re
+    filename = re.sub(r'[^\w\-_\.]', '_', filename)
+
+    cache_file = os.path.join(PATHS['pcap_templates_dir'], 'packets', f'{filename}.ips.json')
+
+    if not os.path.exists(cache_file):
+        return jsonify({}), 404
+
+    try:
+        with open(cache_file, 'r') as f:
+            data = json.load(f)
+        return jsonify(data)
+    except Exception as e:
+        logger.error(f"Error loading IP cache: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route('/api/pcap/load/<filename>', methods=['GET'])
 def pcap_load(filename):
     """Charge un fichier PCAP existant depuis pcap_templates/packets/."""

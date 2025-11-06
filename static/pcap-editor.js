@@ -3,6 +3,7 @@ let pcapCurrentFile = null;
 let pcapPackets = [];
 let pcapSelectedIndices = new Set();
 let pcapDeletedIndices = new Set();
+let pcapIpCache = {}; // Cache des informations IP enrichies
 
 function showPcapEditor() {
     const modal = new bootstrap.Modal(document.getElementById('pcapEditorModal'));
@@ -62,12 +63,113 @@ function loadPcapExistingFile(filename) {
             document.getElementById('pcap-delete-btn').disabled = false;
             updatePcapCounts();
             console.log('File loaded successfully, packets:', pcapPackets.length);
+
+            // Charger le cache IP et enrichir
+            loadAndEnrichIPs(data.filename);
         })
         .catch(err => {
             document.getElementById('pcap-status').className = 'alert alert-danger';
             document.getElementById('pcap-status').textContent = 'Load failed: ' + err;
             console.error('Load error:', err);
         });
+}
+
+function extractIPsFromPackets() {
+    const ips = new Set();
+    const ipRegex = /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
+
+    pcapPackets.forEach(pkt => {
+        // Extraire IPs depuis layers et summary
+        const text = (pkt.layers || '') + ' ' + (pkt.summary || '');
+        const matches = text.match(ipRegex);
+        if (matches) {
+            matches.forEach(ip => ips.add(ip));
+        }
+    });
+
+    return Array.from(ips);
+}
+
+function loadAndEnrichIPs(filename) {
+    const ips = extractIPsFromPackets();
+    if (ips.length === 0) {
+        console.log('No IPs found in packets');
+        return;
+    }
+
+    console.log('Found IPs:', ips);
+
+    // Tenter de charger le cache JSON existant
+    fetch(`/api/pcap/ip-cache/${encodeURIComponent(filename)}`)
+        .then(r => {
+            if (r.ok) {
+                return r.json();
+            }
+            return null;
+        })
+        .then(cached => {
+            if (cached) {
+                console.log('Loaded IP cache from JSON');
+                pcapIpCache = cached;
+                renderPcapPackets(); // Re-render avec les IPs enrichies
+            }
+
+            // Enrichir les IPs manquantes en background
+            const missingIps = ips.filter(ip => !cached || !cached[ip]);
+            if (missingIps.length > 0) {
+                console.log('Enriching missing IPs:', missingIps.length);
+                enrichIPs(missingIps, filename);
+            }
+        })
+        .catch(() => {
+            // Pas de cache, enrichir toutes les IPs
+            console.log('No cache found, enriching all IPs');
+            enrichIPs(ips, filename);
+        });
+}
+
+function enrichIPs(ips, filename) {
+    fetch('/api/pcap/enrich-ips', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            ips: ips,
+            filename: filename
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        console.log('IP enrichment complete:', Object.keys(data.enriched).length);
+        Object.assign(pcapIpCache, data.enriched);
+        renderPcapPackets(); // Re-render avec les nouvelles infos
+    })
+    .catch(err => console.error('IP enrichment failed:', err));
+}
+
+function wrapIPsInText(text) {
+    if (!text) return text;
+
+    const ipRegex = /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
+
+    return text.replace(ipRegex, (ip) => {
+        const info = pcapIpCache[ip];
+        if (!info) {
+            return `<span class="ip-address ip-loading" data-ip="${ip}">${ip}</span>`;
+        }
+
+        // Construire le tooltip
+        let tooltip = `<strong>${ip}</strong><br>`;
+        if (info.hostname) tooltip += `🏠 ${info.hostname}<br>`;
+        if (info.country) tooltip += `🌍 ${info.city || ''}, ${info.country} (${info.countryCode})<br>`;
+        if (info.isp) tooltip += `🏢 ${info.isp}<br>`;
+        if (info.org) tooltip += `🏛️ ${info.org}<br>`;
+        if (info.as) tooltip += `📡 ${info.as}<br>`;
+        if (info.is_private) tooltip += `🔒 Private IP<br>`;
+        if (info.is_loopback) tooltip += `🔁 Loopback<br>`;
+        if (info.lat && info.lon) tooltip += `📍 ${info.lat}, ${info.lon}`;
+
+        return `<span class="ip-address" data-bs-toggle="tooltip" data-bs-html="true" title="${tooltip}" data-ip="${ip}">${ip}</span>`;
+    });
 }
 
 function uploadPcapFile() {
@@ -109,6 +211,9 @@ function uploadPcapFile() {
         document.getElementById('pcap-invert-btn').disabled = false;
         document.getElementById('pcap-delete-btn').disabled = false;
         updatePcapCounts();
+
+        // Charger le cache IP et enrichir
+        loadAndEnrichIPs(data.filename);
     })
     .catch(err => {
         document.getElementById('pcap-status').className = 'alert alert-danger';
@@ -128,17 +233,25 @@ function renderPcapPackets() {
         if (pcapSelectedIndices.has(i)) classes.push('selected');
         if (pcapDeletedIndices.has(i)) classes.push('deleted');
 
+        // Wrapper les IPs avec tooltips
+        const layersWithIPs = wrapIPsInText(pkt.layers || 'Unknown');
+        const summaryWithIPs = wrapIPsInText(pkt.summary);
+
         return `
             <tr class="${classes.join(' ')}" data-index="${i}">
-                <td onclick="togglePcapPacket(${i})">${i}</td>
-                <td onclick="togglePcapPacket(${i})" style="font-family: monospace; font-size: 0.85rem;">${pkt.layers || 'Unknown'}</td>
-                <td onclick="togglePcapPacket(${i})" style="font-size: 0.9rem;">${pkt.summary}</td>
+                <td onclick="togglePcapPacket(${i})">${pcapSelectedIndices.has(i) ? '✓' : ''} ${i}</td>
+                <td onclick="togglePcapPacket(${i})" style="font-family: monospace; font-size: 0.85rem;">${layersWithIPs}</td>
+                <td onclick="togglePcapPacket(${i})" style="font-size: 0.9rem;">${summaryWithIPs}</td>
                 <td onclick="togglePcapPacket(${i})">${pkt.length}</td>
                 <td onclick="togglePcapPacket(${i})">${new Date(pkt.time * 1000).toLocaleTimeString()}</td>
                 <td><button class="btn btn-sm btn-outline-secondary" onclick="showPcapHex(${i}); event.stopPropagation();">📄</button></td>
             </tr>
         `;
     }).join('');
+
+    // Initialiser les tooltips Bootstrap
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    [...tooltipTriggerList].map(el => new bootstrap.Tooltip(el));
 }
 
 function showPcapHex(index) {
