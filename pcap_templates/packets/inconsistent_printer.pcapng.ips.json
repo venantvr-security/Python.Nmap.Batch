@@ -1,0 +1,14 @@
+{
+  "172.16.0.8": {
+    "hostname": null,
+    "is_private": true,
+    "is_loopback": false,
+    "is_multicast": false
+  },
+  "172.16.0.253": {
+    "hostname": null,
+    "is_private": true,
+    "is_loopback": false,
+    "is_multicast": false
+  }
+}

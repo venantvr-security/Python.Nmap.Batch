@@ -1,0 +1,23 @@
+{
+  "172.16.16.128": {
+    "hostname": null,
+    "is_private": true,
+    "is_loopback": false,
+    "is_multicast": false
+  },
+  "74.125.95.104": {
+    "hostname": null,
+    "country": "United States",
+    "countryCode": "US",
+    "region": "California",
+    "city": "Mountain View",
+    "isp": "Google LLC",
+    "org": "Google LLC",
+    "as": "AS15169 Google LLC",
+    "lat": 37.4225,
+    "lon": -122.085,
+    "is_private": false,
+    "is_loopback": false,
+    "is_multicast": false
+  }
+}

@@ -349,7 +349,7 @@ Adaptive Scanner:
   - IDS alerts: 3 (⬇️ 93%)
 ```
 
-## 🎓 Innovation Points (Impressionner les Experts)
+## 🎓 Innovation Points
 
 ### 1. Adversarial Intelligence
 

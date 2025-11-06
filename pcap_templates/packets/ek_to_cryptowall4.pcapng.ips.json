@@ -1,0 +1,108 @@
+{
+  "192.168.122.145": {
+    "ports": [
+      80,
+      49314,
+      49328,
+      49329,
+      49339,
+      49356,
+      49357,
+      49358,
+      49359,
+      49360,
+      49361
+    ],
+    "ips_contacted": [],
+    "hostname": null,
+    "is_private": true,
+    "is_loopback": false,
+    "is_multicast": false
+  },
+  "113.20.11.49": {
+    "ports": [
+      80,
+      49314
+    ],
+    "ips_contacted": [],
+    "hostname": null,
+    "country": "Australia",
+    "countryCode": "AU",
+    "region": "Australian Capital Territory",
+    "city": "Braddon",
+    "isp": "UberGlobal Pty Ltd",
+    "org": "",
+    "as": "",
+    "lat": -35.2729,
+    "lon": 149.131,
+    "is_private": false,
+    "is_loopback": false,
+    "is_multicast": false
+  },
+  "45.32.238.202": {
+    "ports": [
+      80,
+      49328,
+      49329,
+      49339
+    ],
+    "ips_contacted": [],
+    "hostname": "euepixeirein.gr",
+    "country": "The Netherlands",
+    "countryCode": "NL",
+    "region": "North Holland",
+    "city": "Amsterdam",
+    "isp": "The Constant Company",
+    "org": "Vultr Holdings, LLC",
+    "as": "AS20473 The Constant Company, LLC",
+    "lat": 52.3891,
+    "lon": 4.6563,
+    "is_private": false,
+    "is_loopback": false,
+    "is_multicast": false
+  },
+  "213.186.33.18": {
+    "ports": [
+      80,
+      49356,
+      49358,
+      49360
+    ],
+    "ips_contacted": [],
+    "hostname": "cluster007.ovh.net",
+    "country": "France",
+    "countryCode": "FR",
+    "region": "Hauts-de-France",
+    "city": "Roubaix",
+    "isp": "OVH SAS",
+    "org": "OVH ISP",
+    "as": "AS16276 OVH SAS",
+    "lat": 50.6924,
+    "lon": 3.20113,
+    "is_private": false,
+    "is_loopback": false,
+    "is_multicast": false
+  },
+  "184.170.149.44": {
+    "ports": [
+      80,
+      49357,
+      49359,
+      49361
+    ],
+    "ips_contacted": [],
+    "hostname": null,
+    "country": "United States",
+    "countryCode": "US",
+    "region": "California",
+    "city": "Los Angeles",
+    "isp": "Website Hosting",
+    "org": "Website Hosting",
+    "as": "",
+    "lat": 34.0475,
+    "lon": -118.257,
+    "is_private": false,
+    "is_loopback": false,
+    "is_multicast": false
+  }
+}

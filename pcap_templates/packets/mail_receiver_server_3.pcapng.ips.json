@@ -1,0 +1,37 @@
+{
+  "172.16.16.221": {
+    "ports": [
+      25,
+      56694
+    ],
+    "ips_contacted": [],
+    "hostname": null,
+    "is_private": true,
+    "is_loopback": false,
+    "is_multicast": false
+  },
+  "172.16.16.231": {
+    "ports": [
+      25,
+      143,
+      51147,
+      56694
+    ],
+    "ips_contacted": [],
+    "hostname": null,
+    "is_private": true,
+    "is_loopback": false,
+    "is_multicast": false
+  },
+  "172.16.16.235": {
+    "ports": [
+      143,
+      51147
+    ],
+    "ips_contacted": [],
+    "hostname": null,
+    "is_private": true,
+    "is_loopback": false,
+    "is_multicast": false
+  }
+}

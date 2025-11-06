@@ -59,7 +59,7 @@ Python.Nmap.Batch/
     - Intelligence adversariale
     - Evasion automatique
     - Comparaison vs scanners traditionnels
-    - Innovation points pour experts
+    - Innovation points
     - Démonstration (quick start)
     - Cas d'usage (Pentest, Red Team, Bug Bounty)
     - Roadmap (ML integration, publication)
@@ -71,7 +71,7 @@ Python.Nmap.Batch/
     - Innovations techniques (5 points)
     - Résultats démo (92% vs 60%)
     - Roadmap (4 phases)
-    - Pitch pour experts
+    - Pitch
 ```
 
 ## 🔗 Interconnexions
@@ -194,6 +194,7 @@ Python.Nmap.Batch/
 # 1. Scanner adaptatif complet
 from scanners.AdaptiveCompositeScanner import AdaptiveCompositeScanner
 
+# noinspection PyUnresolvedReferences
 scanner = AdaptiveCompositeScanner(process_manager)
 ip, success, error, details, extra = scanner.scan(...)
 
@@ -207,6 +208,7 @@ os_name, confidence = db.identify_os(ttl=64, window=29200, ...)
 from scanners.AdaptiveCompositeScanner import ScanIntelligence
 
 intelligence = ScanIntelligence()
+# noinspection PyUnresolvedReferences
 intelligence.defense_level = DefenseLevel.HIGH
 ```
 

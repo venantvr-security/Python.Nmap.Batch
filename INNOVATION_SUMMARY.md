@@ -358,7 +358,7 @@ Training: Adversarial environment simulation
 - [ ] Publication académique : BlackHat USA 2025 / DEF CON 33
 - [ ] Open-source release avec communauté
 
-## 🏆 Points Forts pour Impressionner les Experts
+## 🏆 Points Forts
 
 ### 1. **Concept Unique**
 
@@ -388,7 +388,7 @@ Imitation de trafic légitime pour contourner les détections ML-based (future f
 
 Enrichissement automatique avec CVE matching, attack surface analysis, et recommandations de sécurité.
 
-## 🎤 Pitch pour Experts
+## 🎤 Pitch
 
 > "Nous avons créé un scanner réseau qui pense comme un adversaire intelligent. En s'inspirant des GANs, notre scanner **génère** des stratégies de scan, **discrimine**
 > les défenses en temps réel, et **s'adapte** continuellement via un feedback loop. Résultat : 92% de taux de détection même avec IDS actif, contre 60% pour un scan

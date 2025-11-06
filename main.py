@@ -786,30 +786,68 @@ def pcap_upload():
         # Lire les paquets
         packets = rdpcap(temp_path)
 
-        # Convertir en JSON
+        # Convertir en JSON et extraire IPs/ports
         packets_data = []
+        ip_port_map = {}  # {ip: {ports: set(), ips_contacted: set()}}
+
         for i, pkt in enumerate(packets):
             # Extraire layers et détails
             layers = []
             if pkt.haslayer('Ether'):
                 layers.append('Ether')
+
+            src_ip = None
+            dst_ip = None
+            src_port = None
+            dst_port = None
+
             if pkt.haslayer('IP'):
                 from scapy.layers.inet import IP as IPLayer
+
                 ip_layer = pkt[IPLayer]
-                layers.append(f'IP {ip_layer.src} > {ip_layer.dst}')
+                src_ip = str(ip_layer.src)
+                dst_ip = str(ip_layer.dst)
+                layers.append(f'IP {src_ip} > {dst_ip}')
+
             if pkt.haslayer('TCP'):
                 from scapy.layers.inet import TCP as TCPLayer
+
                 tcp_layer = pkt[TCPLayer]
-                layers.append(f'TCP {tcp_layer.sport} > {tcp_layer.dport} [{tcp_layer.flags}]')
+                src_port = int(tcp_layer.sport)
+                dst_port = int(tcp_layer.dport)
+                layers.append(f'TCP {src_port} > {dst_port} [{tcp_layer.flags}]')
+
             if pkt.haslayer('UDP'):
                 from scapy.layers.inet import UDP
+
                 udp_layer = pkt[UDP]
-                layers.append(f'UDP {udp_layer.sport} > {udp_layer.dport}')
+                src_port = int(udp_layer.sport)
+                dst_port = int(udp_layer.dport)
+                layers.append(f'UDP {src_port} > {dst_port}')
+
             if pkt.haslayer('Raw'):
                 from scapy.packet import Raw
+
                 raw_layer = pkt[Raw]
                 raw_preview = bytes(raw_layer.load[:50]).hex() if len(raw_layer.load) > 50 else bytes(raw_layer.load).hex()
                 layers.append(f'Raw ({len(raw_layer.load)} bytes): {raw_preview}...')
+
+            # Collecter IPs et ports
+            if src_ip:
+                if src_ip not in ip_port_map:
+                    ip_port_map[src_ip] = {"ports": set(), "ips_contacted": set()}
+                if src_port:
+                    ip_port_map[src_ip]["ports"].add(src_port)
+                if dst_ip:
+                    ip_port_map[src_ip]["ips_contacted"].add(dst_ip)
+
+            if dst_ip:
+                if dst_ip not in ip_port_map:
+                    ip_port_map[dst_ip] = {"ports": set(), "ips_contacted": set()}
+                if dst_port:
+                    ip_port_map[dst_ip]["ports"].add(dst_port)
+                if src_ip:
+                    ip_port_map[dst_ip]["ips_contacted"].add(src_ip)
 
             packets_data.append({
                 "index": i,
@@ -820,11 +858,29 @@ def pcap_upload():
                 "hex": bytes(pkt)[:100].hex()  # Premier 100 octets en hex
             })
 
+        # Sauvegarder les IPs/ports dans un fichier JSON séparé
+        if file.filename:
+            ports_cache_file = os.path.join('/tmp', f'{file.filename}.ports.json')
+            try:
+                # Convertir sets en listes pour JSON
+                ip_port_data = {
+                    ip: {
+                        "ports": sorted(list(data["ports"])),
+                        "ips_contacted": list(data["ips_contacted"])
+                    }
+                    for ip, data in ip_port_map.items()
+                }
+                with open(ports_cache_file, 'w') as f:
+                    json.dump(ip_port_data, f, indent=2)
+            except Exception as e:
+                logger.error(f"Error saving ports cache: {e}")
+
         return jsonify({
             "filename": file.filename,
             "temp_path": temp_path,
             "packet_count": len(packets),
-            "packets": packets_data
+            "packets": packets_data,
+            "ip_port_summary": {ip: {"ports": sorted(list(data["ports"]))} for ip, data in ip_port_map.items()}
         })
 
     except Exception as e:
@@ -847,6 +903,7 @@ def pcap_save():
 
     # Nettoyer le nom de fichier
     import re
+
     new_filename = re.sub(r'[^\w\-_\.]', '_', new_filename)
     if not new_filename.endswith(('.pcap', '.pcapng')):
         new_filename += '.pcap'
@@ -907,6 +964,7 @@ def pcap_enrich_ips():
     data = request.get_json()
     ips = data.get('ips', [])
     pcap_filename = data.get('filename', '')
+    ip_port_data = data.get('ip_port_data', {})  # Données IPs/ports du PCAP
 
     if not ips:
         return jsonify({"enriched": {}})
@@ -914,45 +972,65 @@ def pcap_enrich_ips():
     import socket
     import requests
 
+    # Charger le cache existant s'il existe
+    existing_cache = {}
+    if pcap_filename:
+        cache_file = os.path.join(PATHS['pcap_templates_dir'], 'packets', f'{pcap_filename}.ips.json')
+        if os.path.exists(cache_file):
+            try:
+                with open(cache_file, 'r') as f:
+                    existing_cache = json.load(f)
+            except:
+                pass
+
     enriched = {}
     for ip in ips:
         try:
-            info = {}
+            # Commencer avec les données du cache existant
+            info = existing_cache.get(ip, {}).copy()
 
-            # Reverse DNS
-            try:
-                hostname = socket.gethostbyaddr(ip)[0]
-                info['hostname'] = hostname
-            except:
-                info['hostname'] = None
+            # Ajouter les ports si disponibles
+            if ip in ip_port_data:
+                info['ports'] = ip_port_data[ip].get('ports', [])
+                info['ips_contacted'] = ip_port_data[ip].get('ips_contacted', [])
 
-            # Géolocalisation via ip-api.com (gratuit, pas de clé requise)
-            try:
-                response = requests.get(f'http://ip-api.com/json/{ip}', timeout=2)
-                if response.status_code == 200:
-                    geo_data = response.json()
-                    if geo_data.get('status') == 'success':
-                        info['country'] = geo_data.get('country')
-                        info['countryCode'] = geo_data.get('countryCode')
-                        info['region'] = geo_data.get('regionName')
-                        info['city'] = geo_data.get('city')
-                        info['isp'] = geo_data.get('isp')
-                        info['org'] = geo_data.get('org')
-                        info['as'] = geo_data.get('as')
-                        info['lat'] = geo_data.get('lat')
-                        info['lon'] = geo_data.get('lon')
-            except:
-                pass
+            # Enrichir seulement si pas déjà dans le cache
+            if ip not in existing_cache:
+                # Reverse DNS
+                try:
+                    hostname = socket.gethostbyaddr(ip)[0]
+                    info['hostname'] = hostname
+                except:
+                    info['hostname'] = None
 
-            # Détection type IP
-            import ipaddress as ip_module
-            try:
-                ip_obj = ip_module.ip_address(ip)
-                info['is_private'] = ip_obj.is_private
-                info['is_loopback'] = ip_obj.is_loopback
-                info['is_multicast'] = ip_obj.is_multicast
-            except:
-                pass
+                # Géolocalisation via ip-api.com (gratuit, pas de clé requise)
+                try:
+                    response = requests.get(f'http://ip-api.com/json/{ip}', timeout=2)
+                    if response.status_code == 200:
+                        geo_data = response.json()
+                        if geo_data.get('status') == 'success':
+                            info['country'] = geo_data.get('country')
+                            info['countryCode'] = geo_data.get('countryCode')
+                            info['region'] = geo_data.get('regionName')
+                            info['city'] = geo_data.get('city')
+                            info['isp'] = geo_data.get('isp')
+                            info['org'] = geo_data.get('org')
+                            info['as'] = geo_data.get('as')
+                            info['lat'] = geo_data.get('lat')
+                            info['lon'] = geo_data.get('lon')
+                except:
+                    pass
+
+                # Détection type IP
+                import ipaddress as ip_module
+
+                try:
+                    ip_obj = ip_module.ip_address(ip)
+                    info['is_private'] = ip_obj.is_private
+                    info['is_loopback'] = ip_obj.is_loopback
+                    info['is_multicast'] = ip_obj.is_multicast
+                except:
+                    pass
 
             enriched[ip] = info
 
@@ -976,6 +1054,7 @@ def pcap_enrich_ips():
 def pcap_get_ip_cache(filename):
     """Récupère le cache JSON des IPs enrichies pour un fichier PCAP."""
     import re
+
     filename = re.sub(r'[^\w\-_\.]', '_', filename)
 
     cache_file = os.path.join(PATHS['pcap_templates_dir'], 'packets', f'{filename}.ips.json')
@@ -996,6 +1075,7 @@ def pcap_get_ip_cache(filename):
 def pcap_load(filename):
     """Charge un fichier PCAP existant depuis pcap_templates/packets/."""
     import re
+
     # Sécurité: nettoyer le nom de fichier
     filename = re.sub(r'[^\w\-_\.]', '_', filename)
 
@@ -1016,28 +1096,62 @@ def pcap_load(filename):
 
         # Convertir en JSON
         packets_data = []
+        ip_port_map = {}
+
         for i, pkt in enumerate(packets):
             # Extraire layers et détails
             layers = []
+            src_ip = None
+            dst_ip = None
+            src_port = None
+            dst_port = None
+
             if pkt.haslayer('Ether'):
                 layers.append('Ether')
             if pkt.haslayer('IP'):
                 from scapy.layers.inet import IP as IPLayer
+
                 ip_layer = pkt[IPLayer]
-                layers.append(f'IP {ip_layer.src} > {ip_layer.dst}')
+                src_ip = str(ip_layer.src)
+                dst_ip = str(ip_layer.dst)
+                layers.append(f'IP {src_ip} > {dst_ip}')
             if pkt.haslayer('TCP'):
                 from scapy.layers.inet import TCP as TCPLayer
+
                 tcp_layer = pkt[TCPLayer]
-                layers.append(f'TCP {tcp_layer.sport} > {tcp_layer.dport} [{tcp_layer.flags}]')
+                src_port = int(tcp_layer.sport)
+                dst_port = int(tcp_layer.dport)
+                layers.append(f'TCP {src_port} > {dst_port} [{tcp_layer.flags}]')
             if pkt.haslayer('UDP'):
                 from scapy.layers.inet import UDP
+
                 udp_layer = pkt[UDP]
-                layers.append(f'UDP {udp_layer.sport} > {udp_layer.dport}')
+                src_port = int(udp_layer.sport)
+                dst_port = int(udp_layer.dport)
+                layers.append(f'UDP {src_port} > {dst_port}')
             if pkt.haslayer('Raw'):
                 from scapy.packet import Raw
+
                 raw_layer = pkt[Raw]
                 raw_preview = bytes(raw_layer.load[:50]).hex() if len(raw_layer.load) > 50 else bytes(raw_layer.load).hex()
                 layers.append(f'Raw ({len(raw_layer.load)} bytes): {raw_preview}...')
+
+            # Collecter IPs et ports
+            if src_ip:
+                if src_ip not in ip_port_map:
+                    ip_port_map[src_ip] = {"ports": set(), "ips_contacted": set()}
+                if src_port:
+                    ip_port_map[src_ip]["ports"].add(src_port)
+                if dst_ip:
+                    ip_port_map[src_ip]["ips_contacted"].add(dst_ip)
+
+            if dst_ip:
+                if dst_ip not in ip_port_map:
+                    ip_port_map[dst_ip] = {"ports": set(), "ips_contacted": set()}
+                if dst_port:
+                    ip_port_map[dst_ip]["ports"].add(dst_port)
+                if src_ip:
+                    ip_port_map[dst_ip]["ips_contacted"].add(src_ip)
 
             packets_data.append({
                 "index": i,
@@ -1048,11 +1162,20 @@ def pcap_load(filename):
                 "hex": bytes(pkt)[:100].hex()  # Premier 100 octets en hex
             })
 
+        # Convertir sets en listes pour JSON
+        ip_port_summary = {}
+        for ip, data in ip_port_map.items():
+            ip_port_summary[ip] = {
+                "ports": sorted(list(data["ports"])),
+                "ips_contacted": sorted(list(data["ips_contacted"]))
+            }
+
         return jsonify({
             "filename": filename,
             "temp_path": filepath,  # Utiliser le chemin réel pour la sauvegarde
             "packet_count": len(packets),
-            "packets": packets_data
+            "packets": packets_data,
+            "ip_port_summary": ip_port_summary
         })
 
     except Exception as e:

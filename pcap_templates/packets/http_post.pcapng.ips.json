@@ -1,0 +1,23 @@
+{
+  "172.16.16.128": {
+    "hostname": null,
+    "is_private": true,
+    "is_loopback": false,
+    "is_multicast": false
+  },
+  "69.163.176.56": {
+    "hostname": "apache2-pat.pdx1-shared-a1-15.dreamhost.com",
+    "country": "United States",
+    "countryCode": "US",
+    "region": "Oregon",
+    "city": "Hillsboro",
+    "isp": "New Dream Network",
+    "org": "DreamHost",
+    "as": "AS26347 New Dream Network, LLC",
+    "lat": 45.5397,
+    "lon": -122.9638,
+    "is_private": false,
+    "is_loopback": false,
+    "is_multicast": false
+  }
+}

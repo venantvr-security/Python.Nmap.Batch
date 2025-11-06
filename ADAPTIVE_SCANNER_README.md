@@ -95,9 +95,13 @@ Identification basée sur :
 
 ```python
 # Le scanner apprend automatiquement
+# noinspection PyUnresolvedReferences,PyStatementEffect
 scanner.intelligence.defense_level  # NONE, LOW, MEDIUM, HIGH, PARANOID
+# noinspection PyUnresolvedReferences,PyStatementEffect
 scanner.intelligence.likely_os  # "Linux 5.x", "Windows 10", etc.
+# noinspection PyUnresolvedReferences,PyStatementEffect
 scanner.intelligence.is_rate_limited  # True/False
+# noinspection PyUnresolvedReferences,PyStatementEffect
 scanner.intelligence.firewall_type  # "iptables", "Cisco ASA", etc.
 ```
 
@@ -124,7 +128,7 @@ Techniques appliquées automatiquement selon le contexte :
 | Fingerprinting         | ✅ Excellent | ❌ Aucun     | ✅ **ML-powered**     |
 | Mimicry de trafic      | ❌ Non       | ❌ Non       | ✅ **Oui**            |
 
-## 🎓 Innovation Points pour Experts
+## 🎓 Innovation Points
 
 ### 1. Architecture GAN-Inspired
 
@@ -153,16 +157,17 @@ Techniques appliquées automatiquement selon le contexte :
 ### 3. Context-Aware Strategy Selection
 
 ```python
+# noinspection PyUnresolvedReferences,PyStatementEffect
 if defense_level == NONE:
-    strategy = "aggressive"      # Masscan, timing=fast
+    strategy = "aggressive"  # Masscan, timing=fast
 elif defense_level == LOW:
-    strategy = "standard"        # Nmap, timing=normal
+    strategy = "standard"  # Nmap, timing=normal
 elif defense_level == MEDIUM:
-    strategy = "evasive"         # Scapy, decoys=5
+    strategy = "evasive"  # Scapy, decoys=5
 elif defense_level == HIGH:
-    strategy = "stealth"         # Fragmentation, slow
+    strategy = "stealth"  # Fragmentation, slow
 elif defense_level == PARANOID:
-    strategy = "ultra-stealth"   # Mimicry, encryption
+    strategy = "ultra-stealth"  # Mimicry, encryption
 ```
 
 ### 4. Knowledge Base Evolution
@@ -173,19 +178,21 @@ elif defense_level == PARANOID:
 
 ### 5. Future: Machine Learning Integration
 
-```python
+```text
 # Neural Network pour sélection de stratégie
 class NeuralStrategySelector:
     Input: [defense_level, response_times, ttl, window_size, ...]
     Hidden: Dense(64) > ReLU > Dropout(0.3) > Dense(32)
-    Output: Softmax(N_strategies) > Best strategy
+    Output: Softmax(N_strategies) > Best
+    strategy
+
 
 # Reinforcement Learning pour evasion
 class EvasionAgent:
     State: (defense_type, current_technique, detection_status)
     Actions: [change_timing, add_decoys, fragment, ...]
-    Reward: +1 (port found), -1 (detected), -0.1 (per second)
-    Policy: Deep Q-Network (DQN)
+    Reward: +1(port found), -1(detected), -0.1(per second)
+    Policy: Deep Q - Network(DQN)
 ```
 
 ## 🔬 Démonstration

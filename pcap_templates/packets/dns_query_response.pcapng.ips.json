@@ -1,0 +1,23 @@
+{
+  "192.168.0.114": {
+    "hostname": null,
+    "is_private": true,
+    "is_loopback": false,
+    "is_multicast": false
+  },
+  "205.152.37.23": {
+    "hostname": "dns.asm.bellsouth.net",
+    "country": "United States",
+    "countryCode": "US",
+    "region": "Georgia",
+    "city": "Atlanta",
+    "isp": "AT&T Enterprises",
+    "org": "BMF LAN - ASM",
+    "as": "AS6389 AT&T Enterprises, LLC",
+    "lat": 33.8229,
+    "lon": -84.3686,
+    "is_private": false,
+    "is_loopback": false,
+    "is_multicast": false
+  }
+}

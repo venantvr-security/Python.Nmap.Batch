@@ -58,6 +58,17 @@ function renderPcapFilesList(files, searchTerm = '') {
             if (countries.size > 0) {
                 badges += `<span class="badge bg-success pcap-search-badge me-1">${countries.size} countries</span>`;
             }
+
+            // Compter ports uniques
+            const allPorts = new Set();
+            Object.values(metadata).forEach(m => {
+                if (m.ports) {
+                    m.ports.forEach(p => allPorts.add(p));
+                }
+            });
+            if (allPorts.size > 0) {
+                badges += `<span class="badge bg-primary pcap-search-badge me-1">${allPorts.size} ports</span>`;
+            }
         }
 
         return `
@@ -135,6 +146,13 @@ function searchPcapFiles() {
             if (info.org && info.org.toLowerCase().includes(searchTerm)) {
                 matchReasons.push(`org: ${info.org}`);
                 score += 6;
+            }
+
+            // Recherche par port
+            if (info.ports && info.ports.some(p => String(p).includes(searchTerm))) {
+                const matchingPorts = info.ports.filter(p => String(p).includes(searchTerm));
+                matchReasons.push(`port: ${matchingPorts.join(',')}`);
+                score += 7;
             }
         }
 
@@ -222,7 +240,7 @@ function loadPcapExistingFile(filename) {
             console.log('File loaded successfully, packets:', pcapPackets.length);
 
             // Charger le cache IP et enrichir
-            loadAndEnrichIPs(data.filename);
+            loadAndEnrichIPs(data.filename, data.ip_port_summary || null);
         })
         .catch(err => {
             document.getElementById('pcap-status').className = 'alert alert-danger';
@@ -247,7 +265,7 @@ function extractIPsFromPackets() {
     return Array.from(ips);
 }
 
-function loadAndEnrichIPs(filename) {
+function loadAndEnrichIPs(filename, ipPortSummary = null) {
     const ips = extractIPsFromPackets();
     if (ips.length === 0) {
         console.log('No IPs found in packets');
@@ -275,23 +293,67 @@ function loadAndEnrichIPs(filename) {
             const missingIps = ips.filter(ip => !cached || !cached[ip]);
             if (missingIps.length > 0) {
                 console.log('Enriching missing IPs:', missingIps.length);
-                enrichIPs(missingIps, filename);
+                enrichIPs(missingIps, filename, ipPortSummary);
             }
         })
         .catch(() => {
             // Pas de cache, enrichir toutes les IPs
             console.log('No cache found, enriching all IPs');
-            enrichIPs(ips, filename);
+            enrichIPs(ips, filename, ipPortSummary);
         });
 }
 
-function enrichIPs(ips, filename) {
+function enrichIPs(ips, filename, ipPortSummary = null) {
+    // Utiliser les ports du backend si disponibles, sinon extraire avec regex
+    let ipPortDataJSON = {};
+
+    if (ipPortSummary) {
+        // Utiliser directement les données du backend
+        console.log('Using backend ip_port_summary');
+        ipPortDataJSON = ipPortSummary;
+    } else {
+        // Fallback : extraire les ports associés aux IPs depuis les paquets avec regex
+        console.log('Extracting ports with regex (fallback)');
+        const ipPortData = {};
+        const ipRegex = /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
+        const portRegex = /(?:TCP|UDP)\s+(\d+)\s+>\s+(\d+)/g;
+
+        pcapPackets.forEach(pkt => {
+            const text = (pkt.layers || '') + ' ' + (pkt.summary || '');
+            const ipMatches = text.match(ipRegex);
+            const portMatches = [...text.matchAll(portRegex)];
+
+            if (ipMatches && portMatches.length > 0) {
+                ipMatches.forEach(ip => {
+                    if (!ipPortData[ip]) {
+                        ipPortData[ip] = {ports: new Set(), ips_contacted: new Set()};
+                    }
+                    portMatches.forEach(match => {
+                        const srcPort = parseInt(match[1]);
+                        const dstPort = parseInt(match[2]);
+                        ipPortData[ip].ports.add(srcPort);
+                        ipPortData[ip].ports.add(dstPort);
+                    });
+                });
+            }
+        });
+
+        // Convertir sets en arrays pour JSON
+        for (const [ip, data] of Object.entries(ipPortData)) {
+            ipPortDataJSON[ip] = {
+                ports: Array.from(data.ports).sort((a, b) => a - b),
+                ips_contacted: Array.from(data.ips_contacted)
+            };
+        }
+    }
+
     fetch('/api/pcap/enrich-ips', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
             ips: ips,
-            filename: filename
+            filename: filename,
+            ip_port_data: ipPortDataJSON
         })
     })
     .then(r => r.json())
@@ -316,6 +378,11 @@ function wrapIPsInText(text) {
 
         // Construire le tooltip
         let tooltip = `<strong>${ip}</strong><br>`;
+        if (info.ports && info.ports.length > 0) {
+            const portsStr = info.ports.slice(0, 10).join(', ');
+            const moreStr = info.ports.length > 10 ? ` +${info.ports.length - 10} more` : '';
+            tooltip += `🔌 Ports: ${portsStr}${moreStr}<br>`;
+        }
         if (info.hostname) tooltip += `🏠 ${info.hostname}<br>`;
         if (info.country) tooltip += `🌍 ${info.city || ''}, ${info.country} (${info.countryCode})<br>`;
         if (info.isp) tooltip += `🏢 ${info.isp}<br>`;
@@ -370,7 +437,7 @@ function uploadPcapFile() {
         updatePcapCounts();
 
         // Charger le cache IP et enrichir
-        loadAndEnrichIPs(data.filename);
+        loadAndEnrichIPs(data.filename, data.ip_port_summary || null);
     })
     .catch(err => {
         document.getElementById('pcap-status').className = 'alert alert-danger';
@@ -396,7 +463,7 @@ function renderPcapPackets() {
 
         return `
             <tr class="${classes.join(' ')}" data-index="${i}">
-                <td onclick="togglePcapPacket(${i})">${pcapSelectedIndices.has(i) ? '✓' : ''} ${i}</td>
+                <td onclick="togglePcapPacket(${i})">${i}</td>
                 <td onclick="togglePcapPacket(${i})" style="font-family: monospace; font-size: 0.85rem;">${layersWithIPs}</td>
                 <td onclick="togglePcapPacket(${i})" style="font-size: 0.9rem;">${summaryWithIPs}</td>
                 <td onclick="togglePcapPacket(${i})">${pkt.length}</td>

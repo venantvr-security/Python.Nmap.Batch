@@ -1,0 +1,23 @@
+{
+  "67.228.110.120": {
+    "hostname": "78.6e.e443.ip4.static.sl-reverse.com",
+    "country": "United States",
+    "countryCode": "US",
+    "region": "Washington",
+    "city": "Seattle",
+    "isp": "SoftLayer",
+    "org": "SoftLayer Technologies Inc",
+    "as": "AS36351 IBM Cloud",
+    "lat": 47.6109,
+    "lon": -122.3303,
+    "is_private": false,
+    "is_loopback": false,
+    "is_multicast": false
+  },
+  "172.16.16.128": {
+    "hostname": null,
+    "is_private": true,
+    "is_loopback": false,
+    "is_multicast": false
+  }
+}

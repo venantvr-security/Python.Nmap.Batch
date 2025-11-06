@@ -1,0 +1,23 @@
+{
+  "172.16.16.123": {
+    "hostname": null,
+    "is_private": true,
+    "is_loopback": false,
+    "is_multicast": false
+  },
+  "38.102.136.125": {
+    "hostname": null,
+    "country": "United States",
+    "countryCode": "US",
+    "region": "District of Columbia",
+    "city": "Washington",
+    "isp": "Cogent Communications",
+    "org": "Cogent communications - IPENG",
+    "as": "AS174 Cogent Communications, LLC",
+    "lat": 38.907,
+    "lon": -77.0526,
+    "is_private": false,
+    "is_loopback": false,
+    "is_multicast": false
+  }
+}

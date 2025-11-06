@@ -1,0 +1,44 @@
+{
+  "172.16.0.10": {
+    "hostname": null,
+    "is_private": true,
+    "is_loopback": false,
+    "is_multicast": false
+  },
+  "172.16.0.8": {
+    "hostname": null,
+    "is_private": true,
+    "is_loopback": false,
+    "is_multicast": false
+  },
+  "4.2.2.2": {
+    "hostname": "b.resolvers.level3.net",
+    "country": "United States",
+    "countryCode": "US",
+    "region": "Kansas",
+    "city": "Independence",
+    "isp": "Level 3 Communications, Inc.",
+    "org": "Level 3, LLC",
+    "as": "AS3356 Level 3 Parent, LLC",
+    "lat": 37.2262,
+    "lon": -95.7341,
+    "is_private": false,
+    "is_loopback": false,
+    "is_multicast": false
+  },
+  "4.2.2.1": {
+    "hostname": "a.resolvers.level3.net",
+    "country": "United States",
+    "countryCode": "US",
+    "region": "Kansas",
+    "city": "Independence",
+    "isp": "Level 3 Communications, Inc.",
+    "org": "Level 3, LLC",
+    "as": "AS3356 Level 3 Parent, LLC",
+    "lat": 37.2262,
+    "lon": -95.7341,
+    "is_private": false,
+    "is_loopback": false,
+    "is_multicast": false
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "172.16.16.128": {
+    "ports": [
+      80,
+      2826
+    ],
+    "ips_contacted": [],
+    "hostname": null,
+    "is_private": true,
+    "is_loopback": false,
+    "is_multicast": false
+  },
+  "212.58.226.142": {
+    "ports": [
+      80,
+      2826
+    ],
+    "ips_contacted": [],
+    "hostname": null,
+    "country": "United Kingdom",
+    "countryCode": "GB",
+    "region": "England",
+    "city": "Tadworth",
+    "isp": "BBC",
+    "org": "BBC",
+    "as": "AS2818 BBC",
+    "lat": 51.2905,
+    "lon": -0.199007,
+    "is_private": false,
+    "is_loopback": false,
+    "is_multicast": false
+  }
+}

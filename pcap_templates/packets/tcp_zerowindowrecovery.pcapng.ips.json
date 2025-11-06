@@ -1,0 +1,26 @@
+{
+  "192.168.0.20": {
+    "ports": [
+      2235
+    ],
+    "ips_contacted": [
+      "192.168.0.30"
+    ],
+    "hostname": null,
+    "is_private": true,
+    "is_loopback": false,
+    "is_multicast": false
+  },
+  "192.168.0.30": {
+    "ports": [
+      1720
+    ],
+    "ips_contacted": [
+      "192.168.0.20"
+    ],
+    "hostname": null,
+    "is_private": true,
+    "is_loopback": false,
+    "is_multicast": false
+  }
+}

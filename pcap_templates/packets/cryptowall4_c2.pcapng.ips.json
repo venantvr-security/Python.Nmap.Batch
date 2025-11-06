@@ -1,0 +1,37 @@
+{
+  "192.168.122.145": {
+    "ports": [
+      80,
+      49357,
+      49359,
+      49361
+    ],
+    "ips_contacted": [],
+    "hostname": null,
+    "is_private": true,
+    "is_loopback": false,
+    "is_multicast": false
+  },
+  "184.170.149.44": {
+    "ports": [
+      80,
+      49357,
+      49359,
+      49361
+    ],
+    "ips_contacted": [],
+    "hostname": null,
+    "country": "United States",
+    "countryCode": "US",
+    "region": "California",
+    "city": "Los Angeles",
+    "isp": "Website Hosting",
+    "org": "Website Hosting",
+    "as": "",
+    "lat": 34.0475,
+    "lon": -118.257,
+    "is_private": false,
+    "is_loopback": false,
+    "is_multicast": false
+  }
+}
