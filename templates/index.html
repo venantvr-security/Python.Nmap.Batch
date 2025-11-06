@@ -501,6 +501,10 @@
                         <div class="card shadow-sm">
                             <div class="card-body">
                                 <h5 class="card-title">Existing Files</h5>
+                                <input type="text" class="form-control form-control-sm mb-2" id="pcap-search-input"
+                                       placeholder="🔍 Search files, IPs, hostnames..."
+                                       onkeyup="searchPcapFiles()">
+                                <small class="text-muted d-block mb-2" id="pcap-search-results"></small>
                                 <div id="pcap-existing-files" style="max-height: 400px; overflow-y: auto;">
                                     <p class="text-muted">Loading...</p>
                                 </div>
@@ -609,6 +613,24 @@
 }
 .ip-loading {
     opacity: 0.6;
+}
+.tooltip-inner {
+    text-align: left !important;
+    max-width: 400px;
+}
+.pcap-file-item {
+    transition: all 0.2s;
+}
+.pcap-file-item:hover {
+    background-color: rgba(13, 110, 253, 0.1);
+}
+.pcap-search-match {
+    background-color: rgba(25, 135, 84, 0.2);
+    border-left: 3px solid #198754;
+}
+.pcap-search-badge {
+    font-size: 0.7rem;
+    padding: 2px 6px;
 }
 </style>
 

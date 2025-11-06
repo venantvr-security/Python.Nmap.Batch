@@ -4,6 +4,8 @@ let pcapPackets = [];
 let pcapSelectedIndices = new Set();
 let pcapDeletedIndices = new Set();
 let pcapIpCache = {}; // Cache des informations IP enrichies
+let pcapFilesList = []; // Liste complète des fichiers PCAP avec métadonnées
+let pcapFilesMetadata = {}; // Métadonnées IP pour chaque fichier
 
 function showPcapEditor() {
     const modal = new bootstrap.Modal(document.getElementById('pcapEditorModal'));
@@ -15,23 +17,178 @@ function loadPcapExistingFiles() {
     fetch('/api/pcap/list')
         .then(r => r.json())
         .then(data => {
-            const container = document.getElementById('pcap-existing-files');
-            if (data.files.length === 0) {
-                container.innerHTML = '<p class="text-muted">No files found</p>';
-                return;
-            }
-            container.innerHTML = data.files.map(f => `
-                <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded"
-                     style="cursor: pointer;"
-                     onclick="loadPcapExistingFile('${f.filename}')">
-                    <div>
-                        <div class="fw-bold">${f.filename}</div>
-                        <small class="text-muted">${(f.size / 1024).toFixed(1)} KB</small>
-                    </div>
-                    <span class="text-primary">👁️</span>
-                </div>
-            `).join('');
+            pcapFilesList = data.files;
+
+            // Charger les métadonnées IP pour chaque fichier
+            const metadataPromises = pcapFilesList.map(f =>
+                fetch(`/api/pcap/ip-cache/${encodeURIComponent(f.filename)}`)
+                    .then(r => r.ok ? r.json() : {})
+                    .then(meta => {
+                        pcapFilesMetadata[f.filename] = meta;
+                        return meta;
+                    })
+                    .catch(() => ({}))
+            );
+
+            Promise.all(metadataPromises).then(() => {
+                renderPcapFilesList(pcapFilesList);
+            });
         });
+}
+
+function renderPcapFilesList(files, searchTerm = '') {
+    const container = document.getElementById('pcap-existing-files');
+
+    if (files.length === 0) {
+        container.innerHTML = '<p class="text-muted">No files found</p>';
+        return;
+    }
+
+    container.innerHTML = files.map(f => {
+        const metadata = pcapFilesMetadata[f.filename] || {};
+        const ipCount = Object.keys(metadata).length;
+
+        // Construire badges de métadonnées
+        let badges = '';
+        if (ipCount > 0) {
+            badges += `<span class="badge bg-info pcap-search-badge me-1">${ipCount} IPs</span>`;
+
+            // Compter pays uniques
+            const countries = new Set(Object.values(metadata).map(m => m.country).filter(Boolean));
+            if (countries.size > 0) {
+                badges += `<span class="badge bg-success pcap-search-badge me-1">${countries.size} countries</span>`;
+            }
+        }
+
+        return `
+            <div class="pcap-file-item d-flex justify-content-between align-items-center mb-2 p-2 border rounded"
+                 style="cursor: pointer;"
+                 onclick="loadPcapExistingFile('${f.filename}')"
+                 data-filename="${f.filename}">
+                <div class="flex-grow-1">
+                    <div class="fw-bold">${f.filename}</div>
+                    <small class="text-muted">${(f.size / 1024).toFixed(1)} KB</small>
+                    ${badges ? `<div class="mt-1">${badges}</div>` : ''}
+                </div>
+                <span class="text-primary">👁️</span>
+            </div>
+        `;
+    }).join('');
+}
+
+function searchPcapFiles() {
+    const searchTerm = document.getElementById('pcap-search-input').value.toLowerCase().trim();
+
+    if (!searchTerm) {
+        renderPcapFilesList(pcapFilesList);
+        document.getElementById('pcap-search-results').textContent = '';
+        return;
+    }
+
+    const results = [];
+
+    pcapFilesList.forEach(file => {
+        let matchReasons = [];
+        let score = 0;
+
+        // Recherche dans le nom de fichier
+        if (file.filename.toLowerCase().includes(searchTerm)) {
+            matchReasons.push('filename');
+            score += 10;
+        }
+
+        // Recherche dans les métadonnées IP
+        const metadata = pcapFilesMetadata[file.filename] || {};
+
+        for (const [ip, info] of Object.entries(metadata)) {
+            // Recherche par IP
+            if (ip.includes(searchTerm)) {
+                matchReasons.push(`IP: ${ip}`);
+                score += 5;
+            }
+
+            // Recherche par hostname
+            if (info.hostname && info.hostname.toLowerCase().includes(searchTerm)) {
+                matchReasons.push(`host: ${info.hostname}`);
+                score += 8;
+            }
+
+            // Recherche par pays
+            if (info.country && info.country.toLowerCase().includes(searchTerm)) {
+                matchReasons.push(`country: ${info.country}`);
+                score += 3;
+            }
+
+            // Recherche par ville
+            if (info.city && info.city.toLowerCase().includes(searchTerm)) {
+                matchReasons.push(`city: ${info.city}`);
+                score += 3;
+            }
+
+            // Recherche par ISP
+            if (info.isp && info.isp.toLowerCase().includes(searchTerm)) {
+                matchReasons.push(`ISP: ${info.isp}`);
+                score += 6;
+            }
+
+            // Recherche par organisation
+            if (info.org && info.org.toLowerCase().includes(searchTerm)) {
+                matchReasons.push(`org: ${info.org}`);
+                score += 6;
+            }
+        }
+
+        if (matchReasons.length > 0) {
+            results.push({
+                file: file,
+                reasons: matchReasons,
+                score: score
+            });
+        }
+    });
+
+    // Trier par score décroissant
+    results.sort((a, b) => b.score - a.score);
+
+    // Afficher résultats
+    if (results.length === 0) {
+        document.getElementById('pcap-search-results').textContent = 'No matches found';
+        document.getElementById('pcap-existing-files').innerHTML = '<p class="text-muted">No matches</p>';
+        return;
+    }
+
+    document.getElementById('pcap-search-results').textContent = `Found ${results.length} match(es)`;
+
+    // Render avec highlight
+    const container = document.getElementById('pcap-existing-files');
+    container.innerHTML = results.map(result => {
+        const f = result.file;
+        const metadata = pcapFilesMetadata[f.filename] || {};
+        const ipCount = Object.keys(metadata).length;
+
+        // Limiter les raisons affichées
+        const reasonsText = result.reasons.slice(0, 3).join(', ');
+        const moreText = result.reasons.length > 3 ? ` +${result.reasons.length - 3} more` : '';
+
+        let badges = `<span class="badge bg-warning pcap-search-badge me-1">Match: ${reasonsText}${moreText}</span>`;
+        if (ipCount > 0) {
+            badges += `<span class="badge bg-info pcap-search-badge me-1">${ipCount} IPs</span>`;
+        }
+
+        return `
+            <div class="pcap-file-item pcap-search-match d-flex justify-content-between align-items-center mb-2 p-2 border rounded"
+                 style="cursor: pointer;"
+                 onclick="loadPcapExistingFile('${f.filename}')"
+                 data-filename="${f.filename}">
+                <div class="flex-grow-1">
+                    <div class="fw-bold">${f.filename}</div>
+                    <small class="text-muted">${(f.size / 1024).toFixed(1)} KB</small>
+                    <div class="mt-1">${badges}</div>
+                </div>
+                <span class="text-primary">👁️</span>
+            </div>
+        `;
+    }).join('');
 }
 
 function loadPcapExistingFile(filename) {
