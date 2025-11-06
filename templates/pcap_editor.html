@@ -9,18 +9,23 @@
     <style>
         .packet-row {
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: all 0.2s;
         }
         .packet-row:hover {
-            background-color: rgba(13, 110, 253, 0.1);
+            background-color: rgba(13, 110, 253, 0.15) !important;
         }
         .packet-row.selected {
-            background-color: rgba(25, 135, 84, 0.2);
+            background-color: rgba(25, 135, 84, 0.3) !important;
+            border-left: 3px solid #198754;
         }
         .packet-row.deleted {
-            background-color: rgba(220, 53, 69, 0.2);
+            background-color: rgba(220, 53, 69, 0.3) !important;
             text-decoration: line-through;
-            opacity: 0.6;
+            opacity: 0.7;
+            border-left: 3px solid #dc3545;
+        }
+        .packet-row.selected.deleted {
+            background-color: rgba(220, 53, 69, 0.4) !important;
         }
     </style>
 </head>
@@ -58,11 +63,14 @@
             <div class="card shadow-sm">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="card-title mb-0">Packets</h5>
                         <div>
-                            <button class="btn btn-sm btn-success me-2" id="select-all-btn" onclick="selectAll()" disabled>Select All</button>
-                            <button class="btn btn-sm btn-warning me-2" id="invert-btn" onclick="invertSelection()" disabled>Invert</button>
-                            <button class="btn btn-sm btn-danger" id="delete-btn" onclick="deleteSelected()" disabled>Delete Selected</button>
+                            <h5 class="card-title mb-0">Packets</h5>
+                            <small class="text-muted" id="selection-status">No packets loaded</small>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-success me-2" id="select-all-btn" onclick="selectAll()" disabled>✓ Select All</button>
+                            <button class="btn btn-sm btn-warning me-2" id="invert-btn" onclick="invertSelection()" disabled>⇄ Invert</button>
+                            <button class="btn btn-sm btn-danger" id="delete-btn" onclick="deleteSelected()" disabled>✗ Delete Selected</button>
                         </div>
                     </div>
                     <div id="status" class="alert alert-info" role="alert">
@@ -175,10 +183,12 @@ function loadExistingFile(filename) {
             document.getElementById('invert-btn').disabled = false;
             document.getElementById('delete-btn').disabled = false;
             updateCounts();
+            console.log('File loaded successfully, packets:', packets.length);
         })
         .catch(err => {
             document.getElementById('status').className = 'alert alert-danger';
             document.getElementById('status').textContent = 'Load failed: ' + err;
+            console.error('Load error:', err);
         });
 }
 
@@ -289,17 +299,20 @@ function togglePacket(index) {
 }
 
 function selectAll() {
+    console.log('selectAll() called, packets:', packets.length, 'deleted:', deletedIndices.size);
     selectedIndices.clear();
     for (let i = 0; i < packets.length; i++) {
         if (!deletedIndices.has(i)) {
             selectedIndices.add(i);
         }
     }
+    console.log('Selected:', selectedIndices.size);
     renderPackets();
     updateCounts();
 }
 
 function invertSelection() {
+    console.log('invertSelection() called');
     const newSelected = new Set();
     for (let i = 0; i < packets.length; i++) {
         if (!deletedIndices.has(i) && !selectedIndices.has(i)) {
@@ -307,17 +320,23 @@ function invertSelection() {
         }
     }
     selectedIndices = newSelected;
+    console.log('Inverted to:', selectedIndices.size);
     renderPackets();
     updateCounts();
 }
 
 function deleteSelected() {
+    console.log('deleteSelected() called, selected:', selectedIndices.size);
     if (selectedIndices.size === 0) {
         alert('No packets selected');
         return;
     }
 
+    const confirmMsg = `Delete ${selectedIndices.size} packet(s)?`;
+    if (!confirm(confirmMsg)) return;
+
     selectedIndices.forEach(i => deletedIndices.add(i));
+    console.log('Deleted, total deleted now:', deletedIndices.size);
     selectedIndices.clear();
     renderPackets();
     updateCounts();
@@ -327,6 +346,15 @@ function updateCounts() {
     const remaining = packets.length - deletedIndices.size;
     document.getElementById('selected-count').textContent = selectedIndices.size;
     document.getElementById('total-count').textContent = remaining;
+
+    // Update selection status
+    const statusEl = document.getElementById('selection-status');
+    if (packets.length === 0) {
+        statusEl.textContent = 'No packets loaded';
+    } else {
+        statusEl.textContent = `Selected: ${selectedIndices.size} | Deleted: ${deletedIndices.size} | Total: ${packets.length}`;
+        statusEl.className = selectedIndices.size > 0 ? 'text-success fw-bold' : 'text-muted';
+    }
 }
 
 function saveFile() {
