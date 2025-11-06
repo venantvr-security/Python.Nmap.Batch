@@ -421,8 +421,25 @@ function showPcapHex(index) {
     let formatted = '';
     for (let i = 0; i < pkt.hex.length; i += 32) {
         const offset = (i / 2).toString(16).padStart(4, '0');
-        const hexLine = pkt.hex.substring(i, i + 32).match(/.{1,2}/g).join(' ');
-        formatted += `${offset}: ${hexLine}\n`;
+        const hexBytes = pkt.hex.substring(i, i + 32).match(/.{1,2}/g) || [];
+
+        // Formater hex en 2 groupes de 8 bytes
+        const hex1 = hexBytes.slice(0, 8).join(' ').padEnd(23, ' ');
+        const hex2 = hexBytes.slice(8, 16).join(' ').padEnd(23, ' ');
+
+        // Convertir en ASCII
+        let ascii = '';
+        for (const hexByte of hexBytes) {
+            const byte = parseInt(hexByte, 16);
+            // Afficher le caractère si imprimable (32-126), sinon '.'
+            if (byte >= 32 && byte <= 126) {
+                ascii += String.fromCharCode(byte);
+            } else {
+                ascii += '.';
+            }
+        }
+
+        formatted += `${offset}: ${hex1} ${hex2} |${ascii}|\n`;
     }
 
     document.getElementById('pcap-hex-content').textContent = formatted;
