@@ -763,12 +763,6 @@ def kill_process(process_id):
     return jsonify({"success": False, "error": "Process not found"}), 404
 
 
-@app.route('/pcap-editor')
-def pcap_editor():
-    """Page d'édition de fichiers PCAP."""
-    return render_template('pcap_editor.html')
-
-
 @app.route('/api/pcap/upload', methods=['POST'])
 def pcap_upload():
     """Upload et analyse d'un fichier PCAP."""

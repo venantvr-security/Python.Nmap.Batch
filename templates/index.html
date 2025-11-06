@@ -195,16 +195,21 @@
                 </li>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" id="docNavDropdown" role="button">
-                        Documentation
+                        📚 Documentation
                     </a>
                     <ul class="dropdown-menu" id="doc-list-nav"></ul>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/pcap-editor">📝 PCAP Editor</a>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" id="toolsDropdown" role="button">
+                        🛠️ Tools
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" onclick="showProcesses(); return false;">📊 Process Manager</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="showPcapEditor(); return false;">📝 PCAP Editor</a></li>
+                    </ul>
                 </li>
             </ul>
             <div class="d-flex align-items-center gap-3">
-                <button class="btn btn-sm btn-outline-info" onclick="showProcesses()">📊 Processes</button>
                 <div class="badge bg-secondary" id="tor-status" style="font-size: 0.95rem; padding: 8px 16px;">
                     <span id="tor-indicator">⏳</span> <span id="tor-status-text">Checking...</span>
                 </div>
@@ -474,7 +479,131 @@
     </div>
 </div>
 
+<!-- PCAP Editor Modal -->
+<div aria-hidden="true" aria-labelledby="pcapEditorModalLabel" class="modal fade" id="pcapEditorModal" tabindex="-1">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="pcapEditorModalLabel">📝 PCAP Editor</h5>
+                <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
+            </div>
+            <div class="modal-body" style="overflow-y: auto;">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card shadow-sm mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title">Upload PCAP</h5>
+                                <input accept=".pcap,.pcapng" class="form-control mb-2" id="pcap-file-input" type="file">
+                                <button class="btn btn-primary w-100" onclick="uploadPcapFile()">Upload</button>
+                            </div>
+                        </div>
+
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title">Existing Files</h5>
+                                <div id="pcap-existing-files" style="max-height: 400px; overflow-y: auto;">
+                                    <p class="text-muted">Loading...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-9">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <h5 class="card-title mb-0">Packets</h5>
+                                        <small class="text-muted" id="pcap-selection-status">No packets loaded</small>
+                                    </div>
+                                    <div>
+                                        <button class="btn btn-sm btn-success me-2" id="pcap-select-all-btn" onclick="pcapSelectAll()" disabled>✓ Select All</button>
+                                        <button class="btn btn-sm btn-warning me-2" id="pcap-invert-btn" onclick="pcapInvertSelection()" disabled>⇄ Invert</button>
+                                        <button class="btn btn-sm btn-danger" id="pcap-delete-btn" onclick="pcapDeleteSelected()" disabled>✗ Delete Selected</button>
+                                    </div>
+                                </div>
+                                <div id="pcap-status" class="alert alert-info" role="alert">
+                                    No file loaded. Upload a PCAP file to start editing.
+                                </div>
+                                <div id="pcap-packets-table-container" style="display: none; max-height: 500px; overflow-y: auto;">
+                                    <table class="table table-sm table-hover">
+                                        <thead class="sticky-top bg-white">
+                                            <tr>
+                                                <th style="width: 50px;">#</th>
+                                                <th style="width: 200px;">Layers</th>
+                                                <th>Summary</th>
+                                                <th style="width: 80px;">Length</th>
+                                                <th style="width: 120px;">Time</th>
+                                                <th style="width: 60px;">Hex</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="pcap-packets-table"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card shadow-sm mt-3" id="pcap-save-section" style="display: none;">
+                            <div class="card-body">
+                                <h5 class="card-title">Save Edited PCAP</h5>
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <input class="form-control" id="pcap-save-filename" placeholder="filename.pcap" type="text">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <button class="btn btn-success w-100" onclick="savePcapFile()">Save to pcap_templates/packets/</button>
+                                    </div>
+                                </div>
+                                <small class="text-muted">Selected packets: <span id="pcap-selected-count">0</span> / <span id="pcap-total-count">0</span></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hex Viewer Modal (nested inside PCAP Editor) -->
+<div aria-hidden="true" aria-labelledby="pcapHexModalLabel" class="modal fade" id="pcapHexModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="pcapHexModalLabel">Packet Hex Dump</h5>
+                <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
+            </div>
+            <div class="modal-body">
+                <pre id="pcap-hex-content" style="font-family: monospace; font-size: 0.85rem;"></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.pcap-packet-row {
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.pcap-packet-row:hover {
+    background-color: rgba(13, 110, 253, 0.15) !important;
+}
+.pcap-packet-row.selected {
+    background-color: rgba(25, 135, 84, 0.3) !important;
+    border-left: 3px solid #198754;
+}
+.pcap-packet-row.deleted {
+    background-color: rgba(220, 53, 69, 0.3) !important;
+    text-decoration: line-through;
+    opacity: 0.7;
+    border-left: 3px solid #dc3545;
+}
+.pcap-packet-row.selected.deleted {
+    background-color: rgba(220, 53, 69, 0.4) !important;
+}
+</style>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="/static/script.js"></script>
+<script src="/static/pcap-editor.js"></script>
 </body>
 </html>
