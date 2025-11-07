@@ -2,11 +2,10 @@ import os
 import random
 import sys
 import time
-from typing import Dict, List
+from typing import Dict
 
 import yaml
 from scapy.layers.inet import IP, TCP
-from scapy.packet import Packet
 from scapy.sendrecv import send
 from scapy.utils import rdpcap
 
@@ -108,7 +107,6 @@ class Pcap2(ScannerInterface):
             decoy_ip = self._generate_random_ip()
             decoy_packet = IP(src=decoy_ip, dst=ip, ttl=ttl) / TCP(sport=sport, dport=port, flags=tcp_flags)
             send(decoy_packet, verbose=0)
-
 
     # noinspection PyTypeHints
     def scan(self, ip: str, thread_id: str, event_queue, stop_flag) -> ScanResult:

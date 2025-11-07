@@ -6,9 +6,9 @@ Ces tests vérifient que CurlScanner interprète correctement :
 - Les ports fermés (connection refused)
 - Les ports filtrés (timeout)
 """
-import sys
 import os
-from unittest.mock import Mock, patch, MagicMock
+import sys
+from unittest.mock import Mock, patch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
@@ -19,13 +19,13 @@ class TestCurlScannerPortInterpretation:
     """Tests d'interprétation des états de ports par CurlScanner."""
 
     def test_port_ouvert_http_avec_banniere(
-        self,
-        ip_target,
-        thread_id,
-        event_queue,
-        stop_flag_never,
-        process_manager_mock,
-        strategy_file_curl
+            self,
+            ip_target,
+            thread_id,
+            event_queue,
+            stop_flag_never,
+            process_manager_mock,
+            strategy_file_curl
     ):
         """
         Scénario : Port 80 ouvert avec serveur HTTP qui répond.
@@ -70,13 +70,13 @@ class TestCurlScannerPortInterpretation:
         assert "HTTP/1.1 200 OK" in details["banners"][80], "Bannière HTTP devrait être capturée"
 
     def test_port_ferme_connection_refused(
-        self,
-        ip_target,
-        thread_id,
-        event_queue,
-        stop_flag_never,
-        process_manager_mock,
-        strategy_file_curl
+            self,
+            ip_target,
+            thread_id,
+            event_queue,
+            stop_flag_never,
+            process_manager_mock,
+            strategy_file_curl
     ):
         """
         Scénario : Port 80 fermé (serveur éteint ou port non écouté).
@@ -114,13 +114,13 @@ class TestCurlScannerPortInterpretation:
         assert len(details["ports"]) == 0, "Aucun port ouvert attendu"
 
     def test_port_filtre_timeout(
-        self,
-        ip_target,
-        thread_id,
-        event_queue,
-        stop_flag_never,
-        process_manager_mock,
-        strategy_file_curl
+            self,
+            ip_target,
+            thread_id,
+            event_queue,
+            stop_flag_never,
+            process_manager_mock,
+            strategy_file_curl
     ):
         """
         Scénario : Port 443 filtré par firewall (timeout, aucune réponse).
@@ -159,13 +159,13 @@ class TestCurlScannerPortInterpretation:
         assert 443 not in details["ports"], "Le port 443 ne devrait PAS être ouvert (timeout)"
 
     def test_multi_ports_comportements_mixtes(
-        self,
-        ip_target,
-        thread_id,
-        event_queue,
-        stop_flag_never,
-        process_manager_mock,
-        strategy_file_curl
+            self,
+            ip_target,
+            thread_id,
+            event_queue,
+            stop_flag_never,
+            process_manager_mock,
+            strategy_file_curl
     ):
         """
         Scénario : Scan de plusieurs ports avec comportements différents.
@@ -184,6 +184,7 @@ class TestCurlScannerPortInterpretation:
         scanner.ports = "80,443,8080"
 
         from subprocess import TimeoutExpired
+
         responses = [
             # Port 80: ouvert
             ("HTTP/1.1 200 OK\nServer: Apache", None),

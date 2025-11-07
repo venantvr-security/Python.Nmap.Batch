@@ -7,10 +7,9 @@ Ces tests vérifient que Pcap2 :
 - Envoie tous les paquets sans attendre de réponse
 - Gère les métadonnées (nombre de paquets, timing)
 """
-import sys
 import os
-from unittest.mock import Mock, patch, MagicMock
-import tempfile
+import sys
+from unittest.mock import Mock, patch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
@@ -21,13 +20,13 @@ class TestPcap2PacketReplay:
     """Tests de replay de paquets PCAP."""
 
     def test_load_and_replay_packets(
-        self,
-        ip_target,
-        thread_id,
-        event_queue,
-        stop_flag_never,
-        process_manager_mock,
-        tmp_path
+            self,
+            ip_target,
+            thread_id,
+            event_queue,
+            stop_flag_never,
+            process_manager_mock,
+            tmp_path
     ):
         """
         Scénario : Replay de 3 paquets depuis un fichier PCAP.
@@ -84,13 +83,13 @@ class TestPcap2PacketReplay:
         assert mock_send.call_count == 3, "send() devrait être appelé 3 fois"
 
     def test_modify_destination_ip(
-        self,
-        ip_target,
-        thread_id,
-        event_queue,
-        stop_flag_never,
-        process_manager_mock,
-        tmp_path
+            self,
+            ip_target,
+            thread_id,
+            event_queue,
+            stop_flag_never,
+            process_manager_mock,
+            tmp_path
     ):
         """
         Scénario : Vérifier que l'IP de destination est bien modifiée.
@@ -155,13 +154,13 @@ class TestPcap2PacketReplay:
         assert ip == ip_target
 
     def test_empty_pcap_file(
-        self,
-        ip_target,
-        thread_id,
-        event_queue,
-        stop_flag_never,
-        process_manager_mock,
-        tmp_path
+            self,
+            ip_target,
+            thread_id,
+            event_queue,
+            stop_flag_never,
+            process_manager_mock,
+            tmp_path
     ):
         """
         Scénario : Fichier PCAP vide (aucun paquet).
@@ -204,13 +203,13 @@ class TestPcap2PacketReplay:
         assert len(details["ports"]) == 0, "Aucun port ne devrait être détecté"
 
     def test_missing_pcap_file(
-        self,
-        ip_target,
-        thread_id,
-        event_queue,
-        stop_flag_never,
-        process_manager_mock,
-        tmp_path
+            self,
+            ip_target,
+            thread_id,
+            event_queue,
+            stop_flag_never,
+            process_manager_mock,
+            tmp_path
     ):
         """
         Scénario : Fichier PCAP inexistant.
@@ -250,13 +249,13 @@ class TestPcap2PacketReplay:
         assert len(details["ports"]) == 0
 
     def test_repeat_functionality(
-        self,
-        ip_target,
-        thread_id,
-        event_queue,
-        stop_flag_never,
-        process_manager_mock,
-        tmp_path
+            self,
+            ip_target,
+            thread_id,
+            event_queue,
+            stop_flag_never,
+            process_manager_mock,
+            tmp_path
     ):
         """
         Scénario : Replay avec 2 paquets.
@@ -300,13 +299,13 @@ class TestPcap2PacketReplay:
         assert mock_send.call_count == 2, f"send() devrait être appelé 2 fois, mais appelé {mock_send.call_count} fois"
 
     def test_stop_flag_interruption(
-        self,
-        ip_target,
-        thread_id,
-        event_queue,
-        stop_flag_immediate,
-        process_manager_mock,
-        tmp_path
+            self,
+            ip_target,
+            thread_id,
+            event_queue,
+            stop_flag_immediate,
+            process_manager_mock,
+            tmp_path
     ):
         """
         Scénario : Replay interrompu par stop_flag.

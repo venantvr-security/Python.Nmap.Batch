@@ -7,10 +7,10 @@ Ces tests vérifient que NetcatScanner interprète correctement :
 - Les ports filtrés (timeout)
 - Les bannières capturées
 """
-import sys
 import os
-from unittest.mock import Mock, patch
+import sys
 from subprocess import TimeoutExpired
+from unittest.mock import Mock, patch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
@@ -21,13 +21,13 @@ class TestNetcatScannerPortInterpretation:
     """Tests d'interprétation des états de ports par NetcatScanner."""
 
     def test_port_ouvert_avec_banniere(
-        self,
-        ip_target,
-        thread_id,
-        event_queue,
-        stop_flag_never,
-        process_manager_mock,
-        tmp_path
+            self,
+            ip_target,
+            thread_id,
+            event_queue,
+            stop_flag_never,
+            process_manager_mock,
+            tmp_path
     ):
         """
         Scénario : Port 22 ouvert (SSH) avec bannière.
@@ -76,13 +76,13 @@ class TestNetcatScannerPortInterpretation:
         # Note: NetcatScanner ne capture pas les bannières, seulement les ports
 
     def test_port_ferme_connection_refused(
-        self,
-        ip_target,
-        thread_id,
-        event_queue,
-        stop_flag_never,
-        process_manager_mock,
-        tmp_path
+            self,
+            ip_target,
+            thread_id,
+            event_queue,
+            stop_flag_never,
+            process_manager_mock,
+            tmp_path
     ):
         """
         Scénario : Port 80 fermé (connection refused).
@@ -128,13 +128,13 @@ class TestNetcatScannerPortInterpretation:
         assert 80 not in details["ports"], "Le port 80 ne devrait PAS être ouvert"
 
     def test_port_filtre_timeout(
-        self,
-        ip_target,
-        thread_id,
-        event_queue,
-        stop_flag_never,
-        process_manager_mock,
-        tmp_path
+            self,
+            ip_target,
+            thread_id,
+            event_queue,
+            stop_flag_never,
+            process_manager_mock,
+            tmp_path
     ):
         """
         Scénario : Port 443 filtré par firewall (timeout).
@@ -182,13 +182,13 @@ class TestNetcatScannerPortInterpretation:
         assert 443 not in details["ports"], "Le port 443 ne devrait PAS être ouvert"
 
     def test_multi_ports_comportements_mixtes(
-        self,
-        ip_target,
-        thread_id,
-        event_queue,
-        stop_flag_never,
-        process_manager_mock,
-        tmp_path
+            self,
+            ip_target,
+            thread_id,
+            event_queue,
+            stop_flag_never,
+            process_manager_mock,
+            tmp_path
     ):
         """
         Scénario : Scan de plusieurs ports avec comportements différents.

@@ -10,11 +10,13 @@ Ces fixtures simulent des comportements réseau réalistes :
 import os
 import sys
 from queue import Queue
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock
+
 import pytest
 
 # Ajouter le répertoire parent au PYTHONPATH
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
 
 # ============================================================================
 # FIXTURES : CONFIGURATIONS RÉSEAU RÉALISTES
@@ -208,6 +210,7 @@ def curl_response_timeout():
     Réponse curl pour un timeout (port filtré).
     """
     from subprocess import TimeoutExpired
+
     mock_process = Mock()
     mock_process.communicate.side_effect = TimeoutExpired(cmd="curl", timeout=6)
     mock_process.kill = Mock()
@@ -226,6 +229,7 @@ def scapy_syn_ack_response():
     Paquet Scapy : Réponse SYN-ACK (port ouvert).
     """
     from unittest.mock import Mock
+
     response = Mock()
     response.haslayer.return_value = True
     tcp_layer = Mock()
@@ -241,6 +245,7 @@ def scapy_rst_response():
     Paquet Scapy : Réponse RST (port fermé).
     """
     from unittest.mock import Mock
+
     response = Mock()
     response.haslayer.return_value = True
     tcp_layer = Mock()

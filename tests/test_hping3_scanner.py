@@ -6,10 +6,10 @@ Ces tests vérifient que Hping3Scanner interprète correctement :
 - L'absence de réponse (filtré)
 - Les scans SYN/ACK/FIN
 """
-import sys
 import os
-from unittest.mock import Mock, patch
+import sys
 from subprocess import TimeoutExpired
+from unittest.mock import Mock, patch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
@@ -20,13 +20,13 @@ class TestHping3ScannerTCPFlags:
     """Tests d'interprétation des flags TCP par Hping3Scanner."""
 
     def test_syn_scan_port_ouvert_syn_ack(
-        self,
-        ip_target,
-        thread_id,
-        event_queue,
-        stop_flag_never,
-        process_manager_mock,
-        tmp_path
+            self,
+            ip_target,
+            thread_id,
+            event_queue,
+            stop_flag_never,
+            process_manager_mock,
+            tmp_path
     ):
         """
         Scénario : SYN scan sur port 80 ouvert.
@@ -77,13 +77,13 @@ class TestHping3ScannerTCPFlags:
         assert 80 in details["ports"], "Le port 80 devrait être détecté comme ouvert (flags=SA)"
 
     def test_syn_scan_port_ferme_rst_ack(
-        self,
-        ip_target,
-        thread_id,
-        event_queue,
-        stop_flag_never,
-        process_manager_mock,
-        tmp_path
+            self,
+            ip_target,
+            thread_id,
+            event_queue,
+            stop_flag_never,
+            process_manager_mock,
+            tmp_path
     ):
         """
         Scénario : SYN scan sur port 80 fermé.
@@ -134,13 +134,13 @@ class TestHping3ScannerTCPFlags:
         assert 80 not in details["ports"], "Le port 80 ne devrait PAS être ouvert (flags=RA)"
 
     def test_syn_scan_port_filtre_no_response(
-        self,
-        ip_target,
-        thread_id,
-        event_queue,
-        stop_flag_never,
-        process_manager_mock,
-        tmp_path
+            self,
+            ip_target,
+            thread_id,
+            event_queue,
+            stop_flag_never,
+            process_manager_mock,
+            tmp_path
     ):
         """
         Scénario : SYN scan sur port 443 filtré.
@@ -191,13 +191,13 @@ class TestHping3ScannerTCPFlags:
         assert 443 not in details["ports"], "Le port 443 ne devrait PAS être détecté (filtré)"
 
     def test_multi_ports_comportements_mixtes(
-        self,
-        ip_target,
-        thread_id,
-        event_queue,
-        stop_flag_never,
-        process_manager_mock,
-        tmp_path
+            self,
+            ip_target,
+            thread_id,
+            event_queue,
+            stop_flag_never,
+            process_manager_mock,
+            tmp_path
     ):
         """
         Scénario : Scan de 3 ports avec états différents.
@@ -259,13 +259,13 @@ class TestHping3ScannerFINScan:
     """Tests pour FIN scan avec Hping3."""
 
     def test_fin_scan_port_ouvert_no_response(
-        self,
-        ip_target,
-        thread_id,
-        event_queue,
-        stop_flag_never,
-        process_manager_mock,
-        tmp_path
+            self,
+            ip_target,
+            thread_id,
+            event_queue,
+            stop_flag_never,
+            process_manager_mock,
+            tmp_path
     ):
         """
         Scénario : FIN scan sur port ouvert.

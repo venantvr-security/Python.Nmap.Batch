@@ -90,34 +90,36 @@ Comme Nmap, Scapy a besoin de la capacité `CAP_NET_RAW` pour forger et envoyer 
        print("Usage: scapy-wrapper.py <script.py>")
    ```
 
-2.  **Rendre le wrapper exécutable :**
+2. **Rendre le wrapper exécutable :**
 
-    ```bash
-    chmod +x ~/scapy-wrapper.py
-    ```
+   ```bash
+   chmod +x ~/scapy-wrapper.py
+   ```
 
-3.  **Attribuer les capacités au wrapper :**
+3. **Attribuer les capacités au wrapper :**
 
-    ```bash
-    sudo setcap cap_net_raw,cap_net_admin+eip ~/scapy-wrapper.py
-    ```
+   ```bash
+   sudo setcap cap_net_raw,cap_net_admin+eip ~/scapy-wrapper.py
+   ```
 
-4.  **Utiliser le wrapper pour lancer vos scripts Scapy :**
+4. **Utiliser le wrapper pour lancer vos scripts Scapy :**
 
-    ```bash
-    # Exemple avec un script mon_script_scapy.py
-    ~/scapy-wrapper.py mon_script_scapy.py
-    ```
+   ```bash
+   # Exemple avec un script mon_script_scapy.py
+   ~/scapy-wrapper.py mon_script_scapy.py
+   ```
 
 ---
 
 # Tester l'Évasion de Pare-feu avec Scapy et des PCAP
 
-Cette section explique comment utiliser Scapy pour rejouer des fichiers `.pcap` afin de tester l'efficacité des pare-feu et des IDS, et surtout, comment interpréter les résultats.
+Cette section explique comment utiliser Scapy pour rejouer des fichiers `.pcap` afin de tester l'efficacité des pare-feu et des IDS, et surtout, comment interpréter les
+résultats.
 
 ## Le Principe : Scapy envoie, vous écoutez
 
-Quand vous rejouez un `.pcap` avec `send()`, Scapy envoie les paquets et c'est tout. Il n'attend ni ne traite aucune réponse. C'est à vous de mettre en place une écoute pour voir ce qui se passe.
+Quand vous rejouez un `.pcap` avec `send()`, Scapy envoie les paquets et c'est tout. Il n'attend ni ne traite aucune réponse. C'est à vous de mettre en place une écoute
+pour voir ce qui se passe.
 
 ```python
 from scapy.all import *
