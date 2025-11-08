@@ -2,7 +2,7 @@
 
 Ce guide explique comment configurer `nmap`, `scapy` et `netcat` pour utiliser des fonctionnalités nécessitant des privilèges élevés (comme l'envoi de paquets RAW ou l'
 écoute sur des ports bas) sans avoir à utiliser `sudo` à chaque exécution. Ces méthodes sont destinées à un usage légal sur des machines ou des réseaux que vous possédez
-ou pour lesquels vous avez une autorisation écrite.
+ou pour lesquelles vous avez une autorisation écrite.
 
 > **Avertissement de Sécurité** : Scanner des réseaux sans autorisation explicite est illégal. N'utilisez ces techniques que dans un cadre autorisé.
 
@@ -71,8 +71,8 @@ Cette méthode accorde à l'exécutable `nmap` uniquement les droits nécessaire
 
 ## 3. Scapy : Exécution sans `sudo`
 
-Comme Nmap, Scapy a besoin de la capacité `CAP_NET_RAW` pour forger et envoyer des paquets personnalisés. Appliquer cette capacité directement à l'interpréteur Python (
-`/usr/bin/python3`) est **dangereux**, car cela donnerait ces droits à n'importe quel script Python.
+Comme Nmap, Scapy a besoin de la capacité `CAP_NET_RAW` pour forger et envoyer des paquets personnalisés. Appliquer cette capacité directement à l'interpréteur Python
+(`/usr/bin/python3`) est **dangereux**, car cela donnerait ces droits à n'importe quel script Python.
 
 ### Solution Recommandée : Créer un Wrapper Binaire
 
@@ -80,46 +80,47 @@ Comme Nmap, Scapy a besoin de la capacité `CAP_NET_RAW` pour forger et envoyer 
 
    ```python
    # ~/scapy-wrapper.py
-   #!/usr/bin/env python3
-   from scapy.all import *
-   import sys
 
-   if len(sys.argv) > 1 and os.path.exists(sys.argv[1]):
-       exec(open(sys.argv[1]).read())
-   else:
-       print("Usage: scapy-wrapper.py <script.py>")
+# !/usr/bin/env python3
+
+from scapy.all import *
+import sys
+
+if len(sys.argv) > 1 and os.path.exists(sys.argv[1]):
+exec(open(sys.argv[1]).read())
+else:
+print("Usage: scapy-wrapper.py <script.py>")
+
    ```
 
-2. **Rendre le wrapper exécutable :**
+2.  **Rendre le wrapper exécutable :**
 
-   ```bash
-   chmod +x ~/scapy-wrapper.py
-   ```
+    ```bash
+    chmod +x ~/scapy-wrapper.py
+    ```
 
-3. **Attribuer les capacités au wrapper :**
+3.  **Attribuer les capacités au wrapper :**
 
-   ```bash
-   sudo setcap cap_net_raw,cap_net_admin+eip ~/scapy-wrapper.py
-   ```
+    ```bash
+    sudo setcap cap_net_raw,cap_net_admin+eip ~/scapy-wrapper.py
+    ```
 
-4. **Utiliser le wrapper pour lancer vos scripts Scapy :**
+4.  **Utiliser le wrapper pour lancer vos scripts Scapy :**
 
-   ```bash
-   # Exemple avec un script mon_script_scapy.py
-   ~/scapy-wrapper.py mon_script_scapy.py
-   ```
+    ```bash
+    # Exemple avec un script mon_script_scapy.py
+    ~/scapy-wrapper.py mon_script_scapy.py
+    ```
 
 ---
 
 # Tester l'Évasion de Pare-feu avec Scapy et des PCAP
 
-Cette section explique comment utiliser Scapy pour rejouer des fichiers `.pcap` afin de tester l'efficacité des pare-feu et des IDS, et surtout, comment interpréter les
-résultats.
+Cette section explique comment utiliser Scapy pour rejouer des fichiers `.pcap` afin de tester l'efficacité des pare-feu et des IDS, et surtout, comment interpréter les résultats.
 
 ## Le Principe : Scapy envoie, vous écoutez
 
-Quand vous rejouez un `.pcap` avec `send()`, Scapy envoie les paquets et c'est tout. Il n'attend ni ne traite aucune réponse. C'est à vous de mettre en place une écoute
-pour voir ce qui se passe.
+Quand vous rejouez un `.pcap` avec `send()`, Scapy envoie les paquets et c'est tout. Il n'attend ni ne traite aucune réponse. C'est à vous de mettre en place une écoute pour voir ce qui se passe.
 
 ```python
 from scapy.all import *
@@ -146,6 +147,7 @@ sniff_filter = f"host {target_ip}"
 
 # Lancer la capture en arrière-plan de manière asynchrone
 print("Démarrage de la capture...")
+# noinspection PyUnresolvedReferences
 sniff_task = async_sniff(iface="eth0", filter=sniff_filter, timeout=15)
 
 # Envoyer les paquets du PCAP
@@ -181,14 +183,14 @@ for sent, recv in answered:
 
 ## Tableau d'Interprétation des Résultats
 
-| Réponse Observée                   | Signification Probable                                       | Conclusion su                  r l'Évasion          |
-|:-----------------------------------|:-------------------------------------------------------------|:----------------------------------------------------|
-| **SYN-ACK**                        | Le --- est ouvert et le pare-feu a laissé passer.            | ✅ **Réussie**                                       |
-| **RST / RST-ACK**                  | Le port est fermé o u le pare-feu a rejeté activement.       | ❌ **Échouée**                                       |
-| **ICMP Unreachable**               | Une règle de par e-feu ou de routage bloque le trafic.       | ❌ **Échouée**                                       |
-| **Aucune réponse**                 | Le paquet a été dr oppé silencieusement (firewall) ou perdu. | ⚠️ **Incertaine (mais probable échec)**             |
-| **Alerte dans les logs IDS/IPS**   | Le t rafic a été identifié comme suspect.                    | Détectée **Détectée (même si le paquet est passé)** |
-| **Paquet réassemblé différemment** | Le pare-feu a normalisé le trafic avant de le transmettre.   | 🛡️ **Contournée par le pare-feu**                  |
+| Réponse Observée | Signification Probable                                                              | Conclus ion sur l'Évasion                              |
+| :--- |:------------------------------------------------------------------------------------|:-------------------------------------------------------|
+| **SYN-ACK** | Le port est ou:-------------------------------------t le pare-feu a l aissé passer. | ✅ **Réussie**                                          |
+| **RST / RST-ACK** | Le port est fermé ou le pare-fe u a rejeté activeme                  nt.            | ❌ **Échouée**                                          |
+| **ICMP Unreachable** | Une règle de pare-feu ou de  routage bloque le traf               ic.               | ❌ **Échouée**                                          |
+| **Aucune réponse** | Le paquet a été droppé silenci eusement (firewall)                  ou perdu.       | ⚠️ **Incertaine (mais probable échec)**                |
+| **Alerte dans les logs IDS/IPS** | Le trafic a été  identifié comme suspect.                                           | Détect   ée **Détectée (même si le paquet est passé)** |
+| **Paquet réassemblé différemment** | Le pare-feu a  normalisé le trafic avant de le tran smettre.                        | 🛡️ **Contournée par le pare-feu**                     |
 
 **Conclusion** : Pour valider un test d'évasion, il ne suffit pas d'envoyer des paquets. Il est impératif de **capturer le trafic en parallèle** et, idéalement, de *
 *consulter les logs** du pare-feu ou de l'IDS pour avoir une image complète de la situation.

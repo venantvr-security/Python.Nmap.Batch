@@ -107,9 +107,7 @@ Ces fichiers sont parfaits pour établir une **ligne de base** : à quoi ressemb
 
 L'objectif est de faire en sorte que vos scans se fondent dans le trafic normal. Ces captures vous fournissent des modèles.
 
-* **NfLSO (Network Forensics Lab Special Operations)** : Ces scénarios (`case001.pcap`, etc.) contiennent souvent une machine virtuelle qui effectue des tâches normales (
-  navigation web, e-mails) avant d'être infectée. En filtrant par IP source, vous pouvez isoler ce trafic "normal" et l'utiliser comme modèle pour vos stratégies de
-  mimétisme (`legitimate-browser-scan`).
+* **NfLSO (Network Forensics Lab Special Operations)** : Ces scénarios (`case001.pcap`, etc.) contiennent souvent une machine virtuelle qui effectue des tâches normales (navigation web, e-mails) avant d'être infectée. En filtrant par IP source, vous pouvez isoler ce trafic "normal" et l'utiliser comme modèle pour vos stratégies de mimétisme (`legitimate-browser-scan`).
 * **Captures de Conférences** : En dehors des scans, ces fichiers regorgent de trafic légitime de milliers d'appareils (Windows, macOS, Linux, iOS, Android). C'est une
   excellente source pour valider vos empreintes OS et vos timings polymorphiques.
 

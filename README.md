@@ -84,8 +84,8 @@ strategies:
    ```
 3. Configurez votre fichier `config.toml` pour qu'il corresponde à votre structure de répertoires.
 4. Configurez votre fichier `.env` avec les plages d'IP à scanner.
-5. Assurez-vous que les outils de scan (Nmap, Masscan, etc.) sont installés et accessibles dans le `PATH` système.
-6. Configurez les permissions `sudo` sans mot de passe pour les outils qui le nécessitent (voir la section Prérequis).
+5. Assurez-vous que les outils de scan (Nmap, Masscan, Netcat, etc.) sont installés et accessibles dans le `PATH` système.
+6. **Configurez les capacités Linux** pour les outils qui le nécessitent (voir la section Prérequis).
 7. Lancez le serveur :
    ```bash
    python3 main.py
@@ -98,13 +98,15 @@ strategies:
 
 - **Outils de Scan Externes** : `nmap`, `masscan`, `hping3`, `netcat`, `curl` doivent être installés.
 
-- **Privilèges Root** : Certains scanners (Nmap, Hping3, Scapy) nécessitent des privilèges élevés. Il est recommandé de configurer `sudo` pour autoriser leur exécution
-  sans mot de passe pour l'utilisateur qui lance l'application.
+- **Privilèges Élevés (via `setcap`)** : Certains scanners (Nmap, Hping3, Scapy, Netcat pour l'écoute sur ports bas) nécessitent des privilèges élevés. Il est recommandé
+  de configurer les capacités Linux (`setcap`) pour autoriser leur exécution sans `sudo` pour l'utilisateur qui lance l'application.
 
-  Exemple pour Nmap (à ajouter via `sudo visudo`) :
+  Exemple de configuration des capacités (exécuter une seule fois) :
 
-  ```
-  votre_utilisateur ALL=(ALL) NOPASSWD: /usr/bin/nmap
+  ```bash
+  sudo setcap cap_net_raw,cap_net_admin,cap_net_bind_service+eip $(which nmap)
+  sudo setcap cap_net_bind_service+eip $(which nc)
+  # Pour Scapy, utilisez le wrapper binaire comme décrit dans la documentation (docs/SCAPY-NMAP-ROOT.md)
   ```
 
 ## Licence

@@ -1,7 +1,7 @@
 # Stratégies d'Évasion Avancées contre le Machine Learning
 
-Ces stratégies représentent le summum de la technologie d'évasion, conçues spécifiquement pour tromper les classifieurs de trafic basés sur l'apprentissage automatique (
-Machine Learning). Elles ne se contentent pas d'imiter un comportement légitime, mais cherchent activement à introduire du "bruit" et de l'entropie pour rendre la
+Ces stratégies représentent le summum de la technologie d'évasion, conçues spécifiquement pour tromper les classifieurs de trafic basés sur l'apprentissage automatique
+(Machine Learning). Elles ne se contentent pas d'imiter un comportement légitime, mais cherchent activement à introduire du "bruit" et de l'entropie pour rendre la
 classification statistique impossible.
 
 ### Histoire et Contexte
