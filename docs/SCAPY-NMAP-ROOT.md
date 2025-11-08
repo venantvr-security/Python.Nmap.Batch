@@ -71,8 +71,7 @@ Cette méthode accorde à l'exécutable `nmap` uniquement les droits nécessaire
 
 ## 3. Scapy : Exécution sans `sudo`
 
-Comme Nmap, Scapy a besoin de la capacité `CAP_NET_RAW` pour forger et envoyer des paquets personnalisés. Appliquer cette capacité directement à l'interpréteur Python (
-`/usr/bin/python3`) est **dangereux**, car cela donnerait ces droits à n'importe quel script Python.
+Comme Nmap, Scapy a besoin de la capacité `CAP_NET_RAW` pour forger et envoyer des paquets personnalisés. Appliquer cette capacité directement à l'interpréteur Python (`/usr/bin/python3`) est **dangereux**, car cela donnerait ces droits à n'importe quel script Python.
 
 ### Solution Recommandée : Créer un Wrapper Binaire
 
