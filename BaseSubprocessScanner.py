@@ -1,157 +1,116 @@
+import os
 import shutil
 import subprocess
 import time
 from queue import Queue
-from typing import List, Tuple, Optional, Callable
+from typing import List, Tuple, Callable, Optional
 
-from ScannerInterface import ScannerInterface
+from scanners.ScannerInterface import ScannerInterface
 
 
 class BaseSubprocessScanner(ScannerInterface):
-    """Classe de base factorisant la logique commune de gestion des sous-processus."""
+    """
+    Classe de base pour les scanners qui dépendent de l'exécution d'un
+    outil externe en ligne de commande via un sous-processus.
+    """
 
-    def _get_command_path(self, command: str, fallback_paths: List[str] = None) -> str:
+    def _get_command_path(self, command_name: str, common_paths: List[str]) -> str:
         """
-        Trouve le chemin de la commande avec shutil.which() ou fallback.
-
-        Args:
-            command: Nom de la commande (ex: 'curl')
-            fallback_paths: Liste de chemins de secours (ex: ['/usr/bin/curl', '/bin/curl'])
-
-        Returns:
-            Chemin complet de la commande
-
-        Raises:
-            FileNotFoundError: Si la commande n'est pas trouvée
+        Trouve le chemin absolu d'une commande en utilisant shutil.which ou
+        en cherchant dans des emplacements courants.
         """
-        # Essayer shutil.which()
-        cmd_path = shutil.which(command)
-        if cmd_path:
-            return cmd_path
+        path = shutil.which(command_name)
+        if path:
+            return path
 
-        # Essayer les fallbacks
-        if fallback_paths:
-            for path in fallback_paths:
-                if shutil.which(path):
-                    return path
+        for p in common_paths:
+            if os.path.exists(p):
+                return p
 
-        raise FileNotFoundError(f"Commande '{command}' introuvable. Installez-la ou vérifiez votre PATH.")
+        raise FileNotFoundError(f"Commande '{command_name}' introuvable. Installez-la ou vérifiez votre PATH.")
 
     def _run_command(
             self,
             cmd: List[str],
             ip: str,
-            port: int,
+            port: Optional[int],
             thread_id: str,
             event_queue: Queue,
             stop_flag: Callable[[], bool],
-            timeout: int = 5,
+            timeout: int,
             capture_output: bool = True
     ) -> Tuple[bool, Optional[str], List[str]]:
         """
-        Exécute une commande subprocess avec gestion d'erreurs et timeouts.
-
-        Args:
-            cmd: Commande à exécuter (liste de tokens)
-            ip: IP cible
-            port: Port cible
-            thread_id: ID du thread
-            event_queue: Queue pour les événements
-            stop_flag: Flag d'arrêt
-            timeout: Timeout en secondes
-            capture_output: Si True, capture stdout/stderr
-
-        Returns:
-            Tuple (success, error_msg, output_lines)
-            - success: True si la commande s'est exécutée sans erreur fatale
-            - error_msg: Message d'erreur si échec, None sinon
-            - output_lines: Lignes de sortie (stdout + stderr)
+        Exécute une commande en sous-processus, gère le streaming de la sortie,
+        le timeout et l'arrêt propre.
         """
         cmd_str = " ".join(cmd)
-        event_queue.put({
-            'event': 'thread_update',
-            'data': {
-                'thread_id': thread_id,
-                'message': f"[{time.ctime()}] Début du scan de {ip}:{port} avec {cmd_str}"
-            }
-        })
+        event_queue.put({'event': 'thread_update',
+                         'data': {'thread_id': thread_id,
+                                  'message': f"[{time.ctime()}] Exécution: {cmd_str}"}})
 
+        output_lines: List[str] = []
         try:
-            if capture_output:
-                process = subprocess.Popen(
-                    cmd,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    text=True
-                )
-            else:
-                process = subprocess.Popen(cmd)
+            process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE if capture_output else subprocess.DEVNULL,
+                stderr=subprocess.STDOUT if capture_output else subprocess.DEVNULL,
+                text=True,
+                bufsize=1
+            )
+            if self.process_manager:
+                self.process_manager.register(process, self.__class__.__name__, self.strategy, ip, thread_id)
 
-            # Enregistrer le processus dans le process_manager
-            if self.process_manager is not None:
-                scanner_type = self.__class__.__name__.replace("Scanner", "").lower()
-                self.process_manager.register(
-                    process,
-                    scanner_type,
-                    self.strategy,
-                    ip,
-                    thread_id
-                )
-
-        except Exception as e:
-            error_msg = f"Erreur lancement commande : {str(e)}"
-            event_queue.put({
-                'event': 'thread_update',
-                'data': {
-                    'thread_id': thread_id,
-                    'message': f"[{time.ctime()}] {error_msg}"
-                }
-            })
-            return False, error_msg, []
-
-        # Attendre la fin du processus avec timeout
-        try:
-            if capture_output:
-                stdout, _ = process.communicate(timeout=timeout)
-                output_lines = stdout.splitlines() if stdout else []
-            else:
+            if not capture_output:
+                # Si on ne capture pas la sortie, on attend simplement la fin
                 process.wait(timeout=timeout)
-                output_lines = []
+                if process.returncode == 0:
+                    return True, None, []
+                else:
+                    return False, f"Process exited with code {process.returncode}", []
 
-            event_queue.put({
-                'event': 'thread_update',
-                'data': {
-                    'thread_id': thread_id,
-                    'message': f"[{time.ctime()}] Scan terminé pour port {port}"
-                }
-            })
-            return True, None, output_lines
+            # Boucle de lecture en temps réel
+            buffer: List[str] = []
+            last_emit: float = time.time()
+            start_time: float = time.time()
 
+            for line in iter(process.stdout.readline, ''):
+                if stop_flag():
+                    process.terminate()
+                    return False, "Interrupted", output_lines
+
+                if time.time() - start_time > timeout:
+                    process.kill()
+                    return False, "Timeout", output_lines
+
+                line_stripped = line.strip()
+                output_lines.append(line_stripped)
+                buffer.append(f"[{time.ctime()}] {line_stripped}")
+
+                if time.time() - last_emit >= 0.5:
+                    self._send_output_to_queue(buffer, thread_id, event_queue)
+                    buffer = []
+                    last_emit = time.time()
+
+            if buffer:
+                self._send_output_to_queue(buffer, thread_id, event_queue)
+
+            process.wait()
+            if process.returncode == 0:
+                return True, None, output_lines
+            else:
+                return False, f"Process exited with code {process.returncode}", output_lines
+
+        except FileNotFoundError:
+            return False, f"Commande non trouvée: {cmd[0]}", []
         except subprocess.TimeoutExpired:
             process.kill()
-            if capture_output:
-                stdout, _ = process.communicate()
-                output_lines = stdout.splitlines() if stdout else []
-            else:
-                output_lines = []
-
-            event_queue.put({
-                'event': 'thread_update',
-                'data': {
-                    'thread_id': thread_id,
-                    'message': f"[{time.ctime()}] Scan timeout après {timeout}s pour port {port}"
-                }
-            })
             return False, "Timeout", output_lines
+        except Exception as e:
+            return False, f"Erreur d'exécution: {e}", output_lines
 
-    def _send_output_to_queue(self, output_lines: List[str], thread_id: str, event_queue: Queue):
-        """Envoie les lignes de sortie à la queue d'événements."""
-        for line in output_lines:
-            if line.strip():
-                event_queue.put({
-                    'event': 'thread_update',
-                    'data': {
-                        'thread_id': thread_id,
-                        'message': f"[{time.ctime()}] {line.strip()}"
-                    }
-                })
+    def _send_output_to_queue(self, lines: List[str], thread_id: str, event_queue: Queue) -> None:
+        """Envoie un bloc de lignes à la file d'attente des événements."""
+        if not lines:
+            return
+        event_queue.put({'event': 'thread_update', 'data': {'thread_id': thread_id, 'message': "\n".join(lines)}})
