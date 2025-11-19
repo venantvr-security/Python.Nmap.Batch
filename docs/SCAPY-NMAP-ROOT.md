@@ -183,13 +183,13 @@ for sent, recv in answered:
 
 ## Tableau d'Interprétation des Résultats
 
-| Réponse Observée | Signification Probable                                                              | Conclus ion sur l'Évasion                              |
-| :--- |:------------------------------------------------------------------------------------|:-------------------------------------------------------|
-| **SYN-ACK** | Le port est ou:-------------------------------------t le pare-feu a l aissé passer. | ✅ **Réussie**                                          |
-| **RST / RST-ACK** | Le port est fermé ou le pare-fe u a rejeté activeme                  nt.            | ❌ **Échouée**                                          |
-| **ICMP Unreachable** | Une règle de pare-feu ou de  routage bloque le traf               ic.               | ❌ **Échouée**                                          |
-| **Aucune réponse** | Le paquet a été droppé silenci eusement (firewall)                  ou perdu.       | ⚠️ **Incertaine (mais probable échec)**                |
-| **Alerte dans les logs IDS/IPS** | Le trafic a été  identifié comme suspect.                                           | Détect   ée **Détectée (même si le paquet est passé)** |
+| Réponse Observée                   | Signification Probable                                                              | Conclus ion sur l'Évasion                              |
+|:-----------------------------------|:------------------------------------------------------------------------------------|:-------------------------------------------------------|
+| **SYN-ACK**                        | Le port est ou:-------------------------------------t le pare-feu a l aissé passer. | ✅ **Réussie**                                          |
+| **RST / RST-ACK**                  | Le port est fermé ou le pare-fe u a rejeté activeme                  nt.            | ❌ **Échouée**                                          |
+| **ICMP Unreachable**               | Une règle de pare-feu ou de  routage bloque le traf               ic.               | ❌ **Échouée**                                          |
+| **Aucune réponse**                 | Le paquet a été droppé silenci eusement (firewall)                  ou perdu.       | ⚠️ **Incertaine (mais probable échec)**                |
+| **Alerte dans les logs IDS/IPS**   | Le trafic a été  identifié comme suspect.                                           | Détect   ée **Détectée (même si le paquet est passé)** |
 | **Paquet réassemblé différemment** | Le pare-feu a  normalisé le trafic avant de le tran smettre.                        | 🛡️ **Contournée par le pare-feu**                     |
 
 **Conclusion** : Pour valider un test d'évasion, il ne suffit pas d'envoyer des paquets. Il est impératif de **capturer le trafic en parallèle** et, idéalement, de *
