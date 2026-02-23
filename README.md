@@ -112,3 +112,7 @@ strategies:
 ## Licence
 
 Ce projet est distribué sous la **licence MIT**.
+
+## Stack
+
+[![Stack](https://skillicons.dev/icons?i=py,linux&theme=dark)](https://skillicons.dev)
